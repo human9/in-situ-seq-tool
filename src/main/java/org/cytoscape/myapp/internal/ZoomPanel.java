@@ -118,12 +118,15 @@ class ZoomPanel extends JPanel
 	public void zoomIn(int x, int y) {
 		double xper = (xoff - x) / (img.getWidth(null)*scale);
 		double yper = (yoff - y) / (img.getHeight(null)*scale);
-		if(scale < 1)
-			scale += 0.1*scale;
-		else
-			scale += 0.1;
-		zx += (int) ((xper*(img.getWidth(null)*scale) - (xoff-x)));
-		zy += (int) ((yper*(img.getHeight(null)*scale) - (yoff-y)));
+		if(scale < 20)
+		{
+			if(scale < 1)
+				scale += 0.1*scale;
+			else
+				scale += 0.1;
+			zx += (int) ((xper*(img.getWidth(null)*scale) - (xoff-x)));
+			zy += (int) ((yper*(img.getHeight(null)*scale) - (yoff-y)));
+		}
 	}
 
 	public void zoomOut(int x, int y) {
