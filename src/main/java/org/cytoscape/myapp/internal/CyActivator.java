@@ -30,7 +30,6 @@ public class CyActivator extends AbstractCyActivator {
 		cySwingApplication = getService(context, CySwingApplication.class);
 		desktopPane = findDesktop(cySwingApplication.getJFrame().getComponents());
 		pwi = new PictureWindow(desktopPane);
-		pwi.add();
 
 		cyApplicationManager = getService(context, CyApplicationManager.class);
 		properties = new Properties();

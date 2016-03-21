@@ -27,33 +27,23 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 		this.setPreferredSize(new Dimension(400, 400));
 		JLabel label = new JLabel("CoolApp Control Center");
 		Button showButton = new Button("Show CoolApp Window");
-		Button ziButton = new Button("zoom in");
-		Button zoButton = new Button("zoom out");
+		Button ziButton = new Button("Invert selected XY");
 
 		showButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pwi.add();
-				//InvertAction.invertSelected(appManager);
 			}
 		});
 		ziButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//pwi.zp.zoomIn();
+				InvertAction.invertSelected(appManager);
 				pwi.repaint();
-			}
-		});
-		zoButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				//pwi.zp.zoomOut();
-				pwi.repaint();
-				
 			}
 		});
 
-		this.add(label, BorderLayout.CENTER);
-		this.add(showButton, BorderLayout.SOUTH);
-		this.add(ziButton, BorderLayout.SOUTH);
-		this.add(zoButton, BorderLayout.SOUTH);
+		this.add(label);
+		this.add(showButton);
+		this.add(ziButton);
 	}
 
 

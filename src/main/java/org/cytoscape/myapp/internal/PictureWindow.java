@@ -1,11 +1,9 @@
 package org.cytoscape.myapp.internal;
 
 import java.awt.Component;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
-import javax.imageio.ImageIO;
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
 
@@ -23,32 +21,14 @@ public class PictureWindow extends JInternalFrame
 		this.setVisible(true);
 		this.setSize(400, 400);
 		
-		BufferedImage data = getImage("/data.jpg");
-		if (data != null)
-		{
-			zp = new ZoomPanel(data, data.getWidth(), this);
-			this.getContentPane().add(zp);
-		}
-
-	}
-
-	private BufferedImage getImage(String path)
-	{
-		InputStream img;
-		img = getClass().getResourceAsStream(path);
-		if(img != null)
-		{
-			BufferedImage bimg;
-			try{
-				bimg = ImageIO.read(img);
+		zp = new ZoomPanel("/data.jpg", this);
+		this.getContentPane().add(zp);
+		
+		this.addComponentListener(new ComponentAdapter(){
+			public void componentMoved(ComponentEvent e){
+				repaint();
 			}
-			catch(IOException ioe) {
-				return null;
-			}
-			return bimg;
-		}
-		else
-			return null;
+		});
 	}
 
 	public void add()
