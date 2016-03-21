@@ -9,8 +9,7 @@ import javax.swing.JInternalFrame;
 
 public class PictureWindow extends JInternalFrame
 {
-
-	static final long serialVersionUID = 55391;
+	static final long serialVersionUID = 5539194954L;
 	private JDesktopPane desktop;
 	public ZoomPanel zp;
 

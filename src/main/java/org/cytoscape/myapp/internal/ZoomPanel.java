@@ -7,7 +7,6 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -18,46 +17,55 @@ import javax.swing.JPanel;
 
 class ZoomPanel extends JPanel
 {
-	private double scale;
+	static final long serialVersionUID = 59820525894L;
+
+	//the image being displayed
 	private Image img;
+	//base image dimensions for convenience
+	private int iw, ih;
+	//factor to scale image by
+	private double scale;
+	//maximum scale with signed 16 bit ints used for offset
+	private double maxScale;
+	//the final offset used to draw the image
 	private int xoff, yoff; 
-	private int clickx, clicky; 
-	private int dragx, dragy; 
+	//click coordinates are to give an offset from drag
+	private int cx, cy; 
+	//drag coordinates are for moving image with mouse
+	private int dx, dy; 
+	//zoom cordinates for offsetting while zooming
 	private int zx, zy; 
 
 	public ZoomPanel(String path, final Component parent)
 	{
 		BufferedImage image = getImage(path);
-		this.img = image;
-		this.scale = 400.0/(double)image.getWidth();
-		this.setPreferredSize(new Dimension(400, 400));	
+		img = image;
+		iw = image.getWidth(null);
+		ih = image.getHeight(null);
+		scale = 400.0/(double)iw;
+		setPreferredSize(new Dimension(400, 400));	
+		maxScale = 32768/Math.max(iw,ih);
 		
-		this.addMouseWheelListener(new MouseAdapter(){
-			public void mouseWheelMoved(MouseWheelEvent e){
-				int notches = e.getWheelRotation();
-				if(notches < 0) {
-					zoomIn(e.getX(), e.getY());
-				}
-				else {
-					zoomOut(e.getX(), e.getY());
-				}
+		addMouseWheelListener(new MouseAdapter() {
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				zoom(e.getWheelRotation(), e.getX(), e.getY());
 				parent.repaint();
 			}
 		});
-		this.addMouseListener(new MouseAdapter(){
-			public void mousePressed(MouseEvent e){
-				clickx = e.getX();
-				clicky = e.getY();
+		addMouseListener(new MouseAdapter(){
+			public void mousePressed(MouseEvent e) {
+				cx = e.getX(); 
+				cy = e.getY();
 			}
 		});
-		this.addMouseMotionListener(new MouseMotionAdapter(){
-			public void mouseDragged(MouseEvent e){
+		addMouseMotionListener(new MouseAdapter() {
+			public void mouseDragged(MouseEvent e) {
 				int x = e.getX();
 				int y = e.getY();
-				dragx -= clickx - x; 
-				dragy -= clicky - y; 
-				clickx = x; 
-				clicky = y;
+				dx -= cx - x; 
+				dy -= cy - y; 
+				cx = x; 
+				cy = y;
 				parent.repaint();
 			}
 		});
@@ -65,84 +73,92 @@ class ZoomPanel extends JPanel
 
 	public void paintComponent(Graphics g)
 	{
-		int width = (int) (img.getWidth(null)*scale);
-		int height = (int) (img.getHeight(null)*scale);
+		//calculate the actual scaled dimensions
+		int width = (int) (iw*scale);
+		int height = (int) (ih*scale);
 
+		//default centeed values for offset
 		int defx = (int) (getWidth() - width)/2;
 		int defy = (int) (getHeight() - height)/2;
 		
+
 		if(width < getWidth())
+		//image width is less than frame width
 		{
-			/* We're zoomed out a bit so keep it centered */
-			dragx = defx;
+			dx = defx;
 			zx = 0;
 		}
 		else
+		//check to see if we need to prevent further dragging
 		{
-			if(dragx + zx > 0)
+			if(dx + zx > 0)
 			{
-				dragx = 0;
+				dx = 0;
 				zx = 0;
 			}
-			if(dragx + zx + width < getWidth())
+			if(dx + zx + width < getWidth())
 			{
-				dragx = (width - getWidth()) * -1; 
+				dx = (width - getWidth()) * -1; 
 				zx = 0;
 			}
 		}
-		if (height < getHeight()) {
-			dragy = defy;
+		if (height < getHeight()) 
+		//image height is less than frame height
+		{
+			dy = defy;
 			zy = 0;
 		}
 		else
 		{
-			if(dragy + zy > 0)
+			if(dy + zy > 0)
 			{
-				dragy = 0;
+				dy = 0;
 				zy = 0;
 			}			
-			if(dragy + zy + height < getHeight())
+			if(dy + zy + height < getHeight())
 			{
-				dragy = (height - getHeight()) * -1; 
+				dy = (height - getHeight()) * -1; 
 				zy = 0;
 			}
 		}
-		/* Check each border to see if we should stop */
-		xoff = dragx + zx;
-		yoff = dragy + zy;
+		xoff = dx + zx;
+		yoff = dy + zy;
 
 		Graphics2D gr = (Graphics2D) g;
 		gr.drawImage(img, xoff, yoff, width, height, this);
 	}
 
-	public void zoomIn(int x, int y) {
-		double xper = (xoff - x) / (img.getWidth(null)*scale);
-		double yper = (yoff - y) / (img.getHeight(null)*scale);
-		if(scale < 20)
+	public void zoom(int io, int x, int y)
+	{
+		int xdiff = xoff - x;
+		int ydiff = yoff - y;
+		double xper = xdiff / (iw*scale);
+		double yper = ydiff / (ih*scale);
+		if(io < 0)
 		{
-			if(scale < 1)
-				scale += 0.1*scale;
-			else
-				scale += 0.1;
-			zx += (int) ((xper*(img.getWidth(null)*scale) - (xoff-x)));
-			zy += (int) ((yper*(img.getHeight(null)*scale) - (yoff-y)));
+			if(scale < maxScale)
+			{
+				if(scale < 1)
+					scale += 0.1*scale;
+				else
+					scale += 0.1;
+			}
 		}
+		else
+		{
+			if(scale > 0.1)
+			{
+				if(scale < 1)
+					scale -= 0.1*scale;
+				else
+					scale -= 0.1;
+
+			}
+		}
+		zx += (int) (xper*(iw*scale) - xdiff);
+		zy += (int) (yper*(ih*scale) - ydiff);
 	}
 
-	public void zoomOut(int x, int y) {
-		double xper = (xoff - x) / (img.getWidth(null)*scale);
-		double yper = (yoff - y) / (img.getHeight(null)*scale);
-		if(scale > 0.1)
-		{
-			if(scale < 1)
-				scale -= 0.1*scale;
-			else
-				scale -= 0.1;
-			zx -= (int) ((xoff-x) - (xper*(img.getWidth(null)*scale)));
-			zy -= (int) ((yoff-y) - (yper*(img.getHeight(null)*scale)));
-		}
-	}
-	
 	private BufferedImage getImage(String path)
 	{
 		InputStream img;
