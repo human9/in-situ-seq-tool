@@ -1,6 +1,5 @@
 package org.cytoscape.myapp.internal;
 
-import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -17,7 +16,7 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 
 public class EmptyPanel extends JPanel implements CytoPanelComponent {
-	
+
 	static final long serialVersionUID = 692;
 	private final CyApplicationManager appManager;
 
@@ -30,11 +29,13 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 		Button ziButton = new Button("Invert selected XY");
 
 		showButton.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				pwi.add();
 			}
 		});
 		ziButton.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				InvertAction.invertSelected(appManager);
 				pwi.repaint();
@@ -46,10 +47,8 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 		this.add(ziButton);
 	}
 
-
-
 	@Override
-	public Component getComponent(){
+	public Component getComponent() {
 		return this;
 	}
 
@@ -64,8 +63,7 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 	}
 
 	@Override
-	public String getTitle(){
+	public String getTitle() {
 		return "CoolApp";
 	}
 }
-

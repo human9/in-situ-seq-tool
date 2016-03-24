@@ -5,6 +5,7 @@
 	<properties>
 		<bundle.symbolicName>org.cytoscape.myapp.my-cyaction-app</bundle.symbolicName>
 		<bundle.namespace>org.cytoscape.myapp</bundle.namespace>
+	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>

@@ -26,7 +26,7 @@ public class CyActivator extends AbstractCyActivator {
 
 	@Override
 	public void start(BundleContext context) throws Exception {
-		
+
 		cySwingApplication = getService(context, CySwingApplication.class);
 		desktopPane = findDesktop(cySwingApplication.getJFrame().getComponents());
 		pwi = new PictureWindow(desktopPane);
@@ -36,19 +36,18 @@ public class CyActivator extends AbstractCyActivator {
 		nvFactory = getService(context, CyNetworkViewFactory.class);
 
 		nvManager = getService(context, CyNetworkViewManager.class);
-		MenuAction menuAction = new MenuAction(cyApplicationManager, nvFactory, nvManager); 
+		MenuAction menuAction = new MenuAction(cyApplicationManager, nvFactory, nvManager);
 		registerAllServices(context, menuAction, properties);
 
 		controlPanel = new EmptyPanel(cyApplicationManager, pwi);
 		registerAllServices(context, controlPanel, properties);
 
 	}
-	
-	private JDesktopPane findDesktop(Component[] components)
-	{
+
+	private JDesktopPane findDesktop(Component[] components) {
 		for (Component component : components) {
 			if (component.getClass() == JDesktopPane.class)
-				return (JDesktopPane) component; 
+				return (JDesktopPane) component;
 			else if (component instanceof Container) {
 				Container container = (Container) component;
 				JDesktopPane pane = findDesktop(container.getComponents());
