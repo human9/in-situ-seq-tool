@@ -3,6 +3,7 @@ package org.cytoscape.myapp.internal;
 import java.awt.Component;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.beans.PropertyVetoException;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
@@ -28,6 +29,14 @@ public class PictureWindow extends JInternalFrame
 				repaint();
 			}
 		});
+		this.toFront();
+		try {
+			this.setSelected(true);
+		}
+		catch (PropertyVetoException e) {
+			// couldn't make active
+		}
+		jdp.repaint();
 	}
 
 	public void add()

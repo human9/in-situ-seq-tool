@@ -39,10 +39,21 @@ class ZoomPanel extends JPanel
 	public ZoomPanel(String path, final Component parent)
 	{
 		BufferedImage image = getImage(path);
+		if(image == null)
+			return;
 		img = image;
 		iw = image.getWidth(null);
 		ih = image.getHeight(null);
-		scale = 400.0/(double)iw;
+		Dimension pd;
+		if(parent.getBounds().getSize().width > 0)
+			pd = parent.getBounds().getSize();
+		else
+			pd = new Dimension(400, 400);
+		if(iw > ih)
+			scale = pd.width/(double)iw;
+		else
+			scale = pd.height/(double)ih;
+		setPreferredSize(pd);	
 		setPreferredSize(new Dimension(400, 400));	
 		maxScale = 32768/Math.max(iw,ih);
 		
