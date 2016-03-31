@@ -145,8 +145,9 @@ class ZoomPanel extends JPanel {
 
 		xoff = dx + zx;
 		yoff = dy + zy;
-
 		Graphics2D gr = (Graphics2D) g;
+		gr.setColor(Color.BLACK);
+		gr.fillRect(0, 0, getWidth(), getHeight());
 		gr.drawImage(img, xoff, yoff, width, height, this);
 		if (info) {
 			gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
