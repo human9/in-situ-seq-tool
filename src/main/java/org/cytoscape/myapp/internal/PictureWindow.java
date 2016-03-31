@@ -18,6 +18,7 @@ public class PictureWindow extends JInternalFrame {
 	private JDesktopPane desktop;
 	public ZoomPanel zp;
 	private PictureWindow pw;
+	private KeyEventDispatcher ked;
 
 	PictureWindow(JDesktopPane jdp) {
 		super("CoolApp", true, true, true, true);
@@ -26,7 +27,7 @@ public class PictureWindow extends JInternalFrame {
 		this.setVisible(true);
 		this.setSize(400, 400);
 
-		zp = new ZoomPanel("/data.jpg", this);
+		zp = new ZoomPanel("/data.jpg", this, true);
 		this.getContentPane().add(zp);
 
 		this.addComponentListener(new ComponentAdapter() {
@@ -41,8 +42,7 @@ public class PictureWindow extends JInternalFrame {
 		} catch (PropertyVetoException e) {
 			// couldn't make active
 		}
-
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+		ked = new KeyEventDispatcher() {
 
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent ke) {
@@ -54,13 +54,26 @@ public class PictureWindow extends JInternalFrame {
 							zp.parent.repaint();
 						}
 					}
+					if (ke.getKeyCode() == KeyEvent.VK_O) {
+						final JFileChooser fc = new JFileChooser();
 
+						int returnVal = fc.showOpenDialog(pw);
+						
+						if(returnVal == JFileChooser.APPROVE_OPTION) {
+							pw.getContentPane().remove(zp);
+							zp = new ZoomPanel(fc.getSelectedFile().getAbsolutePath(), pw, false);
+							pw.getContentPane().add(zp);
+							zp.setVisible(true);
+							pw.repaint();
+						}
+					}
 					break;
 				}
 				
 				return false;
 			}
-		});
+		};
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(ked);
 
 		jdp.repaint();
 	}
@@ -78,6 +91,7 @@ public class PictureWindow extends JInternalFrame {
 	public void remove() {
 		desktop.remove(this);
 		this.setVisible(false);
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(ked);
 		desktop.repaint();
 	}
 }

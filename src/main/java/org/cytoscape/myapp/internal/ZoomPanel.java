@@ -11,10 +11,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 class ZoomPanel extends JPanel {
@@ -41,9 +43,13 @@ class ZoomPanel extends JPanel {
 
 	final Component parent;
 
-	public ZoomPanel(String path, final Component parent) {
+	public ZoomPanel(String path, final Component parent, boolean isResource) {
 		this.parent = parent;
-		BufferedImage image = getImage(path);
+		BufferedImage image;
+		if(isResource)
+			 image = getImage(path);
+		else
+			image = getImageFile(path);
 		if (image == null)
 			return;
 		img = image;
@@ -216,5 +222,20 @@ class ZoomPanel extends JPanel {
 			return bimg;
 		} else
 			return null;
+	}
+	
+	private BufferedImage getImageFile(String path)
+	{
+		File input = new File(path);
+		BufferedImage bimg;
+		try{
+			bimg = ImageIO.read(input);
+		}
+		catch(IOException e) {
+			JOptionPane.showMessageDialog(null,"Couldn't open the selected file.","IO Error!",JOptionPane.WARNING_MESSAGE);
+
+			return null;
+		}
+		return bimg;
 	}
 }

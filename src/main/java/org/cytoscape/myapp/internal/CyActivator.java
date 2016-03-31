@@ -61,6 +61,7 @@ public class CyActivator extends AbstractCyActivator {
 	@Override
 	public void shutDown() {
 		pwi.remove();
+		pwi.dispose();
 		super.shutDown();
 	}
 }

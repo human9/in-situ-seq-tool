@@ -45,6 +45,7 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 		this.add(label);
 		this.add(showButton);
 		this.add(ziButton);
+		this.repaint();
 	}
 
 	@Override
