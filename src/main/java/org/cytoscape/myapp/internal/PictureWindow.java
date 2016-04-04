@@ -1,7 +1,6 @@
 package org.cytoscape.myapp.internal;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ComponentAdapter;
@@ -48,23 +47,23 @@ public class PictureWindow extends JInternalFrame {
 			public boolean dispatchKeyEvent(KeyEvent ke) {
 				switch (ke.getID()) {
 				case KeyEvent.KEY_PRESSED:
-					if (ke.getKeyCode() == KeyEvent.VK_I) {
-						if(pw.isSelected) {
-							zp.toggleInfo();
-							zp.parent.repaint();
+					if(pw.isSelected) {
+						if (ke.getKeyCode() == KeyEvent.VK_I) {
+								zp.toggleInfo();
+								zp.parent.repaint();
 						}
-					}
-					if (ke.getKeyCode() == KeyEvent.VK_O) {
-						final JFileChooser fc = new JFileChooser();
+						if (ke.getKeyCode() == KeyEvent.VK_O) {
+							final JFileChooser fc = new JFileChooser();
 
-						int returnVal = fc.showOpenDialog(pw);
-						
-						if(returnVal == JFileChooser.APPROVE_OPTION) {
-							pw.getContentPane().remove(zp);
-							zp = new ZoomPanel(fc.getSelectedFile().getAbsolutePath(), pw, false);
-							pw.getContentPane().add(zp);
-							zp.setVisible(true);
-							pw.repaint();
+							int returnVal = fc.showOpenDialog(pw);
+							
+							if(returnVal == JFileChooser.APPROVE_OPTION) {
+								pw.getContentPane().remove(zp);
+								zp = new ZoomPanel(fc.getSelectedFile().getAbsolutePath(), pw, false);
+								pw.getContentPane().add(zp);
+								zp.setVisible(true);
+								pw.repaint();
+							}
 						}
 					}
 					break;
