@@ -242,8 +242,8 @@ class ZoomPanel extends JPanel
 				}
 				else
 				{
-					left[i] = (int)(offset[x]/scale)*-1;
-					right[i] = (int)((offset[x]-panel[x])/scale)*-1;
+					left[i] = (int)(offset[i]/scale)*-1;
+					right[i] = (int)((offset[i]-panel[i])/scale)*-1;
 				}
 			}
 			gr.drawString("Visible: " + "("+left[x]+","+left[y]+") -> ("+right[x]+","+right[y]+")", 2, 40);
