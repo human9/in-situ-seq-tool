@@ -92,6 +92,7 @@ class ZoomPanel extends JPanel
 		addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				zoom(e.getWheelRotation(), e.getX(), e.getY());
+				updateSelection(e);
 				parent.repaint();
 			}
 		});
@@ -135,26 +136,8 @@ class ZoomPanel extends JPanel
 					click[y] = ydrag;
 					parent.repaint();
 				}
-				if(button3) {
-					int[] current = new int[2];
-					current[x] = e.getX();
-					current[y] = e.getY();
-					selectDrag[x] = select[x] - current[x]; 
-					selectDrag[y] = select[y] - current[y]; 
-					for(int i = 0; i < 2; i++)
-					{
-						if(selectDrag[i] > 0)
-							origin[i] = current[i];
-						else
-						{
-							origin[i] = select[i];
-							selectDrag[i] = Math.abs(selectDrag[i]);
-						}
-						selectedDims[i] = (int) Math.round(selectDrag[i] / scale);
-						selectedOrigin[i] = (int) Math.round((offset[i] - origin[i]) / scale);
-					}
-					parent.repaint();
-				}
+				updateSelection(e);
+				parent.repaint();
 			}
 		});
 	}
@@ -254,6 +237,30 @@ class ZoomPanel extends JPanel
 	public void toggleInfo()
 	{
 		info = !info;
+	}
+
+	private void updateSelection(MouseEvent e)
+	{
+		if(button3)
+		{
+			int[] current = new int[2];
+			current[x] = e.getX();
+			current[y] = e.getY();
+			selectDrag[x] = select[x] - current[x]; 
+			selectDrag[y] = select[y] - current[y]; 
+			for(int i = 0; i < 2; i++)
+			{
+				if(selectDrag[i] > 0)
+					origin[i] = current[i];
+				else
+				{
+					origin[i] = select[i];
+					selectDrag[i] = Math.abs(selectDrag[i]);
+				}
+				selectedDims[i] = (int) Math.round(selectDrag[i] / scale);
+				selectedOrigin[i] = (int) Math.round((offset[i] - origin[i]) / scale);
+			}
+		}
 	}
 
 	private void zoom(int io, int xzoom, int yzoom)
