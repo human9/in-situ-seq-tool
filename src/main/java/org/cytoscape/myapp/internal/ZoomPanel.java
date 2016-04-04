@@ -209,6 +209,9 @@ class ZoomPanel extends JPanel
 		Graphics2D gr = (Graphics2D) g;
 		gr.drawImage(img, offset[x], offset[y], scaled[x], scaled[y], this);
 		
+		gr.setColor(Color.BLACK);
+		gr.fillRect(0, 0, getWidth(), getHeight());
+		
 		gr.setColor(Color.YELLOW);
 		if(selectedDims[x] != 0 && selectedDims[y] != 0)
 		{
