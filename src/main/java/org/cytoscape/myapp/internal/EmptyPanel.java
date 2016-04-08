@@ -1,15 +1,15 @@
 package org.cytoscape.myapp.internal;
 
-import java.awt.Button;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
+import javax.swing.JSplitPane;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -18,33 +18,28 @@ import org.cytoscape.application.swing.CytoPanelName;
 public class EmptyPanel extends JPanel implements CytoPanelComponent {
 
 	static final long serialVersionUID = 692;
-	private final CyApplicationManager appManager;
 
-	public EmptyPanel(CyApplicationManager applicationManager, final PictureWindow pwi) {
-		appManager = applicationManager;
-		this.setBorder(new EmptyBorder(10, 10, 10, 10));
+	public EmptyPanel(CyApplicationManager applicationManager, final PictureWindow pictureWindow)
+	{
+		this.setLayout(new GridBagLayout()); 
 		this.setPreferredSize(new Dimension(400, 400));
-		JLabel label = new JLabel("CoolApp Control Center");
-		Button showButton = new Button("Show CoolApp Window");
-		Button ziButton = new Button("Invert selected XY");
+		GridBagConstraints cons = new GridBagConstraints();
+		cons.fill = GridBagConstraints.BOTH;
+		cons.weightx = 1;
+		cons.weighty = 1;
+		cons.gridx = 0;
+		cons.gridy = 1;
+		pictureWindow.setLayout(new GridLayout(0, 1));
 
-		showButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pwi.add();
-			}
-		});
-		ziButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				InvertAction.invertSelected(appManager);
-				pwi.repaint();
-			}
-		});
+		GridBagConstraints cons2 = new GridBagConstraints();
+		cons2.fill = GridBagConstraints.HORIZONTAL;
+		cons2.weightx = 1;
+		cons2.gridx = 0;
+		cons2.gridy = 0;
 
-		this.add(label);
-		this.add(showButton);
-		this.add(ziButton);
+		JLabel label = new JLabel("CoolApp Control Panel");
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, label, pictureWindow);
+		this.add(splitPane, cons);
 		this.repaint();
 	}
 

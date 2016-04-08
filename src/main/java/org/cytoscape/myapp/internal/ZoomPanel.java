@@ -2,6 +2,7 @@ package org.cytoscape.myapp.internal;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -19,9 +20,11 @@ import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+/** A component to display, zoom/drag and make selections on an image **/
 
 class ZoomPanel extends JPanel
 {
+	static final long serialVersionUID = 403245914L;
 	int x = 0; int y = 1;
 	//the image being displayed
 	private Image img;
@@ -65,6 +68,7 @@ class ZoomPanel extends JPanel
 	{
 		this.parent = parent;
 		this.path = path;
+		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		BufferedImage image;
 		if(isResource)
 			 image = getImage(path);
@@ -86,12 +90,14 @@ class ZoomPanel extends JPanel
 			scale = pd.width/(double)imageDim[0];
 		else
 			scale = pd.height/(double)imageDim[1];
-		setPreferredSize(pd);	
 		maxScale = 32768/Math.max(imageDim[x],imageDim[y]);
 		
 		addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				zoom(e.getWheelRotation(), e.getX(), e.getY());
+				int[] newZoom = new int[2];
+				newZoom[x] = e.getX();
+				newZoom[y] = e.getY();
+				zoom(e.getWheelRotation(), newZoom);
 				updateSelection(e);
 				parent.repaint();
 			}
@@ -148,7 +154,7 @@ class ZoomPanel extends JPanel
 		for(int i = 0; i < 2; i ++)
 		{
 			if(scaled[i] < panel[i])
-			//image width is less than frame width
+			//image size is less than frame width
 			{
 				drag[i] = (int) (panel[i] - scaled[i])/2;
 				zoom[i] = 0;
@@ -177,8 +183,8 @@ class ZoomPanel extends JPanel
 	{
 		// get up to date scaled dimensions
 		int[] scaled = new int[2];
-		scaled[x] = (int) (imageDim[x]*scale);
-		scaled[y] = (int) (imageDim[y]*scale);
+		scaled[x] = (int) Math.round(imageDim[x]*scale);
+		scaled[y] = (int) Math.round(imageDim[y]*scale);
 
 		// get up to date panel dimensions
 		int[] panel = new int[2];
@@ -195,7 +201,7 @@ class ZoomPanel extends JPanel
 		gr.fillRect(0, 0, getWidth(), getHeight());
 
 		gr.drawImage(img, offset[x], offset[y], scaled[x], scaled[y], this);
-		
+
 		gr.setColor(Color.YELLOW);
 		if(selectedDims[x] != 0 && selectedDims[y] != 0)
 		{
@@ -221,7 +227,7 @@ class ZoomPanel extends JPanel
 				if(small[i])
 				{
 					left[i] = 0;
-					right[i] = imageDim[x];
+					right[i] = imageDim[i];
 				}
 				else
 				{
@@ -263,12 +269,15 @@ class ZoomPanel extends JPanel
 		}
 	}
 
-	private void zoom(int io, int xzoom, int yzoom)
+	private void zoom(int io, int[] newZoom)
 	{
-		int xdiff = offset[x] - xzoom;
-		int ydiff = offset[y] - yzoom;
-		double ratioX = xdiff / (imageDim[x]*scale);
-		double ratioY = ydiff / (imageDim[y]*scale);
+		int[] diff = new int[2];
+		double[] ratio = new double[2];
+		for(int i = 0; i < 2; i++)
+		{
+			diff[i] = offset[i] - newZoom[i];
+			ratio[i] = diff[i] / (imageDim[i]*scale);
+		}
 		if(io < 0)
 		{
 			if(scale < maxScale)
@@ -290,12 +299,13 @@ class ZoomPanel extends JPanel
 
 			}
 		}
-		zoom[x] += (int) (ratioX*(imageDim[x]*scale) - xdiff);
-		zoom[y] += (int) (ratioY*(imageDim[y]*scale) - ydiff);
 		
-		// in case we don't draw before zoom is called again
-		offset[x] = drag[x] + zoom[x];
-		offset[y] = drag[y] + zoom[y];
+		for(int i = 0; i < 2; i++)
+		{
+			zoom[i] -= diff[i] - Math.floor(ratio[i]*(imageDim[i]*scale));
+			// in case we don't draw before zoom is called again
+			offset[i] = drag[i] + zoom[i];
+		}
 	}
 		
 	private BufferedImage getImage(String path) {

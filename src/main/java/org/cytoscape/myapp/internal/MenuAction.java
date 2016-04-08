@@ -34,10 +34,12 @@ public class MenuAction extends AbstractCyAction {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// InvertAction.invertSelected(applicationManager);
-		final CyNetworkView currentNetworkView = applicationManager.getCurrentNetworkView();
+		/*final CyNetworkView currentNetworkView = applicationManager.getCurrentNetworkView();
 		final CyNetwork network = currentNetworkView.getModel();
 		CyNetworkView testView = networkViewFactory.createNetworkView(network);
 
 		networkViewManager.addNetworkView(testView);
+		*/
+		
 	}
 }
