@@ -94,10 +94,7 @@ class ZoomPanel extends JPanel
 		
 		addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				int[] newZoom = new int[2];
-				newZoom[x] = e.getX();
-				newZoom[y] = e.getY();
-				zoom(e.getWheelRotation(), newZoom);
+				zoom(e.getWheelRotation(), new int[]{e.getX(), e.getY()});
 				updateSelection(e);
 				parent.repaint();
 			}
@@ -183,8 +180,8 @@ class ZoomPanel extends JPanel
 	{
 		// get up to date scaled dimensions
 		int[] scaled = new int[2];
-		scaled[x] = (int) Math.round(imageDim[x]*scale);
-		scaled[y] = (int) Math.round(imageDim[y]*scale);
+		scaled[x] = (int) (imageDim[x]*scale);
+		scaled[y] = (int) (imageDim[y]*scale);
 
 		// get up to date panel dimensions
 		int[] panel = new int[2];
@@ -302,7 +299,7 @@ class ZoomPanel extends JPanel
 		
 		for(int i = 0; i < 2; i++)
 		{
-			zoom[i] -= diff[i] - Math.floor(ratio[i]*(imageDim[i]*scale));
+			zoom[i] += (int) (ratio[i]*(imageDim[i]*scale) - diff[i]);
 			// in case we don't draw before zoom is called again
 			offset[i] = drag[i] + zoom[i];
 		}
