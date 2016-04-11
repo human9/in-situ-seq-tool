@@ -6,7 +6,6 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -27,7 +26,7 @@ class ZoomPanel extends JPanel
 	static final long serialVersionUID = 403245914L;
 	int x = 0; int y = 1;
 	//the image being displayed
-	private Image img;
+	private BufferedImage img;
 	
 	//base image dimensions for convenience
 	private int[] imageDim = new int[2]; 
@@ -197,7 +196,7 @@ class ZoomPanel extends JPanel
 		gr.setColor(Color.BLACK);
 		gr.fillRect(0, 0, getWidth(), getHeight());
 
-		gr.drawImage(img, offset[x], offset[y], scaled[x], scaled[y], this);
+		gr.drawImage(img, offset[x], offset[y], scaled[x], scaled[y], null);
 
 		gr.setColor(Color.YELLOW);
 		if(selectedDims[x] != 0 && selectedDims[y] != 0)
@@ -277,12 +276,14 @@ class ZoomPanel extends JPanel
 		}
 		if(io < 0)
 		{
-			if(scale < maxScale)
+			if(scale < maxScale && scale <= 3)
 			{
 				if(scale < 1)
 					scale += 0.1*scale;
 				else
 					scale += 0.1;
+				if((int)scale == 3)
+					scale = 3;
 			}
 		}
 		else
@@ -293,7 +294,6 @@ class ZoomPanel extends JPanel
 					scale -= 0.1*scale;
 				else
 					scale -= 0.1;
-
 			}
 		}
 		
