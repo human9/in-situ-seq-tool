@@ -288,12 +288,14 @@ class ZoomPanel extends JPanel
 		}
 		else
 		{
-			if(scale > 0.1)
+			if(scale > 0.01)
 			{
 				if(scale < 1)
 					scale -= 0.1*scale;
 				else
 					scale -= 0.1;
+				if((int)(scale*100) == 1)
+					scale = 0.01;
 			}
 		}
 		
