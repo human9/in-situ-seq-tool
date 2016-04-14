@@ -1,4 +1,4 @@
-package org.cytoscape.myapp.internal;
+package org.cytoscape.inseq.internal;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -15,11 +15,11 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 
-public class EmptyPanel extends JPanel implements CytoPanelComponent {
+public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
 	static final long serialVersionUID = 692;
 
-	public EmptyPanel(CyApplicationManager applicationManager, final PictureWindow pictureWindow)
+	public InseqControlPanel(CyApplicationManager applicationManager, final PictureWindow pictureWindow)
 	{
 		this.setLayout(new GridBagLayout()); 
 		this.setPreferredSize(new Dimension(400, 400));
@@ -37,7 +37,7 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 		cons2.gridx = 0;
 		cons2.gridy = 0;
 
-		JLabel label = new JLabel("CoolApp Control Panel");
+		JLabel label = new JLabel("Inseq Control Panel");
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, label, pictureWindow);
 		this.add(splitPane, cons);
 		this.repaint();
@@ -60,6 +60,6 @@ public class EmptyPanel extends JPanel implements CytoPanelComponent {
 
 	@Override
 	public String getTitle() {
-		return "CoolApp";
+		return "Inseq";
 	}
 }

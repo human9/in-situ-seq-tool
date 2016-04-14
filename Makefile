@@ -1,4 +1,4 @@
-JAR = target/my-cyaction-app-1.0-SNAPSHOT.jar
+JAR = target/prototype-1.0-SNAPSHOT.jar
 
 winstall: $(JAR)
 	cp $(JAR) C:/Users/John.Salamon/CytoscapeConfiguration/3/apps/installed

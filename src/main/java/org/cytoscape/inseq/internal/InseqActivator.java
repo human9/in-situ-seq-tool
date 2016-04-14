@@ -1,4 +1,4 @@
-package org.cytoscape.myapp.internal;
+package org.cytoscape.inseq.internal;
 
 import java.util.Properties;
 
@@ -8,11 +8,11 @@ import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
-public class CyActivator extends AbstractCyActivator {
+public class InseqActivator extends AbstractCyActivator {
 
 	private CyApplicationManager cyApplicationManager;
 	private CyNetworkViewManager nvManager;
-	private EmptyPanel controlPanel;
+	private InseqControlPanel controlPanel;
 	private Properties properties;
 	private CyNetworkViewFactory nvFactory;
 	private PictureWindow pictureWindow;
@@ -30,7 +30,7 @@ public class CyActivator extends AbstractCyActivator {
 		MenuAction menuAction = new MenuAction(cyApplicationManager, nvFactory, nvManager);
 		registerAllServices(context, menuAction, properties);
 
-		controlPanel = new EmptyPanel(cyApplicationManager, pictureWindow);
+		controlPanel = new InseqControlPanel(cyApplicationManager, pictureWindow);
 		registerAllServices(context, controlPanel, properties);
 	}
 

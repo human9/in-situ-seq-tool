@@ -3,14 +3,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<properties>
-		<bundle.symbolicName>org.cytoscape.myapp.my-cyaction-app</bundle.symbolicName>
-		<bundle.namespace>org.cytoscape.myapp</bundle.namespace>
+		<bundle.symbolicName>org.cytoscape.inseq.prototype</bundle.symbolicName>
+		<bundle.namespace>org.cytoscape.inseq</bundle.namespace>
 	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.cytoscape.myapp</groupId>
-	<artifactId>my-cyaction-app</artifactId>
+	<groupId>org.cytoscape.inseq</groupId>
+	<artifactId>prototype</artifactId>
 	<version>1.0-SNAPSHOT</version>
 
 	<name>${bundle.symbolicName} [${bundle.namespace}]</name>
@@ -77,7 +77,7 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package>${bundle.namespace}</Export-Package>
 						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
-						<Bundle-Activator>${bundle.namespace}.internal.CyActivator</Bundle-Activator>
+						<Bundle-Activator>${bundle.namespace}.internal.InseqActivator</Bundle-Activator>
 					</instructions>
 				</configuration>
 			</plugin>

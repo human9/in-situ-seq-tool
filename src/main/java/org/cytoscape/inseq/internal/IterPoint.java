@@ -1,4 +1,4 @@
-package org.cytoscape.myapp.internal;
+package org.cytoscape.inseq.internal;
 
 import java.awt.Point;
 
