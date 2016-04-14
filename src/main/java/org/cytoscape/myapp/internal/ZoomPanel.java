@@ -6,6 +6,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -19,17 +20,19 @@ import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-/** A component to display, zoom/drag and make selections on an image **/
+/** 
+ * A component to display, zoom/drag and make selections on an image.
+ * ZoomPanel overrides JPanel's painComponent method to accomplish this.
+ */
 
 class ZoomPanel extends JPanel
 {
 	static final long serialVersionUID = 403245914L;
-	int x = 0; int y = 1;
 	//the image being displayed
-	private BufferedImage img;
+	private Image img;
 	
 	//base image dimensions for convenience
-	private int[] imageDim = new int[2]; 
+	private Dimension imgDimension; 
 
 	//factor to scale image by
 	private double scale;
@@ -38,28 +41,30 @@ class ZoomPanel extends JPanel
 	private double maxScale;
 	
 	//the final offset used to draw the image
-	private int[] offset = new int[2]; 
+	private IterPoint imgOffset;
 	
 	//click coordinates are to give an offset from drag
-	private int[] click = new int[2]; 
+	private IterPoint mouseClick = new IterPoint();
  
 	//drag coordinates are for moving image with mouse
-	private int[] drag = new int[2]; 
+	private IterPoint mouseDrag = new IterPoint();
  
 	//zoom cordinates for offsetting while zooming
-	private int[] zoom = new int[2]; 
+	private IterPoint zoom = new IterPoint(); 
  
 	//toggle for displaying information
-	private boolean info=false;
-	private boolean button1 = false;
-	private boolean button3 = false;
-	private int[] select = new int[2];
-	private int[] origin = new int[2];
-	private int[] selectDrag = new int[2];
-	int[] selectedDims = new int[2];
-	int[] selectedOrigin = new int[2];
-	public final Component parent;
+	private boolean info;
+	private boolean button1;
+	private boolean button3;
 
+	private IterPoint select = new IterPoint();
+	private IterPoint small = new IterPoint();
+	private IterPoint origin = new IterPoint();
+	private IterPoint selectDrag = new IterPoint();
+	private IterPoint selectedDims = new IterPoint();
+	private IterPoint selectedOrigin = new IterPoint();
+	
+	public final Component parent;
 	
 	private String path;
 
@@ -76,25 +81,36 @@ class ZoomPanel extends JPanel
 		if (image == null)
 			return;
 
-		img = image;
-		imageDim[x] = image.getWidth(null);
-		imageDim[y] = image.getHeight(null);
+		this.img = image;
+		imgDimension = new Dimension(image.getWidth(null), image.getHeight(null));
 		Dimension pd;
 		if(parent.getBounds().getSize().width > 0)
 			pd = parent.getBounds().getSize();
 		else
 			pd = new Dimension(400, 400);
 
-		if(imageDim[x] > imageDim[y])
-			scale = pd.width/(double)imageDim[0];
+		if(imgDimension.width > imgDimension.height)
+			scale = pd.width/(double)imgDimension.width;
 		else
-			scale = pd.height/(double)imageDim[1];
-		maxScale = 32768/Math.max(imageDim[x],imageDim[y]);
+			scale = pd.height/(double)imgDimension.height;
+		setPreferredSize(pd);	
+		maxScale = 32768/Math.max(imgDimension.width,imgDimension.height);
+		
+		if(parent.getBounds().getSize().width > 0)
+			pd = parent.getBounds().getSize();
+		else
+			pd = new Dimension(400, 400);
+
+		if(imgDimension.width > imgDimension.height)
+			scale = pd.width/(double)imgDimension.width;
+		else
+			scale = pd.height/(double)imgDimension.height;
+		setPreferredSize(pd);	
+		maxScale = 32768/Math.max(imgDimension.width,imgDimension.height);
 		
 		addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				zoom(e.getWheelRotation(), new int[]{e.getX(), e.getY()});
-				updateSelection(e);
+				zoom(e.getWheelRotation(), e.getX(), e.getY());
 				parent.repaint();
 			}
 		});
@@ -102,19 +118,14 @@ class ZoomPanel extends JPanel
 			public void mousePressed(MouseEvent e) {
 				if(e.getButton() == MouseEvent.BUTTON1) {
 					button1 = true;
-					click[x] = e.getX();
-					click[y] = e.getY();
+					mouseClick = new IterPoint(e.getX(), e.getY());
 				}
 				if(e.getButton() == MouseEvent.BUTTON3) {
 					button3 = true;
-					for(int i = 0; i < 2; i++)
-					{
-						selectDrag[i] = 0;
-						selectedOrigin[i] = 0;
-						selectedDims[i] = 0;
-					}
-					select[x] = e.getX();
-					select[y] = e.getY();
+					selectDrag.move(0,0);
+					selectedOrigin.move(0,0);
+					selectedDims.move(0,0);
+					select.setLocation(e.getPoint());
 					parent.repaint();
 				}
 			}
@@ -130,82 +141,85 @@ class ZoomPanel extends JPanel
 		addMouseMotionListener(new MouseAdapter() {
 			public void mouseDragged(MouseEvent e) {
 				if(button1) {
-					int xdrag = e.getX();
-					int ydrag = e.getY();
-					drag[x] -= click[x] - xdrag; 
-					drag[y] -= click[y] - ydrag; 
-					click[x] = xdrag; 
-					click[y] = ydrag;
+					mouseDrag.translate(-(mouseClick.x - e.getX()), -(mouseClick.y - e.getY()));
+					mouseClick.setLocation(e.getPoint());
 					parent.repaint();
 				}
-				updateSelection(e);
-				parent.repaint();
+				if(button3) {
+					selectDrag.move(select.x - e.getX(), select.y - e.getY());
+					origin.setLocation(select);
+					IterPoint eventPoint = new IterPoint(e.getPoint());
+					for(IterPoint.Coord c : IterPoint.Coord.values())
+					{
+						if(selectDrag.getPoint(c) > 0)
+							origin.setPoint(c, eventPoint.getPoint(c));
+						else
+							selectDrag.setPoint(c, Math.abs(selectDrag.getPoint(c)));
+						selectedDims.setPoint(c, (int)Math.round(selectDrag.getPoint(c)/scale));
+						selectedOrigin.setPoint(c, (int)Math.round((imgOffset.getPoint(c)-origin.getPoint(c))/scale));
+					}
+					parent.repaint();
+				}
 			}
 		});
 	}
 
-	int[] getOffset(boolean[] small, int[] scaled, int[] panel)
+	IterPoint getOffset(IterPoint scaled, IterPoint panel)
 	{
-		int[] offset = new int[2];
-		for(int i = 0; i < 2; i ++)
+		IterPoint offset = new IterPoint();
+		for(IterPoint.Coord c : IterPoint.Coord.values())
 		{
-			if(scaled[i] < panel[i])
-			//image size is less than frame width
+			if(scaled.getPoint(c) < panel.getPoint(c))
+			//image width is less than frame width
 			{
-				drag[i] = (int) (panel[i] - scaled[i])/2;
-				zoom[i] = 0;
-				small[i] = true;
+				mouseDrag.setPoint(c, (int) (panel.getPoint(c) - scaled.getPoint(c))/2);
+				zoom.setPoint(c, 0);
+				small.setPoint(c, 1);
 			}
 			else
 			//check to see if we need to prevent further dragging
 			{
-				if(drag[i] + zoom[i] > 0)
+				small.setPoint(c, 0);
+				if(mouseDrag.getPoint(c) + zoom.getPoint(c) > 0)
 				{
-					drag[i] = 0;
-					zoom[i] = 0;
+					mouseDrag.setPoint(c, 0);
+					zoom.setPoint(c, 0);
 				}
-				if(drag[i] + zoom[i] + scaled[i] < panel[i])
+				if(mouseDrag.getPoint(c) + zoom.getPoint(c) + scaled.getPoint(c) < panel.getPoint(c))
 				{
-					drag[i] = (scaled[i] - panel[i]) * -1; 
-					zoom[i] = 0;
+					mouseDrag.setPoint(c, (scaled.getPoint(c) - panel.getPoint(c)) * -1); 
+					zoom.setPoint(c, 0);
 				}
 			}
-			offset[i] = zoom[i]+drag[i];
+			offset.setPoint(c, zoom.getPoint(c)+mouseDrag.getPoint(c));
 		}
 		return offset;
 	}
 
+	@Override
 	public void paintComponent(Graphics g)
 	{
 		// get up to date scaled dimensions
-		int[] scaled = new int[2];
-		scaled[x] = (int) (imageDim[x]*scale);
-		scaled[y] = (int) (imageDim[y]*scale);
+		IterPoint scaled = new IterPoint(imgDimension.width*scale, imgDimension.height*scale);
 
 		// get up to date panel dimensions
-		int[] panel = new int[2];
-		panel[x] = getWidth();
-		panel[y] = getHeight();
+		IterPoint panel = new IterPoint(getWidth(), getHeight());
 
-		boolean[] small = new boolean[2];
+		imgOffset = getOffset(scaled, panel);
 
-		offset = getOffset(small, scaled, panel);
-		
 		Graphics2D gr = (Graphics2D) g;
-		
 		gr.setColor(Color.BLACK);
 		gr.fillRect(0, 0, getWidth(), getHeight());
-
-		gr.drawImage(img, offset[x], offset[y], scaled[x], scaled[y], null);
-
+		gr.drawImage(img, imgOffset.x, imgOffset.y, scaled.x, scaled.y, this);
+		
 		gr.setColor(Color.YELLOW);
-		if(selectedDims[x] != 0 && selectedDims[y] != 0)
+		if(selectedDims.x != 0 && selectedDims.y != 0)
 		{
 			if(button3)
-				gr.drawRect(origin[x], origin[y], selectDrag[x], selectDrag[y]);
+				gr.drawRect(origin.x, origin.y, selectDrag.x, selectDrag.y);
 			else
 			{
-				gr.drawRect((int)Math.round(offset[x] - (selectedOrigin[x] * scale)), (int) Math.round(offset[y] - (selectedOrigin[y] * scale)), (int)Math.round(selectedDims[x] * scale), (int)Math.round(selectedDims[y] * scale));
+				gr.drawRect((int)Math.round(imgOffset.x - (selectedOrigin.x * scale)), (int) Math.round(imgOffset.y - (selectedOrigin.y * scale)), (int)Math.round(selectedDims.x * scale), (int)Math.round(selectedDims.y * scale));
 			}
 		}
 
@@ -214,25 +228,26 @@ class ZoomPanel extends JPanel
 		{
 			gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 					        RenderingHints.VALUE_ANTIALIAS_ON);
-			gr.drawString("File: \"" +path+"\"" + " Dimensions: " + imageDim[x] + "x" + imageDim[y], 2, 12);
+			gr.drawString("File: \"" +path+"\"" + " Dimensions: " + imgDimension.width + "x" + imgDimension.height, 2, 12);
 			gr.drawString("Zoom: " + (int)(scale*100) + "%", 2, 26);
-			int[] left = new int[2];
-			int[] right = new int[2];
-			for(int i = 0; i < 2; i++)
+			IterPoint left = new IterPoint();
+			IterPoint right = new IterPoint();
+			IterPoint dims = new IterPoint(imgDimension.width, imgDimension.height);
+			for(IterPoint.Coord c : IterPoint.Coord.values())
 			{
-				if(small[i])
+				if(small.getPoint(c) == 1)
 				{
-					left[i] = 0;
-					right[i] = imageDim[i];
+					left.setPoint(c, 0);
+					right.setPoint(c, dims.getPoint(c));
 				}
 				else
 				{
-					left[i] = (int)(offset[i]/scale)*-1;
-					right[i] = (int)((offset[i]-panel[i])/scale)*-1;
+					left.setPoint(c, (int)(imgOffset.getPoint(c)/scale)*-1);
+					right.setPoint(c, (int)(((imgOffset.getPoint(c)-panel.getPoint(c))/scale)*-1));
 				}
 			}
-			gr.drawString("Visible: " + "("+left[x]+","+left[y]+") -> ("+right[x]+","+right[y]+")", 2, 40);
-			gr.drawString("Selected: " + "("+-selectedOrigin[x]+","+-selectedOrigin[y]+") -> ("+((-selectedOrigin[x])+selectedDims[x])+","+((-selectedOrigin[y])+selectedDims[y])+")", 2, 54);
+			gr.drawString("Visible: " + "("+left.x+","+left.y+") -> ("+right.x+","+right.y+")", 2, 40);
+			gr.drawString("Selected: " + "("+-selectedOrigin.x+","+-selectedOrigin.y+") -> ("+((-selectedOrigin.x)+selectedDims.x)+","+((-selectedOrigin.y)+selectedDims.y)+")", 2, 54);
 		}
 	}
 
@@ -241,39 +256,11 @@ class ZoomPanel extends JPanel
 		info = !info;
 	}
 
-	private void updateSelection(MouseEvent e)
+	private void zoom(int io, int xzoom, int yzoom)
 	{
-		if(button3)
-		{
-			int[] current = new int[2];
-			current[x] = e.getX();
-			current[y] = e.getY();
-			selectDrag[x] = select[x] - current[x]; 
-			selectDrag[y] = select[y] - current[y]; 
-			for(int i = 0; i < 2; i++)
-			{
-				if(selectDrag[i] > 0)
-					origin[i] = current[i];
-				else
-				{
-					origin[i] = select[i];
-					selectDrag[i] = Math.abs(selectDrag[i]);
-				}
-				selectedDims[i] = (int) Math.round(selectDrag[i] / scale);
-				selectedOrigin[i] = (int) Math.round((offset[i] - origin[i]) / scale);
-			}
-		}
-	}
-
-	private void zoom(int io, int[] newZoom)
-	{
-		int[] diff = new int[2];
-		double[] ratio = new double[2];
-		for(int i = 0; i < 2; i++)
-		{
-			diff[i] = offset[i] - newZoom[i];
-			ratio[i] = diff[i] / (imageDim[i]*scale);
-		}
+		IterPoint diff = new IterPoint(imgOffset.x-xzoom, imgOffset.y-yzoom);
+		double ratioX = diff.x / (imgDimension.width*scale);
+		double ratioY = diff.y / (imgDimension.height*scale);
 		if(io < 0)
 		{
 			if(scale < maxScale && scale <= 3)
@@ -288,23 +275,19 @@ class ZoomPanel extends JPanel
 		}
 		else
 		{
-			if(scale > 0.01)
+			if(scale > 0.1)
 			{
 				if(scale < 1)
 					scale -= 0.1*scale;
 				else
 					scale -= 0.1;
-				if((int)(scale*100) == 1)
-					scale = 0.01;
+
 			}
 		}
+		zoom.translate((int) (ratioX*(imgDimension.width*scale) - diff.x), (int) (ratioY*(imgDimension.height*scale) - diff.y));
 		
-		for(int i = 0; i < 2; i++)
-		{
-			zoom[i] += (int) (ratio[i]*(imageDim[i]*scale) - diff[i]);
-			// in case we don't draw before zoom is called again
-			offset[i] = drag[i] + zoom[i];
-		}
+		// in case we don't draw before zoom is called again
+		imgOffset.move(mouseDrag.x+zoom.x, mouseDrag.y+zoom.y);
 	}
 		
 	private BufferedImage getImage(String path) {
