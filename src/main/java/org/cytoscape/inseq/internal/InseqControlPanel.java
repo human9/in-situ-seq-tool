@@ -22,7 +22,6 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 	public InseqControlPanel(CyApplicationManager applicationManager, final PictureWindow pictureWindow)
 	{
 		this.setLayout(new GridBagLayout()); 
-		this.setPreferredSize(new Dimension(400, 400));
 		GridBagConstraints cons = new GridBagConstraints();
 		cons.fill = GridBagConstraints.BOTH;
 		cons.weightx = 1;
