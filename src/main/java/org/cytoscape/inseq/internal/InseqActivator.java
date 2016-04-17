@@ -35,7 +35,7 @@ public class InseqActivator extends AbstractCyActivator {
 		ImportAction menuAction = new ImportAction(swingApp, cyApplicationManager, nvFactory, nvManager);
 		registerAllServices(context, menuAction, properties);
 
-		controlPanel = new InseqControlPanel(cyApplicationManager, pictureWindow);
+		controlPanel = new InseqControlPanel(swingApp, cyApplicationManager, pictureWindow);
 		registerAllServices(context, controlPanel, properties);
 	}
 

@@ -3,8 +3,8 @@ package org.cytoscape.inseq.internal;
 import java.awt.Point;
 
 /**
- * An extension of the Point class for which coordinates can be iterated over
- * more easily.
+ * An extension of the Point class for which coordinates can be iterated over more easily.
+ *
  */
 class IterPoint extends Point {
 	static final long serialVersionUID = 4343434L;

@@ -38,7 +38,8 @@ public class ImportAction extends AbstractCyAction {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
-		SelectionWindow dialog = new SelectionWindow(swingAdapter.getCySwingApplication().getJFrame());
+		//SelectionWindow dialog = new SelectionWindow(swingAdapter.getCySwingApplication().getJFrame());
+		ImportDialog dialog = new ImportDialog(swingAdapter.getCySwingApplication().getJFrame());
 
 		// InvertAction.invertSelected(applicationManager);
 		/*final CyNetworkView currentNetworkView = applicationManager.getCurrentNetworkView();

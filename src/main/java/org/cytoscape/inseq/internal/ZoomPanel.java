@@ -56,6 +56,9 @@ class ZoomPanel extends JPanel
 	private boolean info;
 	private boolean button1;
 	private boolean button3;
+	private boolean ratioIsUpToDate;
+	private double ratioX;
+	private double ratioY;
 
 	private IterPoint select = new IterPoint();
 	private IterPoint small = new IterPoint();
@@ -96,18 +99,6 @@ class ZoomPanel extends JPanel
 		setPreferredSize(pd);	
 		maxScale = 32768/Math.max(imgDimension.width,imgDimension.height);
 		
-		if(parent.getBounds().getSize().width > 0)
-			pd = parent.getBounds().getSize();
-		else
-			pd = new Dimension(400, 400);
-
-		if(imgDimension.width > imgDimension.height)
-			scale = pd.width/(double)imgDimension.width;
-		else
-			scale = pd.height/(double)imgDimension.height;
-		setPreferredSize(pd);	
-		maxScale = 32768/Math.max(imgDimension.width,imgDimension.height);
-		
 		addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				zoom(e.getWheelRotation(), e.getX(), e.getY());
@@ -136,10 +127,15 @@ class ZoomPanel extends JPanel
 				if(e.getButton() == MouseEvent.BUTTON3) {
 					button3 = false;
 				}
+				parent.repaint();
 			}
 		});
 		addMouseMotionListener(new MouseAdapter() {
+			public void mouseMoved(MouseEvent e) {
+				ratioIsUpToDate = false;
+			}
 			public void mouseDragged(MouseEvent e) {
+				ratioIsUpToDate = false;
 				if(button1) {
 					mouseDrag.translate(-(mouseClick.x - e.getX()), -(mouseClick.y - e.getY()));
 					mouseClick.setLocation(e.getPoint());
@@ -172,6 +168,7 @@ class ZoomPanel extends JPanel
 			if(scaled.getPoint(c) < panel.getPoint(c))
 			//image width is less than frame width
 			{
+				ratioIsUpToDate = false;
 				mouseDrag.setPoint(c, (int) (panel.getPoint(c) - scaled.getPoint(c))/2);
 				zoom.setPoint(c, 0);
 				small.setPoint(c, 1);
@@ -200,7 +197,7 @@ class ZoomPanel extends JPanel
 	public void paintComponent(Graphics g)
 	{
 		// get up to date scaled dimensions
-		IterPoint scaled = new IterPoint(imgDimension.width*scale, imgDimension.height*scale);
+		IterPoint scaled = new IterPoint(Math.round(imgDimension.width*scale), Math.round(imgDimension.height*scale));
 
 		// get up to date panel dimensions
 		IterPoint panel = new IterPoint(getWidth(), getHeight());
@@ -254,23 +251,30 @@ class ZoomPanel extends JPanel
 	public void toggleInfo()
 	{
 		info = !info;
+		parent.repaint();
 	}
 
 	private void zoom(int io, int xzoom, int yzoom)
 	{
 		IterPoint diff = new IterPoint(imgOffset.x-xzoom, imgOffset.y-yzoom);
-		double ratioX = diff.x / (imgDimension.width*scale);
-		double ratioY = diff.y / (imgDimension.height*scale);
+		if(!ratioIsUpToDate)
+		{
+			ratioX = diff.x / (double)Math.round(imgDimension.width*scale);
+			ratioY = diff.y / (double)Math.round(imgDimension.height*scale);
+			ratioIsUpToDate = true;
+		}
 		if(io < 0)
 		{
-			if(scale < maxScale && scale <= 3)
+			if(scale < maxScale && scale <= 10)
 			{
 				if(scale < 1)
 					scale += 0.1*scale;
 				else
+				{
 					scale += 0.1;
-				if((int)scale == 3)
-					scale = 3;
+					if((int)scale == 10)
+						scale = 10;
+				}
 			}
 		}
 		else
@@ -284,7 +288,7 @@ class ZoomPanel extends JPanel
 
 			}
 		}
-		zoom.translate((int) (ratioX*(imgDimension.width*scale) - diff.x), (int) (ratioY*(imgDimension.height*scale) - diff.y));
+		zoom.translate((int)(ratioX*Math.round(imgDimension.width*scale) - diff.x), (int)(ratioY*Math.round(imgDimension.height*scale) - diff.y));
 		
 		// in case we don't draw before zoom is called again
 		imgOffset.move(mouseDrag.x+zoom.x, mouseDrag.y+zoom.y);

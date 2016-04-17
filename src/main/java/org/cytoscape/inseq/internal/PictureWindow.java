@@ -7,20 +7,22 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class PictureWindow extends JPanel {
 	static final long serialVersionUID = 5539194954L;
 	public ZoomPanel zp;
-	private PictureWindow pw;
 	private KeyEventDispatcher ked;
+	private PictureWindow pw;
 
 	PictureWindow() {
-		this.pw = this;
 		this.setVisible(true);
+		pw = this;
 
 		zp = new ZoomPanel("/data.jpg", this, true);
 		this.add(zp);
+		this.add(new JLabel("test"));
 
 		this.addComponentListener(new ComponentAdapter() {
 			@Override
@@ -29,7 +31,6 @@ public class PictureWindow extends JPanel {
 			}
 		});
 		ked = new KeyEventDispatcher() {
-
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent ke) {
 				switch (ke.getID()) {

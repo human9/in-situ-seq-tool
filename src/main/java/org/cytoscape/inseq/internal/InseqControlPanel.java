@@ -1,16 +1,19 @@
 package org.cytoscape.inseq.internal;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
+import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -18,9 +21,11 @@ import org.cytoscape.application.swing.CytoPanelName;
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
 	static final long serialVersionUID = 692;
+	CySwingAppAdapter swingAdapter;
 
-	public InseqControlPanel(CyApplicationManager applicationManager, final PictureWindow pictureWindow)
+	public InseqControlPanel(CySwingAppAdapter adapter, CyApplicationManager applicationManager, final PictureWindow pictureWindow)
 	{
+		swingAdapter = adapter;
 		this.setLayout(new GridBagLayout()); 
 		GridBagConstraints cons = new GridBagConstraints();
 		cons.fill = GridBagConstraints.BOTH;
@@ -36,8 +41,14 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		cons2.gridx = 0;
 		cons2.gridy = 0;
 
-		JLabel label = new JLabel("Inseq Control Panel");
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, label, pictureWindow);
+		JButton openSelector = new JButton("Open selection window");
+		openSelector.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				SelectionWindow dialog = new SelectionWindow(swingAdapter.getCySwingApplication().getJFrame());
+			}
+		});
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, openSelector, pictureWindow);
 		this.add(splitPane, cons);
 		this.repaint();
 	}
