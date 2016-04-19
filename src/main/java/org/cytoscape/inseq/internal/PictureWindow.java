@@ -61,10 +61,6 @@ public class PictureWindow extends JPanel {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(ked);
 	}
 
-	public void add() {
-		this.setVisible(true);
-	}
-
 	public void remove() {
 		this.setVisible(false);
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(ked);

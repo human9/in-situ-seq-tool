@@ -15,8 +15,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -73,6 +75,12 @@ class ZoomPanel extends JPanel
 
 	public ZoomPanel(String path, final Component parent, boolean isResource)
 	{
+		ImageIO.scanForPlugins();
+		
+		Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("TIFF");
+		while (readers.hasNext()) {
+			System.out.println("reader: " + readers.next());
+		}
 		this.parent = parent;
 		this.path = path;
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
@@ -319,6 +327,7 @@ class ZoomPanel extends JPanel
 		}
 		catch(IOException e) {
 			JOptionPane.showMessageDialog(null,"Couldn't open the selected file.","IO Error!",JOptionPane.WARNING_MESSAGE);
+			System.out.println("Error on image");
 
 			return null;
 		}
