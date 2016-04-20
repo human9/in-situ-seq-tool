@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.dataimport;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -10,12 +10,14 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 public class ImportDialog extends JDialog {
@@ -86,6 +88,14 @@ public class ImportDialog extends JDialog {
 		confirm.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				try {
+					File imported = new File(input.getText());
+				}
+				catch(NullPointerException n) {
+					JOptionPane.showMessageDialog(null,"don't do that","Stahp",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+
 				dispose();
 			}
 		});

@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.imageselection;
 
 import java.awt.Color;
 import java.awt.Dimension;

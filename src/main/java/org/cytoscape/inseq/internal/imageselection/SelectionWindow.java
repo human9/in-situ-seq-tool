@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.imageselection;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -17,7 +17,7 @@ public class SelectionWindow extends JDialog {
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
 	
-	SelectionWindow(final JFrame parent)
+	public SelectionWindow(final JFrame parent)
 	{
 		super(parent, "Select Region", false);
 		this.setPreferredSize(new Dimension(400,400));

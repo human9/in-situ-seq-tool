@@ -10,6 +10,8 @@ import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
+import org.cytoscape.inseq.internal.dataimport.*;
+
 public class InseqActivator extends AbstractCyActivator {
 
 	private CyApplicationManager cyApplicationManager;
@@ -17,13 +19,10 @@ public class InseqActivator extends AbstractCyActivator {
 	private InseqControlPanel controlPanel;
 	private Properties properties;
 	private CyNetworkViewFactory nvFactory;
-	private PictureWindow pictureWindow;
 	private CySwingAppAdapter swingApp;
 
 	@Override
 	public void start(BundleContext context) throws Exception {
-
-		pictureWindow = new PictureWindow();
 
 		cyApplicationManager = getService(context, CyApplicationManager.class);
 		properties = new Properties();
@@ -35,13 +34,12 @@ public class InseqActivator extends AbstractCyActivator {
 		ImportAction menuAction = new ImportAction(swingApp, cyApplicationManager, nvFactory, nvManager);
 		registerAllServices(context, menuAction, properties);
 
-		controlPanel = new InseqControlPanel(swingApp, cyApplicationManager, pictureWindow);
+		controlPanel = new InseqControlPanel(swingApp, cyApplicationManager);
 		registerAllServices(context, controlPanel, properties);
 	}
 
 	@Override
 	public void shutDown() {
-		pictureWindow.remove();
 		super.shutDown();
 	}
 }

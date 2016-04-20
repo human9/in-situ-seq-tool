@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.dataimport;
 
 import java.awt.event.ActionEvent;
 
