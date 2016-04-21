@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +26,7 @@ class ImagePane extends JPanel
 	public boolean ratioIsCurrent;
 	public Point selectedOrigin = new Point();
 	public Point selectedFinish = new Point();
+	public Rectangle rect;
 
 	public ImagePane(final BufferedImage image)
 	{
@@ -49,10 +51,11 @@ class ImagePane extends JPanel
 		int ly = (int)Math.round((selectedOrigin.y)*scale);
 		int rx = (int)Math.round((selectedFinish.x)*scale);
 		int ry = (int)Math.round((selectedFinish.y)*scale);
-		gr.drawRect(Math.min(lx,rx) + offset.width,Math.min(ly,ry) + offset.height,Math.abs(lx-rx),Math.abs(ly-ry));
+		rect = new Rectangle(Math.min(lx,rx) + offset.width,Math.min(ly,ry) + offset.height,Math.abs(lx-rx),Math.abs(ly-ry));
+		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
 		Color fill = new Color(255, 0, 0, 60);
 		gr.setColor(fill);
-		gr.fillRect(Math.min(lx,rx) + offset.width,Math.min(ly,ry) + offset.height,Math.abs(lx-rx),Math.abs(ly-ry));
+		gr.fillRect(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	public void scaleUp()

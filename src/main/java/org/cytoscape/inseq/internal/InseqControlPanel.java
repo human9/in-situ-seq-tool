@@ -31,7 +31,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		openSelector.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new SelectionWindow(ia.swingAppAdapter.getCySwingApplication().getJFrame());
+				new SelectionWindow(ia.swingAppAdapter.getCySwingApplication().getJFrame(), ia.gridSize);
 			}
 		});
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, openSelector, null);

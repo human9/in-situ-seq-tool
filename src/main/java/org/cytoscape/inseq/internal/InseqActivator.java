@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal;
 
+import java.awt.Dimension;
 import java.util.Properties;
 
 import org.cytoscape.app.swing.CySwingAppAdapter;
@@ -28,6 +29,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public CyNetworkTableManager networkTableManager; 
 	public CyNetworkViewFactory networkViewFactory; 
 	public CySwingAppAdapter swingAppAdapter;
+	public Dimension gridSize;
 	
 	private InseqControlPanel controlPanel;
 	private Properties properties;

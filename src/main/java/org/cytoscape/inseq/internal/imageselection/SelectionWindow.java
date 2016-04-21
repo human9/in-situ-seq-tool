@@ -20,11 +20,13 @@ public class SelectionWindow extends JDialog {
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
+	private Dimension gs;
 	
-	public SelectionWindow(final JFrame parent)
+	public SelectionWindow(final JFrame parent, final Dimension gridSize)
 	{
 		super(parent, "Select Region", false);
 		this.setPreferredSize(new Dimension(400,400));
+		this.gs = gridSize;
 		
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
@@ -57,7 +59,7 @@ public class SelectionWindow extends JDialog {
 		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				//zp.toggleInfo();
+				System.out.println(zp.getSelectedGridNumbers(gs));
 			}
 		});
 		add(info, consInfo);

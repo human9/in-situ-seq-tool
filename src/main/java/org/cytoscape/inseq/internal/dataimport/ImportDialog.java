@@ -34,6 +34,8 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
 public class ImportDialog extends JDialog {
 	
@@ -165,20 +167,48 @@ public class ImportDialog extends JDialog {
 				CSVTable.createColumn(name.substring(1), Integer.class, false);
 			}
 		}
+
+		String x = "grid_center_X";
+		String y = "grid_center_Y";
+		CSVTable.createColumn(x, Double.class, false);
+		CSVTable.createColumn(y, Double.class, false);
 		
+		double maxX = 0;
+		double maxY = 0;
 		for (CSVRecord record : inseqParser)
 		{
 			CyNode node = CSVNet.addNode();
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
+			
 			for(String name : geneNames)
 			{
 				gridRow.set(name.substring(1), Integer.parseInt(record.get(name)));
 				gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
+				gridRow.set(x, Double.parseDouble(record.get(x)));
+				gridRow.set(y, Double.parseDouble(record.get(y)));
+
 			}
+			double tx = Double.parseDouble(record.get("grid_center_X"));
+			double ty = Double.parseDouble(record.get("grid_center_Y"));
+			if(tx > maxX)
+				maxX = tx;
+			if(ty > maxY)
+				maxY = ty;
 		}
+		int numRow = (int)Math.ceil(maxX / 400d);
+		int numCol = (int)Math.ceil(maxY / 400d);
+		System.out.println("Assuming grid of " + numRow + " by " + numCol);
+		ia.gridSize = new Dimension(numRow, numCol);
 		
-		ia.networkManager.addNetwork(CSVNet);
 		CyNetworkView testView = ia.networkViewFactory.createNetworkView(CSVNet);
+		for (CyNode node : CSVNet.getNodeList())
+		{
+			View<CyNode> nv = testView.getNodeView(node);
+			CyRow gridRow = CSVTable.getRow(node.getSUID());
+			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, gridRow.get(x, Double.class));
+			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, gridRow.get(y, Double.class));
+		}
+		ia.networkManager.addNetwork(CSVNet);
 		ia.networkViewManager.addNetworkView(testView);
 
 		return CSVNet;

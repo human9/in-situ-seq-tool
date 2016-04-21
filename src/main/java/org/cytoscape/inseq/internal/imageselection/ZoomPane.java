@@ -10,6 +10,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.ArrayList;
 
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
@@ -133,6 +134,17 @@ class ZoomPane extends JScrollPane
 		
 		imagePane.revalidate();
 		imagePane.repaint();
+	}
+	
+	public ArrayList<Integer> getSelectedGridNumbers(Dimension gridSize)
+	{
+		double totalX = imagePane.getWidth() / gridSize.width;
+		double totalY = imagePane.getHeight() / gridSize.height;
+		for(int i = 1; i < gridSize.width*gridSize.height; i++)
+		{
+			if(imagePane.rect.contains(new Point(1,1)));
+		}
+		return null;
 	}
 
 	public void updateViewport(ImagePane view)
