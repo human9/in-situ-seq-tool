@@ -11,11 +11,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cytoscape</groupId>
 	<artifactId>inseq</artifactId>
-	<version>1.0-PROTOTYPE</version>
+	<version>1.0-SNAPSHOT</version>
 
 	<name>Inseq</name>
-
 	<packaging>bundle</packaging>
+	
 
 	<build>
 		<resources>
@@ -78,6 +78,11 @@
 						<Export-Package>${bundle.namespace}</Export-Package>
 						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.internal.InseqActivator</Bundle-Activator>
+						
+						<Embed-Dependency>*;scope=!provided|test;groupId=!org.cytoscape</Embed-Dependency>
+						<Embed-Transitive>true</Embed-Transitive>
+						<Import-Package>*;resolution:=optional</Import-Package>
+						
 					</instructions>
 				</configuration>
 			</plugin>
@@ -165,6 +170,14 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- Apache Commons -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>1.2</version>
+			<optional>true</optional>
+		</dependency>
+		
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.ops4j.pax.logging</groupId>

@@ -4,37 +4,52 @@ import java.util.Properties;
 
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.inseq.internal.dataimport.ImportAction;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyNetworkTableManager;
+import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
-import org.cytoscape.inseq.internal.dataimport.*;
-
 public class InseqActivator extends AbstractCyActivator {
 
-	private CyApplicationManager cyApplicationManager;
-	private CyNetworkViewManager nvManager;
+	public CyApplicationManager applicationManager;
+	public CyNetworkViewManager networkViewManager;
+	public CyNetworkFactory networkFactory; 
+	public CyNetworkManager networkManager; 
+	public CyTableFactory tableFactory; 
+	public CyTableManager tableManager; 
+	public CyNetwork inseqNetwork; 
+	public CyNetworkTableManager networkTableManager; 
+	public CyNetworkViewFactory networkViewFactory; 
+	public CySwingAppAdapter swingAppAdapter;
+	
 	private InseqControlPanel controlPanel;
 	private Properties properties;
-	private CyNetworkViewFactory nvFactory;
-	private CySwingAppAdapter swingApp;
 
 	@Override
 	public void start(BundleContext context) throws Exception {
 
-		cyApplicationManager = getService(context, CyApplicationManager.class);
+		applicationManager = getService(context, CyApplicationManager.class);
 		properties = new Properties();
-		nvFactory = getService(context, CyNetworkViewFactory.class);
+		networkFactory = getService(context, CyNetworkFactory.class);
+		tableFactory = getService(context, CyTableFactory.class);
+		tableManager = getService(context, CyTableManager.class);
+		networkViewManager = getService(context, CyNetworkViewManager.class);
+		networkManager = getService(context, CyNetworkManager.class);
+		networkTableManager = getService(context, CyNetworkTableManager.class);
+		networkViewFactory = getService(context, CyNetworkViewFactory.class);
+		swingAppAdapter = getService(context, CySwingAppAdapter.class);
 
-		swingApp = getService(context, CySwingAppAdapter.class);
-
-		nvManager = getService(context, CyNetworkViewManager.class);
-		ImportAction menuAction = new ImportAction(swingApp, cyApplicationManager, nvFactory, nvManager);
+		ImportAction menuAction = new ImportAction(this);
 		registerAllServices(context, menuAction, properties);
 
-		controlPanel = new InseqControlPanel(swingApp, cyApplicationManager);
+		controlPanel = new InseqControlPanel(this);
 		registerAllServices(context, controlPanel, properties);
 	}
 

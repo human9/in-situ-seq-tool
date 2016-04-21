@@ -13,7 +13,6 @@ import java.awt.event.MouseWheelEvent;
 
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
-import javax.swing.border.EmptyBorder;
 
 class ZoomPane extends JScrollPane
 {
@@ -21,6 +20,7 @@ class ZoomPane extends JScrollPane
 	
 	private Point mouseClick;
 	private boolean dragButton;
+	private boolean selectButton;
 	private ImagePane imagePane;
 	private double ratioX, ratioY;
 	private Dimension imgDims;
@@ -38,6 +38,7 @@ class ZoomPane extends JScrollPane
 		vp.setBackground(Color.BLACK);
 		
 		addComponentListener(new ComponentAdapter() {
+			@Override
 			public void componentResized(ComponentEvent e) {
 				imagePane.setMinimumSize(vp.getExtentSize());
 				imagePane.setSize();
@@ -45,27 +46,40 @@ class ZoomPane extends JScrollPane
 			}
 		});
 		addMouseWheelListener(new MouseAdapter() {
+			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				zoomImage(e.getPoint(), e.getWheelRotation());
 			}
 		});
 		addMouseListener(new MouseAdapter(){
+			@Override
 			public void mousePressed(MouseEvent e) {
 				if(e.getButton() == MouseEvent.BUTTON1) {
 					dragButton = true;
-					mouseClick = new Point(e.getX(), e.getY());
+					mouseClick = e.getPoint();
+				}
+				if(e.getButton() == MouseEvent.BUTTON3) {
+					selectButton = true;
+					Point view = new Point(getViewport().getViewPosition());
+					imagePane.selectedOrigin.move((int)((view.x + e.getX() - imagePane.offset.width)/imagePane.getScale()), (int)((view.y + e.getY() - imagePane.offset.height)/imagePane.getScale()));
 				}
 			}
+			@Override
 			public void mouseReleased(MouseEvent e) {
 				if(e.getButton() == MouseEvent.BUTTON1) {
 					dragButton = false;
 				}
+				if(e.getButton() == MouseEvent.BUTTON3) {
+					selectButton = false;
+				}
 			}
 		});
 		addMouseMotionListener(new MouseAdapter() {
+			@Override
 			public void mouseMoved(MouseEvent e) {
 				imagePane.ratioIsCurrent = false;
 			}
+			@Override
 			public void mouseDragged(MouseEvent e) {
 				imagePane.ratioIsCurrent = false;
 				if(dragButton) {
@@ -73,6 +87,11 @@ class ZoomPane extends JScrollPane
 					Rectangle r = new Rectangle(move, vp.getExtentSize());
 					vp.scrollRectToVisible(r);
 					mouseClick.setLocation(e.getPoint());
+				}
+				if(selectButton) {
+					Point view = new Point(getViewport().getViewPosition());
+					imagePane.selectedFinish.move((int)((view.x + e.getX() - imagePane.offset.width)/imagePane.getScale()), (int)((view.y + e.getY() - imagePane.offset.height)/imagePane.getScale()));
+					repaint();
 				}
 			}
 		});

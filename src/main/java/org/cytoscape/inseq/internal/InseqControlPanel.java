@@ -13,8 +13,6 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
-import org.cytoscape.app.swing.CySwingAppAdapter;
-import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.imageselection.SelectionWindow;
@@ -22,11 +20,9 @@ import org.cytoscape.inseq.internal.imageselection.SelectionWindow;
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
 	static final long serialVersionUID = 692;
-	CySwingAppAdapter swingAdapter;
 
-	public InseqControlPanel(CySwingAppAdapter adapter, CyApplicationManager applicationManager)
+	public InseqControlPanel(final InseqActivator ia)
 	{
-		swingAdapter = adapter;
 		this.setLayout(new GridBagLayout()); 
 		this.setPreferredSize(new Dimension(400,400));
 
@@ -35,7 +31,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		openSelector.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SelectionWindow dialog = new SelectionWindow(swingAdapter.getCySwingApplication().getJFrame());
+				new SelectionWindow(ia.swingAppAdapter.getCySwingApplication().getJFrame());
 			}
 		});
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, openSelector, null);

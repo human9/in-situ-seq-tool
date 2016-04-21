@@ -1,9 +1,11 @@
 package org.cytoscape.inseq.internal.imageselection;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,10 +16,15 @@ import javax.swing.JPanel;
 
 class ImagePane extends JPanel
 {
+
+	private static final long serialVersionUID = 178665L;
 	final public BufferedImage image;
 	private double scale = 1;
-	private Dimension offset, requested;
+	public Dimension offset = new Dimension();
+	private Dimension requested;
 	public boolean ratioIsCurrent;
+	public Point selectedOrigin = new Point();
+	public Point selectedFinish = new Point();
 
 	public ImagePane(final BufferedImage image)
 	{
@@ -33,6 +40,19 @@ class ImagePane extends JPanel
 		gr.fillRect(0, 0, getWidth(), getHeight());
 		
 		gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null); 
+		System.out.println(selectedFinish);
+		System.out.println(offset);
+		
+		gr.setColor(Color.YELLOW);
+		gr.setStroke(new BasicStroke(2));
+		int lx = (int)Math.round((selectedOrigin.x)*scale);
+		int ly = (int)Math.round((selectedOrigin.y)*scale);
+		int rx = (int)Math.round((selectedFinish.x)*scale);
+		int ry = (int)Math.round((selectedFinish.y)*scale);
+		gr.drawRect(Math.min(lx,rx) + offset.width,Math.min(ly,ry) + offset.height,Math.abs(lx-rx),Math.abs(ly-ry));
+		Color fill = new Color(255, 0, 0, 60);
+		gr.setColor(fill);
+		gr.fillRect(Math.min(lx,rx) + offset.width,Math.min(ly,ry) + offset.height,Math.abs(lx-rx),Math.abs(ly-ry));
 	}
 
 	public void scaleUp()

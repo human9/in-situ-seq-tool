@@ -14,6 +14,10 @@ import javax.swing.JFrame;
 
 public class SelectionWindow extends JDialog {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
 	
@@ -26,7 +30,7 @@ public class SelectionWindow extends JDialog {
 		setLayout(gbl);
 		
 		consPanel = new GridBagConstraints(0,0,2,1,0.1,1,GridBagConstraints.SOUTH,1,new Insets(0,0,0,0), 1,1);
-		ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/17.jpg"));
+		ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Desktop/chem.png"));
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
 		add(zp, consPanel);
