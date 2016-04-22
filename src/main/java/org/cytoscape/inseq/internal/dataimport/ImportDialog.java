@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.dataimport;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -173,6 +174,11 @@ public class ImportDialog extends JDialog {
 		CSVTable.createColumn(x, Double.class, false);
 		CSVTable.createColumn(y, Double.class, false);
 		
+		String snex = "SNEx";
+		String sney = "SNEy";
+		CSVTable.createColumn(snex, Double.class, false);
+		CSVTable.createColumn(sney, Double.class, false);
+
 		double maxX = 0;
 		double maxY = 0;
 		for (CSVRecord record : inseqParser)
@@ -186,6 +192,8 @@ public class ImportDialog extends JDialog {
 				gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
 				gridRow.set(x, Double.parseDouble(record.get(x)));
 				gridRow.set(y, Double.parseDouble(record.get(y)));
+				gridRow.set(snex, Double.parseDouble(record.get(snex)));
+				gridRow.set(sney, Double.parseDouble(record.get(sney)));
 
 			}
 			double tx = Double.parseDouble(record.get("grid_center_X"));
@@ -208,9 +216,12 @@ public class ImportDialog extends JDialog {
 			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, gridRow.get(x, Double.class));
 			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, gridRow.get(y, Double.class));
 		}
+
+		testView.setVisualProperty(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
 		ia.networkManager.addNetwork(CSVNet);
 		ia.networkViewManager.addNetworkView(testView);
 		ia.inseqView = testView;
+		ia.inseqTable = CSVTable;
 
 		return CSVNet;
 	}

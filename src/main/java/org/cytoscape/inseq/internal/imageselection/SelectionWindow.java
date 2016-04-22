@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.imageselection;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -78,6 +79,7 @@ public class SelectionWindow extends JDialog {
 				for(CyNode node : ia.inseqNetwork.getNodeList())
 				{
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
+					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED); 
 					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, true);
 				}
 
@@ -87,7 +89,7 @@ public class SelectionWindow extends JDialog {
 				for(CyNode node : nodes)
 				{
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, false);
+					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN); 
 				}
 				ia.inseqView.updateView();
 				

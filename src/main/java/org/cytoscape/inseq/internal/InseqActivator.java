@@ -10,6 +10,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNetworkTableManager;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
@@ -26,6 +27,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public CyNetworkManager networkManager; 
 	public CyTableFactory tableFactory; 
 	public CyTableManager tableManager; 
+	public CyTable inseqTable;
 	public CyNetwork inseqNetwork; 
 	public CyNetworkView inseqView; 
 	public CyNetworkTableManager networkTableManager; 
