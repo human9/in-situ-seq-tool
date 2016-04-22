@@ -138,13 +138,26 @@ class ZoomPane extends JScrollPane
 	
 	public ArrayList<Integer> getSelectedGridNumbers(Dimension gridSize)
 	{
-		double totalX = imagePane.getWidth() / gridSize.width;
-		double totalY = imagePane.getHeight() / gridSize.height;
-		for(int i = 1; i < gridSize.width*gridSize.height; i++)
+		double stepX = imagePane.image.getWidth()*imagePane.getScale() / gridSize.width;
+		double stepY = imagePane.image.getHeight()*imagePane.getScale() / gridSize.height;
+		int x = (int) (stepX / 2) + imagePane.offset.width;
+		int y = (int) (stepY / 2) + imagePane.offset.height;
+		System.out.println(stepX +","+stepY);
+		ArrayList<Integer> points = new ArrayList<Integer>();
+		for(int i = 0; i < gridSize.width*gridSize.height; i++)
 		{
-			if(imagePane.rect.contains(new Point(1,1)));
+			
+			if(imagePane.rect.contains(new Point(x,y)))
+				points.add(i);	
+			y += stepY;
+			if (i % gridSize.height == 0) 
+			{
+				y = (int)(stepY / 2);
+				x += stepX;
+			}
+
 		}
-		return null;
+		return points;
 	}
 
 	public void updateViewport(ImagePane view)

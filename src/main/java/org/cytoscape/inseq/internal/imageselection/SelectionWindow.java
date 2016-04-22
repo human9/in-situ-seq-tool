@@ -6,11 +6,23 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+
+import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
+import org.cytoscape.model.CyTable;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
 public class SelectionWindow extends JDialog {
 	
@@ -20,13 +32,15 @@ public class SelectionWindow extends JDialog {
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
-	private Dimension gs;
+	private JFrame parent;
+	private final InseqActivator ia;
 	
-	public SelectionWindow(final JFrame parent, final Dimension gridSize)
+	public SelectionWindow(final InseqActivator ia)
 	{
-		super(parent, "Select Region", false);
+		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Select Region", false);
+		this.parent = ia.swingAppAdapter.getCySwingApplication().getJFrame();
+		this.ia = ia;
 		this.setPreferredSize(new Dimension(400,400));
-		this.gs = gridSize;
 		
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
@@ -55,11 +69,28 @@ public class SelectionWindow extends JDialog {
 		add(browse, consBrowse);
 		
 		GridBagConstraints consInfo = new GridBagConstraints(1,1,1,1,0.1,0,GridBagConstraints.SOUTH,0,new Insets(4,4,4,4), 1,1);
-		JButton info = new JButton("Show Info");
+		JButton info = new JButton("Get Selection");
 		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println(zp.getSelectedGridNumbers(gs));
+				ArrayList<Integer> gridNums = zp.getSelectedGridNumbers(ia.gridSize);
+				
+				for(CyNode node : ia.inseqNetwork.getNodeList())
+				{
+					View<CyNode> nv = ia.inseqView.getNodeView(node);
+					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, true);
+				}
+
+				Set<CyNode> nodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name", gridNums);
+				System.out.println(nodes);
+				
+				for(CyNode node : nodes)
+				{
+					View<CyNode> nv = ia.inseqView.getNodeView(node);
+					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, false);
+				}
+				ia.inseqView.updateView();
+				
 			}
 		});
 		add(info, consInfo);
@@ -74,4 +105,26 @@ public class SelectionWindow extends JDialog {
 		zp.updateViewport(ip);
 		repaint();
 	}
+
+    private static Set<CyNode> getNodesWithValue(
+            final CyNetwork net, final CyTable table,
+            final String colname, final ArrayList<Integer> values)
+    {
+        final Set<CyNode> nodes = new HashSet<CyNode>();
+		for(Integer value : values) {
+			final Collection<CyRow> matchingRows = table.getMatchingRows(colname, value.toString());
+			final String primaryKeyColname = table.getPrimaryKey().getName();
+			for (final CyRow row : matchingRows)
+			{
+				final Long nodeId = row.get(primaryKeyColname, Long.class);
+				if (nodeId == null)
+					continue;
+				final CyNode node = net.getNode(nodeId);
+				if (node == null)
+					continue;
+				nodes.add(node);
+			}
+        }
+        return nodes;
+    }
 }

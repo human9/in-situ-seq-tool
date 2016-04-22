@@ -210,6 +210,7 @@ public class ImportDialog extends JDialog {
 		}
 		ia.networkManager.addNetwork(CSVNet);
 		ia.networkViewManager.addNetworkView(testView);
+		ia.inseqView = testView;
 
 		return CSVNet;
 	}

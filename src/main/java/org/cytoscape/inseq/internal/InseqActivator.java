@@ -13,6 +13,7 @@ import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
@@ -26,6 +27,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public CyTableFactory tableFactory; 
 	public CyTableManager tableManager; 
 	public CyNetwork inseqNetwork; 
+	public CyNetworkView inseqView; 
 	public CyNetworkTableManager networkTableManager; 
 	public CyNetworkViewFactory networkViewFactory; 
 	public CySwingAppAdapter swingAppAdapter;
