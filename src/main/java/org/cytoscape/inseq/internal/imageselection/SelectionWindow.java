@@ -84,7 +84,6 @@ public class SelectionWindow extends JDialog {
 				}
 
 				Set<CyNode> nodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name", gridNums);
-				System.out.println(nodes);
 				
 				for(CyNode node : nodes)
 				{

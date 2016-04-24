@@ -17,6 +17,9 @@ import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.osgi.framework.BundleContext;
 
 public class InseqActivator extends AbstractCyActivator {
@@ -34,6 +37,9 @@ public class InseqActivator extends AbstractCyActivator {
 	public CyNetworkViewFactory networkViewFactory; 
 	public CySwingAppAdapter swingAppAdapter;
 	public Dimension gridSize;
+	public VisualMappingManager visualManager;
+	public VisualStyleFactory visualFactory;
+	public VisualMappingFunctionFactory discreteMappingFactory;
 	
 	private InseqControlPanel controlPanel;
 	private Properties properties;
@@ -51,6 +57,9 @@ public class InseqActivator extends AbstractCyActivator {
 		networkTableManager = getService(context, CyNetworkTableManager.class);
 		networkViewFactory = getService(context, CyNetworkViewFactory.class);
 		swingAppAdapter = getService(context, CySwingAppAdapter.class);
+		visualManager = getService(context, VisualMappingManager.class);
+		visualFactory = getService(context, VisualStyleFactory.class);
+		discreteMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
 
 		ImportAction menuAction = new ImportAction(this);
 		registerAllServices(context, menuAction, properties);

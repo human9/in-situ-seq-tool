@@ -17,6 +17,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -37,6 +38,8 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.vizmap.VisualMappingFunction;
+import org.cytoscape.view.vizmap.VisualStyle;
 
 public class ImportDialog extends JDialog {
 	
@@ -44,6 +47,8 @@ public class ImportDialog extends JDialog {
 	JTextField input;
 	boolean listenersActive = true;
 	private InseqActivator ia;
+	private String[] columnNames = {"grid_ID", "SNEx", "SNEy", 
+	"population", "tumour", "grid_center_X", "grid_center_Y"};
 
 	ImportDialog(final JFrame parent, final InseqActivator ia) {
 
@@ -145,12 +150,17 @@ public class ImportDialog extends JDialog {
 		} catch (IOException e) {
 			return null;
 		}
-		if (inseqParser.getHeaderMap().containsKey("grid_ID")) {
-			// import things
-			System.out.println("This is valid");
-		} else {
-			JOptionPane.showMessageDialog(this, "Selected file is not a valid inseq CSV.", "Import Error", JOptionPane.WARNING_MESSAGE);
-			return null;
+
+		// Iterate through expected names and check that they are present in the CSV file
+		Map<String,Integer> hMap = inseqParser.getHeaderMap();
+		for(String name : columnNames)
+		{
+			if (!hMap.containsKey(name))
+			{
+				JOptionPane.showMessageDialog(this, "Selected file is not a valid inseq CSV: " + name + " not found!", 
+						"Import Error", JOptionPane.WARNING_MESSAGE);
+				return null;
+			}
 		}
 		
 		// create network to store the grids in
@@ -169,35 +179,31 @@ public class ImportDialog extends JDialog {
 			}
 		}
 
-		String x = "grid_center_X";
-		String y = "grid_center_Y";
-		CSVTable.createColumn(x, Double.class, false);
-		CSVTable.createColumn(y, Double.class, false);
+		for (String name : columnNames)
+		{
+			CSVTable.createColumn(name, Double.class, false);
+		}	
 		
-		String snex = "SNEx";
-		String sney = "SNEy";
-		CSVTable.createColumn(snex, Double.class, false);
-		CSVTable.createColumn(sney, Double.class, false);
-
 		double maxX = 0;
 		double maxY = 0;
 		for (CSVRecord record : inseqParser)
 		{
 			CyNode node = CSVNet.addNode();
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
-			
+				
+			gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
+			for(String name : columnNames)
+			{
+				gridRow.set(name, Double.parseDouble(record.get(name)));
+			}
 			for(String name : geneNames)
 			{
 				gridRow.set(name.substring(1), Integer.parseInt(record.get(name)));
-				gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
-				gridRow.set(x, Double.parseDouble(record.get(x)));
-				gridRow.set(y, Double.parseDouble(record.get(y)));
-				gridRow.set(snex, Double.parseDouble(record.get(snex)));
-				gridRow.set(sney, Double.parseDouble(record.get(sney)));
-
 			}
+
 			double tx = Double.parseDouble(record.get("grid_center_X"));
 			double ty = Double.parseDouble(record.get("grid_center_Y"));
+
 			if(tx > maxX)
 				maxX = tx;
 			if(ty > maxY)
@@ -208,20 +214,34 @@ public class ImportDialog extends JDialog {
 		System.out.println("Assuming grid of " + numRow + " by " + numCol);
 		ia.gridSize = new Dimension(numRow, numCol);
 		
-		CyNetworkView testView = ia.networkViewFactory.createNetworkView(CSVNet);
+		CyNetworkView view = ia.networkViewFactory.createNetworkView(CSVNet);
 		for (CyNode node : CSVNet.getNodeList())
 		{
-			View<CyNode> nv = testView.getNodeView(node);
+			View<CyNode> nv = view.getNodeView(node);
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
-			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, gridRow.get(x, Double.class));
-			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, gridRow.get(y, Double.class));
+			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, gridRow.get("grid_center_X", Double.class));
+			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, gridRow.get("grid_center_Y", Double.class));
 		}
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, maxX/2);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, maxY/2);
 
-		testView.setVisualProperty(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
+		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+		vs.setDefaultValue(BasicVisualLexicon.NODE_SIZE, 100d);
+		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
+		for(VisualStyle style : ia.visualManager.getAllVisualStyles())
+		{
+			if(style.getTitle() == "Inseq Style")
+			{
+				ia.visualManager.removeVisualStyle(style);
+			}
+		}
+		ia.visualManager.addVisualStyle(vs);
+		vs.apply(view);
 		ia.networkManager.addNetwork(CSVNet);
-		ia.networkViewManager.addNetworkView(testView);
-		ia.inseqView = testView;
+		ia.networkViewManager.addNetworkView(view);
+		ia.inseqView = view;
 		ia.inseqTable = CSVTable;
+		view.updateView();
 
 		return CSVNet;
 	}

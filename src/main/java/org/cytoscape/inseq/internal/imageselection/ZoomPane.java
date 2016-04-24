@@ -138,21 +138,24 @@ class ZoomPane extends JScrollPane
 	
 	public ArrayList<Integer> getSelectedGridNumbers(Dimension gridSize)
 	{
-		double stepX = imagePane.image.getWidth()*imagePane.getScale() / gridSize.width;
-		double stepY = imagePane.image.getHeight()*imagePane.getScale() / gridSize.height;
-		int x = (int) (stepX / 2) + imagePane.offset.width;
-		int y = (int) (stepY / 2) + imagePane.offset.height;
-		System.out.println(stepX +","+stepY);
+		int stepX = (int)Math.round(imagePane.image.getWidth() / gridSize.width);
+		int stepY = (int)Math.round(imagePane.image.getHeight() / gridSize.height);
+		int x = (int) Math.round(stepX / 2); 
+		int y = (int) Math.round(stepY / 2);
 		ArrayList<Integer> points = new ArrayList<Integer>();
+		int lx = imagePane.selectedOrigin.x;
+		int ly = imagePane.selectedOrigin.y;
+		int rx = imagePane.selectedFinish.x;
+		int ry = imagePane.selectedFinish.y;
+		Rectangle rect = new Rectangle(Math.min(lx,rx), Math.min(ly,ry), Math.abs(lx-rx), Math.abs(ly-ry));
 		for(int i = 0; i < gridSize.width*gridSize.height; i++)
 		{
-			
-			if(imagePane.rect.contains(new Point(x,y)))
+			if(rect.contains(new Point(x,y)))
 				points.add(i);	
 			y += stepY;
 			if (i % gridSize.height == 0) 
 			{
-				y = (int)(stepY / 2);
+				y = (int)Math.round(stepY / 2);
 				x += stepX;
 			}
 

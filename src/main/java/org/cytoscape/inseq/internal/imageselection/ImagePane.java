@@ -42,8 +42,6 @@ class ImagePane extends JPanel
 		gr.fillRect(0, 0, getWidth(), getHeight());
 		
 		gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null); 
-		System.out.println(selectedFinish);
-		System.out.println(offset);
 		
 		gr.setColor(Color.YELLOW);
 		gr.setStroke(new BasicStroke(2));
