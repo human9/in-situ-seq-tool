@@ -126,13 +126,13 @@ class ZoomPane extends JScrollPane
 		y = (int) (Math.round(ratioY*newScale*imgDims.height) - Math.round(ratioY*oldScale*imgDims.height));
 
 		Rectangle r = new Rectangle(new Point(x,y), vp.getExtentSize());
+		imagePane.revalidate();
 		if(direction < 0)
 			imagePane.setSize();
 		vp.scrollRectToVisible(r);
 		if(direction >= 0)	
 			imagePane.setSize();
 		
-		imagePane.revalidate();
 		imagePane.repaint();
 	}
 	
