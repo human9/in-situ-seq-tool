@@ -34,13 +34,11 @@ public class SelectionWindow extends JDialog {
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
 	private JFrame parent;
-	private final InseqActivator ia;
 	
 	public SelectionWindow(final InseqActivator ia)
 	{
 		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Select Region", false);
 		this.parent = ia.swingAppAdapter.getCySwingApplication().getJFrame();
-		this.ia = ia;
 		this.setPreferredSize(new Dimension(400,400));
 		
 		GridBagLayout gbl = new GridBagLayout();
