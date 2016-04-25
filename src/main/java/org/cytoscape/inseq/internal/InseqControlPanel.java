@@ -9,14 +9,14 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
-import org.apache.commons.csv.CSVRecord;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.imageselection.SelectionWindow;
@@ -27,6 +27,7 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.vizmap.VisualStyle;
 
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
@@ -107,7 +108,103 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 	}
 	
 	void genRatio(){
-		// create a network based on ratio with the selected grids
+
+		//generate gene nodes
+		//next 
+		CyNetwork ratioNet = ia.networkFactory.createNetwork();
+		ratioNet.getRow(ratioNet).set(CyNetwork.NAME, "ratio network");
+		CyTable ratioTable = ratioNet.getDefaultNodeTable();
+		
+		Map<Double, CyNode> populations = new HashMap<Double, CyNode>();
+		ia.selectedNodes.size();
+		for(String name : ia.geneNames)
+		{
+			ratioTable.createColumn(name.substring(1), Double.class, false);
+		}
+		ratioTable.createColumn("grids_in_pop", Integer.class, false);
+		ArrayList<CyNode> populationNodes = new ArrayList<CyNode>();
+		for (CyNode node : ia.selectedNodes)
+		{
+			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
+			Double population = gridRow.get("population", Double.class);
+			if(!populations.containsKey(population))
+			{
+				CyNode popNode = ratioNet.addNode();
+				populationNodes.add(popNode);
+				CyRow popRow = ratioTable.getRow(popNode.getSUID());
+				popRow.set("grids_in_pop", 1);
+				popRow.set(CyNetwork.NAME, population.toString());
+				populations.put(population, popNode);
+				for(String name : ia.geneNames)
+				{
+					popRow.set(name.substring(1), (double)gridRow.get(name.substring(1), Integer.class));	
+				}
+			}
+			else
+			{
+				CyNode pop = populations.get(population);
+				CyRow popRow = ratioTable.getRow(pop.getSUID());
+				for(String name : ia.geneNames)
+				{
+					popRow.set(name.substring(1), popRow.get(name.substring(1), Double.class) + gridRow.get(name.substring(1), Integer.class));	
+				}
+				popRow.set("grids_in_pop", popRow.get("grids_in_pop", Integer.class) + 1);
+			}
+		}
+		for(String name : ia.geneNames)
+		{
+			Double average = 0d;
+			for(double value : ratioTable.getColumn(name.substring(1)).getValues(Double.class))
+			{
+				average += value;
+			}
+			average /= ratioTable.getColumn(name.substring(1)).getValues(Double.class).size();
+			for(CyNode node : ratioNet.getNodeList())
+			{
+				CyRow row = ratioTable.getRow(node.getSUID());	
+				row.set(name.substring(1),  row.get(name.substring(1), Double.class)/(double)row.get("grids_in_pop", Integer.class) / average);
+			}
+		}
+		
+		
+		for(String name : ia.geneNames)
+		{
+			CyNode node = ratioNet.addNode();
+			CyRow nodeRow = ratioTable.getRow(node.getSUID());
+			nodeRow.set(CyNetwork.NAME, name.substring(1));
+			for(CyNode popNode : populationNodes)
+			{
+				if(ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class) > 0.01)
+						ratioNet.addEdge(node, popNode, false);
+
+			}
+		}
+		
+		CyNetworkView view = ia.networkViewFactory.createNetworkView(ratioNet);
+		
+		VisualStyle vs = ia.visualFactory.createVisualStyle("Ratio Style");
+		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.BLUE);
+		for(VisualStyle style : ia.visualManager.getAllVisualStyles())
+		{
+			if(style.getTitle() == "Ratio Style")
+			{
+				ia.visualManager.removeVisualStyle(style);
+			}
+		}
+		ia.visualManager.addVisualStyle(vs);
+		vs.apply(view);
+		for(CyNode node : populationNodes)
+		{
+			View<CyNode> gv = view.getNodeView(node);
+			gv.setVisualProperty(BasicVisualLexicon.NODE_SIZE, (double)ratioTable.getRow(node.getSUID()).get("grids_in_pop", Integer.class));
+			gv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
+		}
+		
+		
+
+		ia.networkManager.addNetwork(ratioNet);
+		ia.networkViewManager.addNetworkView(view);
+		view.updateView();
 
 	}
 

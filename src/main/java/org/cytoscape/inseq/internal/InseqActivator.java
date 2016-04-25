@@ -1,7 +1,9 @@
 package org.cytoscape.inseq.internal;
 
 import java.awt.Dimension;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -10,6 +12,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNetworkTableManager;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
@@ -40,6 +43,8 @@ public class InseqActivator extends AbstractCyActivator {
 	public VisualMappingManager visualManager;
 	public VisualStyleFactory visualFactory;
 	public VisualMappingFunctionFactory discreteMappingFactory;
+	public Set<CyNode> selectedNodes;
+	public List<String> geneNames;
 	
 	private InseqControlPanel controlPanel;
 	private Properties properties;

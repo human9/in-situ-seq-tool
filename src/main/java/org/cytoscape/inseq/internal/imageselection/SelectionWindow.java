@@ -45,7 +45,7 @@ public class SelectionWindow extends JDialog {
 		setLayout(gbl);
 		
 		consPanel = new GridBagConstraints(0,0,2,1,0.1,1,GridBagConstraints.SOUTH,1,new Insets(0,0,0,0), 1,1);
-		ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Desktop/chem.png"));
+		ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"));
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
 		add(zp, consPanel);
@@ -81,9 +81,9 @@ public class SelectionWindow extends JDialog {
 					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, true);
 				}
 
-				Set<CyNode> nodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name", gridNums);
+				ia.selectedNodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name", gridNums);
 				
-				for(CyNode node : nodes)
+				for(CyNode node : ia.selectedNodes)
 				{
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
 					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN); 

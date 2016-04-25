@@ -167,12 +167,12 @@ public class ImportDialog extends JDialog {
 		CSVNet.getRow(CSVNet).set(CyNetwork.NAME, "test network");
 		// create table to store gene, tumour, and other info in
 		CyTable CSVTable = CSVNet.getDefaultNodeTable();
-		List<String> geneNames = new ArrayList<String>();
+		ia.geneNames = new ArrayList<String>();
 		for (String name : inseqParser.getHeaderMap().keySet())
 		{
 			if(name.charAt(0) == '*')
 			{
-				geneNames.add(name);
+				ia.geneNames.add(name);
 				System.out.println("Found gene name: " + name.substring(1));
 				CSVTable.createColumn(name.substring(1), Integer.class, false);
 			}
@@ -195,7 +195,7 @@ public class ImportDialog extends JDialog {
 			{
 				gridRow.set(name, Double.parseDouble(record.get(name)));
 			}
-			for(String name : geneNames)
+			for(String name : ia.geneNames)
 			{
 				gridRow.set(name.substring(1), Integer.parseInt(record.get(name)));
 			}
