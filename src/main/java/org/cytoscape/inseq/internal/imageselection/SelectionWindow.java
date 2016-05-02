@@ -26,7 +26,7 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
 public class SelectionWindow extends JDialog {
-	
+
 	/**
 	 * 
 	 */
@@ -34,24 +34,24 @@ public class SelectionWindow extends JDialog {
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
 	private JFrame parent;
-	
-	public SelectionWindow(final InseqActivator ia)
-	{
+
+	public SelectionWindow(final InseqActivator ia) {
 		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Select Region", false);
 		this.parent = ia.swingAppAdapter.getCySwingApplication().getJFrame();
-		this.setPreferredSize(new Dimension(400,400));
-		
+		this.setPreferredSize(new Dimension(400, 400));
+
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
-		
-		consPanel = new GridBagConstraints(0,0,2,1,0.1,1,GridBagConstraints.SOUTH,1,new Insets(0,0,0,0), 1,1);
+
+		consPanel = new GridBagConstraints(0, 0, 2, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 1,
+				1);
 		ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"));
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
 		add(zp, consPanel);
 
-		
-		GridBagConstraints consBrowse = new GridBagConstraints(0,1,1,1,0.1,0,GridBagConstraints.SOUTH,0,new Insets(4,4,4,4), 1,1);
+		GridBagConstraints consBrowse = new GridBagConstraints(0, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+				new Insets(4, 4, 4, 4), 1, 1);
 		JButton browse = new JButton("Change Image");
 		browse.addActionListener(new ActionListener() {
 			@Override
@@ -59,62 +59,59 @@ public class SelectionWindow extends JDialog {
 				final JFileChooser fc = new JFileChooser();
 
 				int returnVal = fc.showOpenDialog(parent);
-				
-				if(returnVal == JFileChooser.APPROVE_OPTION) {
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					changeImage(fc.getSelectedFile().getAbsolutePath());
 				}
 			}
 		});
 		add(browse, consBrowse);
-		
-		GridBagConstraints consInfo = new GridBagConstraints(1,1,1,1,0.1,0,GridBagConstraints.SOUTH,0,new Insets(4,4,4,4), 1,1);
+
+		GridBagConstraints consInfo = new GridBagConstraints(1, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+				new Insets(4, 4, 4, 4), 1, 1);
 		JButton info = new JButton("Get Selection");
 		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<Integer> gridNums = zp.getSelectedGridNumbers(ia.gridSize);
-				
-				for(CyNode node : ia.inseqNetwork.getNodeList())
-				{
+
+				for (CyNode node : ia.inseqNetwork.getNodeList()) {
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED); 
+					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
 					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, true);
 				}
 
-				ia.selectedNodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name", gridNums);
-				
-				for(CyNode node : ia.selectedNodes)
-				{
+				ia.selectedNodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name",
+						gridNums);
+
+				for (CyNode node : ia.selectedNodes) {
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN); 
+					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN);
 				}
 				ia.inseqView.updateView();
-				
+
 			}
 		});
 		add(info, consInfo);
-		
+
 		pack();
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
-	private void changeImage(String path)
-	{
+
+	private void changeImage(String path) {
 		ImagePane ip = new ImagePane(ImagePane.getImageFile(path));
 		zp.updateViewport(ip);
 		repaint();
 	}
 
-    private static Set<CyNode> getNodesWithValue(
-            final CyNetwork net, final CyTable table,
-            final String colname, final ArrayList<Integer> values)
-    {
-        final Set<CyNode> nodes = new HashSet<CyNode>();
-		for(Integer value : values) {
+	private static Set<CyNode> getNodesWithValue(final CyNetwork net, final CyTable table, final String colname,
+			final ArrayList<Integer> values) {
+		final Set<CyNode> nodes = new HashSet<CyNode>();
+		for (Integer value : values) {
 			final Collection<CyRow> matchingRows = table.getMatchingRows(colname, value.toString());
 			final String primaryKeyColname = table.getPrimaryKey().getName();
-			for (final CyRow row : matchingRows)
-			{
+			for (final CyRow row : matchingRows) {
 				final Long nodeId = row.get(primaryKeyColname, Long.class);
 				if (nodeId == null)
 					continue;
@@ -123,7 +120,7 @@ public class SelectionWindow extends JDialog {
 					continue;
 				nodes.add(node);
 			}
-        }
-        return nodes;
-    }
+		}
+		return nodes;
+	}
 }

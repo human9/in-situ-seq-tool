@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.swing.JButton;
@@ -41,13 +40,13 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 public class ImportDialog extends JDialog {
-	
+
 	private static final long serialVersionUID = 262657186016113345L;
 	JTextField input;
 	boolean listenersActive = true;
 	private InseqActivator ia;
-	private String[] columnNames = {"grid_ID", "SNEx", "SNEy", 
-	"population", "tumour", "grid_center_X", "grid_center_Y"};
+	private String[] columnNames = { "grid_ID", "SNEx", "SNEy", "population", "tumour", "grid_center_X",
+			"grid_center_Y" };
 
 	ImportDialog(final JFrame parent, final InseqActivator ia) {
 
@@ -127,8 +126,7 @@ public class ImportDialog extends JDialog {
 					return;
 				}
 				CyNetwork net = importFile(in);
-				if (net != null)
-				{
+				if (net != null) {
 					ia.inseqNetwork = net;
 					dispose();
 				}
@@ -150,88 +148,79 @@ public class ImportDialog extends JDialog {
 			return null;
 		}
 
-		// Iterate through expected names and check that they are present in the CSV file
-		Map<String,Integer> hMap = inseqParser.getHeaderMap();
-		for(String name : columnNames)
-		{
-			if (!hMap.containsKey(name))
-			{
-				JOptionPane.showMessageDialog(this, "Selected file is not a valid inseq CSV: " + name + " not found!", 
+		// Iterate through expected names and check that they are present in the
+		// CSV file
+		Map<String, Integer> hMap = inseqParser.getHeaderMap();
+		for (String name : columnNames) {
+			if (!hMap.containsKey(name)) {
+				JOptionPane.showMessageDialog(this, "Selected file is not a valid inseq CSV: " + name + " not found!",
 						"Import Error", JOptionPane.WARNING_MESSAGE);
 				return null;
 			}
 		}
-		
+
 		// create network to store the grids in
 		CyNetwork CSVNet = ia.networkFactory.createNetwork();
 		CSVNet.getRow(CSVNet).set(CyNetwork.NAME, "test network");
 		// create table to store gene, tumour, and other info in
 		CyTable CSVTable = CSVNet.getDefaultNodeTable();
 		ia.geneNames = new ArrayList<String>();
-		for (String name : inseqParser.getHeaderMap().keySet())
-		{
-			if(name.charAt(0) == '*')
-			{
+		for (String name : inseqParser.getHeaderMap().keySet()) {
+			if (name.charAt(0) == '*') {
 				ia.geneNames.add(name);
 				System.out.println("Found gene name: " + name.substring(1));
 				CSVTable.createColumn(name.substring(1), Integer.class, false);
 			}
 		}
 
-		for (String name : columnNames)
-		{
+		for (String name : columnNames) {
 			CSVTable.createColumn(name, Double.class, false);
-		}	
-		
+		}
+
 		double maxX = 0;
 		double maxY = 0;
-		for (CSVRecord record : inseqParser)
-		{
+		for (CSVRecord record : inseqParser) {
 			CyNode node = CSVNet.addNode();
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
-				
+
 			gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
-			for(String name : columnNames)
-			{
+			for (String name : columnNames) {
 				gridRow.set(name, Double.parseDouble(record.get(name)));
 			}
-			for(String name : ia.geneNames)
-			{
+			for (String name : ia.geneNames) {
 				gridRow.set(name.substring(1), Integer.parseInt(record.get(name)));
 			}
 
 			double tx = Double.parseDouble(record.get("grid_center_X"));
 			double ty = Double.parseDouble(record.get("grid_center_Y"));
 
-			if(tx > maxX)
+			if (tx > maxX)
 				maxX = tx;
-			if(ty > maxY)
+			if (ty > maxY)
 				maxY = ty;
 		}
-		int numRow = (int)Math.ceil(maxX / 400d);
-		int numCol = (int)Math.ceil(maxY / 400d);
+		int numRow = (int) Math.ceil(maxX / 400d);
+		int numCol = (int) Math.ceil(maxY / 400d);
 		System.out.println("Assuming grid of " + numRow + " by " + numCol);
 		ia.gridSize = new Dimension(numRow, numCol);
-		
+
 		CyNetworkView view = ia.networkViewFactory.createNetworkView(CSVNet);
-		for (CyNode node : CSVNet.getNodeList())
-		{
+		for (CyNode node : CSVNet.getNodeList()) {
 			View<CyNode> nv = view.getNodeView(node);
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
 			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, gridRow.get("grid_center_X", Double.class));
 			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, gridRow.get("grid_center_Y", Double.class));
 		}
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, maxX/2);
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, maxY/2);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, maxX / 2);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, maxY / 2);
 
 		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
 		vs.setDefaultValue(BasicVisualLexicon.NODE_SIZE, 100d);
 		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
-		for(VisualStyle style : ia.visualManager.getAllVisualStyles())
-		{
-			if(style.getTitle() == "Inseq Style")
-			{
+		for (VisualStyle style : ia.visualManager.getAllVisualStyles()) {
+			if (style.getTitle() == "Inseq Style") {
 				ia.visualManager.removeVisualStyle(style);
+				break;
 			}
 		}
 		ia.visualManager.addVisualStyle(vs);

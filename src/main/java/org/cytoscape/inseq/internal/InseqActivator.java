@@ -29,29 +29,31 @@ public class InseqActivator extends AbstractCyActivator {
 
 	public CyApplicationManager applicationManager;
 	public CyNetworkViewManager networkViewManager;
-	public CyNetworkFactory networkFactory; 
-	public CyNetworkManager networkManager; 
-	public CyTableFactory tableFactory; 
-	public CyTableManager tableManager; 
+	public CyNetworkFactory networkFactory;
+	public CyNetworkManager networkManager;
+	public CyTableFactory tableFactory;
+	public CyTableManager tableManager;
 	public CyTable inseqTable;
-	public CyNetwork inseqNetwork; 
-	public CyNetworkView inseqView; 
-	public CyNetworkTableManager networkTableManager; 
-	public CyNetworkViewFactory networkViewFactory; 
+	public CyNetwork inseqNetwork;
+	public CyNetworkView inseqView;
+	public CyNetworkTableManager networkTableManager;
+	public CyNetworkViewFactory networkViewFactory;
 	public CySwingAppAdapter swingAppAdapter;
 	public Dimension gridSize;
 	public VisualMappingManager visualManager;
 	public VisualStyleFactory visualFactory;
 	public VisualMappingFunctionFactory discreteMappingFactory;
+	public VisualMappingFunctionFactory continuousMappingFactory;
 	public Set<CyNode> selectedNodes;
 	public List<String> geneNames;
-	
+
 	private InseqControlPanel controlPanel;
 	private Properties properties;
 
 	@Override
 	public void start(BundleContext context) throws Exception {
 
+		// todo: just pass the context instead of doing all this crap
 		applicationManager = getService(context, CyApplicationManager.class);
 		properties = new Properties();
 		networkFactory = getService(context, CyNetworkFactory.class);
@@ -65,6 +67,7 @@ public class InseqActivator extends AbstractCyActivator {
 		visualManager = getService(context, VisualMappingManager.class);
 		visualFactory = getService(context, VisualStyleFactory.class);
 		discreteMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
+		continuousMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=continuous)");
 
 		ImportAction menuAction = new ImportAction(this);
 		registerAllServices(context, menuAction, properties);

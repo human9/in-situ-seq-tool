@@ -34,14 +34,15 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 	static final long serialVersionUID = 692;
 
 	InseqActivator ia;
-	public InseqControlPanel(final InseqActivator iac)
-	{
+
+	public InseqControlPanel(final InseqActivator iac) {
 		this.ia = iac;
 		JPanel panel = new JPanel();
-		panel.setLayout(new GridBagLayout()); 
-		this.setPreferredSize(new Dimension(400,400));
+		panel.setLayout(new GridBagLayout());
+		this.setPreferredSize(new Dimension(400, 400));
 
-		GridBagConstraints cons= new GridBagConstraints(0,0,1,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,new Insets(4,4,4,4), 1,1);
+		GridBagConstraints cons = new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
 		JButton openSelector = new JButton("Open selection window");
 		openSelector.addActionListener(new ActionListener() {
 			@Override
@@ -49,8 +50,9 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				new SelectionWindow(ia);
 			}
 		});
-		
-		GridBagConstraints cons2= new GridBagConstraints(0,1,1,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,new Insets(4,4,4,4), 1,1);
+
+		GridBagConstraints cons2 = new GridBagConstraints(0, 1, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
 		JButton sne = new JButton("Layout SNE");
 		sne.addActionListener(new ActionListener() {
 			@Override
@@ -58,8 +60,9 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				layoutSNE();
 			}
 		});
-		
-		GridBagConstraints cons3 = new GridBagConstraints(0,2,1,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,new Insets(4,4,4,4), 1,1);
+
+		GridBagConstraints cons3 = new GridBagConstraints(0, 2, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
 		JButton grid = new JButton("Layout Grid");
 		grid.addActionListener(new ActionListener() {
 			@Override
@@ -67,8 +70,9 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				layoutGrid();
 			}
 		});
-		
-		GridBagConstraints cons4 = new GridBagConstraints(0,3,1,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,new Insets(4,4,4,4), 1,1);
+
+		GridBagConstraints cons4 = new GridBagConstraints(0, 3, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
 		JButton ratio = new JButton("Generate Ratio Net");
 		ratio.addActionListener(new ActionListener() {
 			@Override
@@ -77,10 +81,21 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 			}
 		});
 
+		GridBagConstraints cons5 = new GridBagConstraints(0, 4, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
+		JButton distance = new JButton("Generate Distance Net");
+		distance.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				genDistance();
+			}
+		});
+
 		panel.add(openSelector, cons);
 		panel.add(sne, cons2);
 		panel.add(grid, cons3);
 		panel.add(ratio, cons4);
+		panel.add(distance, cons5);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, null);
 		this.add(splitPane, cons);
@@ -106,101 +121,92 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 	public String getTitle() {
 		return "Inseq";
 	}
-	
-	void genRatio(){
 
-		//generate gene nodes
-		//next 
+	String distanceKeygen(CyNode node1, CyNode node2) {
+		long a = Math.min(node1.getSUID(), node2.getSUID());
+		long b = Math.max(node1.getSUID(), node2.getSUID());
+		return a+"-"+b;
+	}
+
+	void genRatio() {
+
+		// generate gene nodes
 		CyNetwork ratioNet = ia.networkFactory.createNetwork();
 		ratioNet.getRow(ratioNet).set(CyNetwork.NAME, "ratio network");
 		CyTable ratioTable = ratioNet.getDefaultNodeTable();
-		
+
 		Map<Double, CyNode> populations = new HashMap<Double, CyNode>();
 		ia.selectedNodes.size();
-		for(String name : ia.geneNames)
-		{
+		for (String name : ia.geneNames) {
 			ratioTable.createColumn(name.substring(1), Double.class, false);
 		}
 		ratioTable.createColumn("grids_in_pop", Integer.class, false);
 		ArrayList<CyNode> populationNodes = new ArrayList<CyNode>();
-		for (CyNode node : ia.selectedNodes)
-		{
+		for (CyNode node : ia.selectedNodes) {
 			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
 			Double population = gridRow.get("population", Double.class);
-			if(!populations.containsKey(population))
-			{
+			if (!populations.containsKey(population)) {
 				CyNode popNode = ratioNet.addNode();
 				populationNodes.add(popNode);
 				CyRow popRow = ratioTable.getRow(popNode.getSUID());
 				popRow.set("grids_in_pop", 1);
 				popRow.set(CyNetwork.NAME, population.toString());
 				populations.put(population, popNode);
-				for(String name : ia.geneNames)
-				{
-					popRow.set(name.substring(1), (double)gridRow.get(name.substring(1), Integer.class));	
+				for (String name : ia.geneNames) {
+					popRow.set(name.substring(1), (double) gridRow.get(name.substring(1), Integer.class));
 				}
-			}
-			else
-			{
+			} else {
 				CyNode pop = populations.get(population);
 				CyRow popRow = ratioTable.getRow(pop.getSUID());
-				for(String name : ia.geneNames)
-				{
-					popRow.set(name.substring(1), popRow.get(name.substring(1), Double.class) + gridRow.get(name.substring(1), Integer.class));	
+				for (String name : ia.geneNames) {
+					popRow.set(name.substring(1), popRow.get(name.substring(1), Double.class)
+							+ gridRow.get(name.substring(1), Integer.class));
 				}
 				popRow.set("grids_in_pop", popRow.get("grids_in_pop", Integer.class) + 1);
 			}
 		}
-		for(String name : ia.geneNames)
-		{
+		for (String name : ia.geneNames) {
 			Double average = 0d;
-			for(double value : ratioTable.getColumn(name.substring(1)).getValues(Double.class))
-			{
+			for (double value : ratioTable.getColumn(name.substring(1)).getValues(Double.class)) {
 				average += value;
 			}
 			average /= ratioTable.getColumn(name.substring(1)).getValues(Double.class).size();
-			for(CyNode node : ratioNet.getNodeList())
-			{
-				CyRow row = ratioTable.getRow(node.getSUID());	
-				row.set(name.substring(1),  row.get(name.substring(1), Double.class)/(double)row.get("grids_in_pop", Integer.class) / average);
+			for (CyNode node : ratioNet.getNodeList()) {
+				CyRow row = ratioTable.getRow(node.getSUID());
+				row.set(name.substring(1), row.get(name.substring(1), Double.class)
+						/ (double) row.get("grids_in_pop", Integer.class) / average);
 			}
 		}
-		
-		
-		for(String name : ia.geneNames)
-		{
+
+		for (String name : ia.geneNames) {
 			CyNode node = ratioNet.addNode();
 			CyRow nodeRow = ratioTable.getRow(node.getSUID());
 			nodeRow.set(CyNetwork.NAME, name.substring(1));
-			for(CyNode popNode : populationNodes)
-			{
-				if(ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class) > 0.01)
-						ratioNet.addEdge(node, popNode, false);
+			for (CyNode popNode : populationNodes) {
+				if (ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class) > 0.01)
+					ratioNet.addEdge(node, popNode, false);
 
 			}
 		}
-		
+
 		CyNetworkView view = ia.networkViewFactory.createNetworkView(ratioNet);
-		
+
 		VisualStyle vs = ia.visualFactory.createVisualStyle("Ratio Style");
 		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.BLUE);
-		for(VisualStyle style : ia.visualManager.getAllVisualStyles())
-		{
-			if(style.getTitle() == "Ratio Style")
-			{
+		for (VisualStyle style : ia.visualManager.getAllVisualStyles()) {
+			if (style.getTitle() == "Ratio Style") {
 				ia.visualManager.removeVisualStyle(style);
+				break;
 			}
 		}
 		ia.visualManager.addVisualStyle(vs);
 		vs.apply(view);
-		for(CyNode node : populationNodes)
-		{
+		for (CyNode node : populationNodes) {
 			View<CyNode> gv = view.getNodeView(node);
-			gv.setVisualProperty(BasicVisualLexicon.NODE_SIZE, (double)ratioTable.getRow(node.getSUID()).get("grids_in_pop", Integer.class));
+			gv.setVisualProperty(BasicVisualLexicon.NODE_SIZE,
+					(double) ratioTable.getRow(node.getSUID()).get("grids_in_pop", Integer.class));
 			gv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
 		}
-		
-		
 
 		ia.networkManager.addNetwork(ratioNet);
 		ia.networkViewManager.addNetworkView(view);
@@ -208,49 +214,99 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
 	}
 
-	void layoutGrid(){
+	void genDistance() {
 		
+		/* Stores every single distance.. perhaps this is not the best way */ 
+		Map<String, Double> distances = new HashMap<String, Double>();
+		for(CyNode node : ia.selectedNodes)
+		{
+			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
+			double x = gridRow.get("grid_center_X", Double.class);
+			double y = gridRow.get("grid_center_Y", Double.class);
+			for(CyNode nextNode : ia.selectedNodes)
+			{
+				String key = distanceKeygen(node, nextNode);
+				if (!distances.containsKey(key)) {
+
+					CyRow nextRow = ia.inseqTable.getRow(nextNode.getSUID());
+					double nx = nextRow.get("grid_center_X", Double.class);
+					double ny = nextRow.get("grid_center_Y", Double.class);
+					distances.put(key, Math.hypot(x-nx, y-ny));
+				}
+			}
+		}
+		
+		for(CyNode node : ia.selectedNodes)
+		{
+			for(CyNode inNode : ia.selectedNodes)
+			{
+				System.out.println(distances.get(distanceKeygen(node,inNode)));
+			}
+		}
+		
+		// generate gene nodes
+		CyNetwork distanceNet = ia.networkFactory.createNetwork();
+		distanceNet.getRow(distanceNet).set(CyNetwork.NAME, "distance network");
+		CyTable distanceTable = distanceNet.getDefaultNodeTable();
+
+		for(CyNode node : ia.selectedNodes)
+		{
+			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
+			for (String name : ia.geneNames) {
+				int value = gridRow.get(name.substring(1), Integer.class);
+				System.out.println(value);
+			}
+		}
+
+		CyNetworkView view = ia.networkViewFactory.createNetworkView(distanceNet);
+		ia.networkManager.addNetwork(distanceNet);
+		ia.networkViewManager.addNetworkView(view);
+		view.updateView();
+		
+	}
+
+	void layoutGrid() {
+
 		CyTable genTable = ia.inseqTable;
 		double xmax = 0;
 		double ymax = 0;
-		for (CyNode node : ia.inseqNetwork.getNodeList())
-		{
+		for (CyNode node : ia.inseqNetwork.getNodeList()) {
 			View<CyNode> nv = ia.inseqView.getNodeView(node);
 			CyRow gridRow = genTable.getRow(node.getSUID());
 			double x = gridRow.get("grid_center_X", Double.class);
 			double y = gridRow.get("grid_center_Y", Double.class);
 			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
-			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y); 
+			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y);
 			if (x > xmax)
 				xmax = x;
 			if (y > ymax)
 				ymax = y;
 		}
-		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xmax/2);
-		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, ymax/2);
+		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xmax / 2);
+		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, ymax / 2);
 		ia.inseqView.updateView();
 
 	}
-	void layoutSNE(){
-		
+
+	void layoutSNE() {
+
 		CyTable genTable = ia.inseqTable;
 		double xmax = 0;
 		double ymax = 0;
-		for (CyNode node : ia.inseqNetwork.getNodeList())
-		{
+		for (CyNode node : ia.inseqNetwork.getNodeList()) {
 			View<CyNode> nv = ia.inseqView.getNodeView(node);
 			CyRow gridRow = genTable.getRow(node.getSUID());
-			double x = gridRow.get("SNEx", Double.class)*100;
-			double y = gridRow.get("SNEy", Double.class)*100;
+			double x = gridRow.get("SNEx", Double.class) * 100;
+			double y = gridRow.get("SNEy", Double.class) * 100;
 			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
-			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y); 
+			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y);
 			if (x > xmax)
 				xmax = x;
 			if (y > ymax)
 				ymax = y;
 		}
-		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xmax/2);
-		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, ymax/2);
+		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xmax / 2);
+		ia.inseqView.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, ymax / 2);
 		ia.inseqView.updateView();
 
 	}

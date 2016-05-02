@@ -23,8 +23,8 @@ public class ImportAction extends AbstractCyAction {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		
+
 		new ImportDialog(ia.swingAppAdapter.getCySwingApplication().getJFrame(), ia);
-		
+
 	}
 }
