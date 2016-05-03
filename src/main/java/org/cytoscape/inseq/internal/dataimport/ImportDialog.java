@@ -45,8 +45,8 @@ public class ImportDialog extends JDialog {
 	JTextField input;
 	boolean listenersActive = true;
 	private InseqActivator ia;
-	private String[] columnNames = { "grid_ID", "SNEx", "SNEy", "population", "tumour", "grid_center_X",
-			"grid_center_Y" };
+	private String[] integerColumnNames = { "grid_ID", "population", "tumour" };
+	private String[] doubleColumnNames = { "SNEx", "SNEy", "grid_center_X", "grid_center_Y" };
 
 	ImportDialog(final JFrame parent, final InseqActivator ia) {
 
@@ -151,7 +151,7 @@ public class ImportDialog extends JDialog {
 		// Iterate through expected names and check that they are present in the
 		// CSV file
 		Map<String, Integer> hMap = inseqParser.getHeaderMap();
-		for (String name : columnNames) {
+		for (String name : doubleColumnNames) {
 			if (!hMap.containsKey(name)) {
 				JOptionPane.showMessageDialog(this, "Selected file is not a valid inseq CSV: " + name + " not found!",
 						"Import Error", JOptionPane.WARNING_MESSAGE);
@@ -173,8 +173,11 @@ public class ImportDialog extends JDialog {
 			}
 		}
 
-		for (String name : columnNames) {
+		for (String name : doubleColumnNames) {
 			CSVTable.createColumn(name, Double.class, false);
+		}
+		for (String name : integerColumnNames) {
+			CSVTable.createColumn(name, Integer.class, false);
 		}
 
 		double maxX = 0;
@@ -184,8 +187,11 @@ public class ImportDialog extends JDialog {
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
 
 			gridRow.set(CyNetwork.NAME, record.get("grid_ID"));
-			for (String name : columnNames) {
+			for (String name : doubleColumnNames) {
 				gridRow.set(name, Double.parseDouble(record.get(name)));
+			}
+			for (String name : integerColumnNames) {
+				gridRow.set(name, Integer.parseInt(record.get(name)));
 			}
 			for (String name : ia.geneNames) {
 				gridRow.set(name.substring(1), Integer.parseInt(record.get(name)));
