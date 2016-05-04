@@ -10,7 +10,7 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -140,7 +140,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		ratioNet.getRow(ratioNet).set(CyNetwork.NAME, "ratio network");
 		CyTable ratioTable = ratioNet.getDefaultNodeTable();
 
-		Map<Double, CyNode> populations = new HashMap<Double, CyNode>();
+		Map<Integer, CyNode> populations = new HashMap<Integer, CyNode>();
 		ia.selectedNodes.size();
 		for (String name : ia.geneNames) {
 			ratioTable.createColumn(name.substring(1), Double.class, false);
@@ -149,7 +149,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		ArrayList<CyNode> populationNodes = new ArrayList<CyNode>();
 		for (CyNode node : ia.selectedNodes) {
 			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
-			Double population = gridRow.get("population", Double.class);
+			Integer population = gridRow.get("population", Integer.class);
 			if (!populations.containsKey(population)) {
 				CyNode popNode = ratioNet.addNode();
 				populationNodes.add(popNode);
@@ -228,151 +228,164 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
 	int pointToGrid(Point point)
 	{
-		return ((point.x-1) * ia.gridSize.height) + point.y;
+		return ((point.x) * ia.gridSize.height) + point.y;
 	}
 	
 	String primaryKeyColname;
 	Map<Integer, CyNode> selectedNodes;
-	Map<String, Double> totalDistance; 
+	Map<String, ArrayList<Double>> totalDistance; 
 	Map<String, Integer> numDistances;
 	Map<String, Double> distances;
 
-	private CyNode getNodeWithID(final Integer ID, String name, CyNode current)
+	ArrayList<String>comparisonGenes;
+	ArrayList<String> genes;
+
+
+	private String transcriptKeygen(String first, String second)
 	{
+		List<String> names = Arrays.asList(first, second);
+		java.util.Collections.sort(names);
+		return names.toString();
+	}
+
+	private void findGenesInGridID(final Integer ID, String name, CyNode current)
+	{
+		// check that the grid ID represents a node within our selection
 		if(selectedNodes.containsKey(ID))
 		{
-			//add to the map here
+			// get the node and row of the grid (each grid is represented by a node)
 			CyNode node = selectedNodes.get(ID);
 			CyRow row = ia.inseqTable.getRow(node.getSUID());
-			if(row.get(name.substring(1), Integer.class) > 0)
+
+			//System.out.println(node.toString() + current.toString());
+
+			// check whether any gene of interest is within this grid
+			// comparisonGenes are the genes that we are looking for in the second grid
+			for(Iterator<String> itr = comparisonGenes.iterator(); itr.hasNext();)
 			{
-				CyRow currentRow = ia.inseqTable.getRow(current.getSUID());
-				int a1 = currentRow.get("grid_ID", Integer.class) % ia.gridSize.height;
-				int b1 = currentRow.get("grid_ID", Integer.class) / ia.gridSize.width;
-				int a2 = row.get("grid_ID", Integer.class) % ia.gridSize.height;
-				int b2 = row.get("grid_ID", Integer.class) / ia.gridSize.width;
-				
-				String key = distanceKeygen(current, node);
-				if (!distances.containsKey(key)) 
-					distances.put(key, Math.hypot(a1-a2, b1-b2));
-
-				if(!totalDistance.containsKey(name))
-					totalDistance.put(name, distances.get(key));
-				else
-					totalDistance.put(name, totalDistance.get(name) + distances.get(key));
-				
-				if(!numDistances.containsKey(name))
-					numDistances.put(name, 1);
-				else
-					numDistances.put(name, 1 + numDistances.get(name));
-
-				return node;
-			}
-			else return null;
+				String comparisonName = itr.next();
+				if(row.get(comparisonName.substring(1), Integer.class) > 0)
+				{
+					// the gene is in this grid! first let's generate some keys
+					String tKey = transcriptKeygen(comparisonName, name);
+					String dKey = distanceKeygen(current, node);
 					
+					// now let's see we need to find the distance between these grids
+					if(!distances.containsKey(dKey))
+					{
+						// the key isn't in there so we need to get the locations and calculate it
+						CyRow currentRow = ia.inseqTable.getRow(current.getSUID());
+						int grid1X = gridToPoint(currentRow.get("grid_ID", Integer.class)).x;
+						int grid1Y = gridToPoint(currentRow.get("grid_ID", Integer.class)).y;
+						int grid2X = gridToPoint(ID).x; 
+						int grid2Y = gridToPoint(ID).y; 
+
+						// now find the hypotenuse and add it to the distances map
+						distances.put(dKey, Math.hypot(grid1X-grid2X, grid1Y-grid2Y));
+					}
+
+					if(!totalDistance.containsKey(tKey))
+					{
+						// create the arraylist first because it hasn't been made yet
+						totalDistance.put(tKey, new ArrayList<Double>());
+					}
+					
+					// now we can add this distance to the transcript distance map
+					totalDistance.get(tKey).add(distances.get(dKey));
+
+					// remove this gene from the internal iterations
+					itr.remove();
+				}
+			}
 		}
-		else
-			return null;
 	}
 	
-	private Map<String, CyNode> getNodeWithTranscript(final Set<CyNode> selection, final CyNode current)
+
+	private void searchGrid(Point point, CyNode current)
 	{
-		ArrayList<String> genes = new ArrayList<String>(ia.geneNames);
-		Map<String, CyNode> nodes = new HashMap<String, CyNode>();
+		int grid = pointToGrid(point);
+		if(grid > 0 && grid <= ia.gridSize.width * ia.gridSize.height)
+		{
+			// first we iterate over the genes which are present in the current node
+			for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
+			{
+				String name = itr.next();
+				// now, search the selected grid for the current gene, passing the list of genes to compare
+				findGenesInGridID(grid, name, current);
+				if(comparisonGenes.size() == 0) {
+					itr.remove();
+				}
+				if(genes.size() == 0) return;
+			}
+		}
+	}
+	
+	private void beginSearchPattern(final Set<CyNode> selection, final CyNode current)
+	{
+		genes = new ArrayList<String>(ia.geneNames);
+		comparisonGenes = new ArrayList<String>(ia.geneNames);
 		CyRow currentRow = ia.inseqTable.getRow(current.getSUID());
 		for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
 		{
 			String name = itr.next();
-			if(currentRow.get(name.substring(1), Integer.class) > 0)
+			if(currentRow.get(name.substring(1), Integer.class) <= 0)
 			{
-				nodes.put(name, current);
 				itr.remove();
 			}
 		}
-		if(genes.size() == 0)
-			return nodes;
 		
-		Point center = gridToPoint((int)Math.round(currentRow.get("grid_ID", Integer.class)));
-		for(int i = 1; i < ia.gridSize.height/2; i++)
+		Point center = gridToPoint(currentRow.get("grid_ID", Integer.class));
+		searchGrid(center, current);
+		if(genes.size() == 0)
+			return;
+		
+		for(int i = 1; i < ia.gridSize.height; i++)
 		{
-			System.out.println(i);
-			Point iteration = new Point(center.x - i, center.y + i);
+			Point gridPoint = new Point(center.x - i, center.y + i);
 			for(int a = 0; a < i*2; a++)
 			{
-				for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
-				{
-					String name = itr.next();
-					CyNode node = getNodeWithID(pointToGrid(iteration), name, current);
-					if(node != null)
-					{
-						nodes.put(name, node);
-						itr.remove();
-					}
-					if(genes.size() == 0)
-						return nodes;
-					iteration.translate(a,0);
-				}
+				searchGrid(gridPoint, current);
+				gridPoint.translate(1,0);
+				if(genes.size() == 0)
+					return;
 			}
 			for(int a = 0; a < i*2; a++)
 			{
-				for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
-				{
-					String name = itr.next();
-					CyNode node = getNodeWithID(pointToGrid(iteration), name, current);
-					if(node != null)
-					{
-						nodes.put(name, node);
-						itr.remove();
-					}
-					if(genes.size() == 0)
-						return nodes;
-					iteration.translate(0,-a);
-				}
+				searchGrid(gridPoint, current);
+				gridPoint.translate(0,-1);
+				if(genes.size() == 0)
+					return;
 			}
 			for(int a = 0; a < i*2; a++)
 			{
-				for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
-				{
-					String name = itr.next();
-					CyNode node = getNodeWithID(pointToGrid(iteration), name, current);
-					if(node != null)
-					{
-						nodes.put(name, node);
-						itr.remove();
-					}
-					if(genes.size() == 0)
-						return nodes;
-					iteration.translate(-a,0);
-				}
+				searchGrid(gridPoint, current);
+				gridPoint.translate(-1,0);
+				if(genes.size() == 0)
+					return;
 			}
 			for(int a = 0; a < i*2; a++)
 			{
-				for(Iterator<String> itr = genes.iterator(); itr.hasNext();)
-				{
-					String name = itr.next();
-					CyNode node = getNodeWithID(pointToGrid(iteration), name, current);
-					if(node != null)
-					{
-						nodes.put(name, node);
-						itr.remove();
-					}
-					if(genes.size() == 0)
-						return nodes;
-					iteration.translate(0,a);
-				}
+				searchGrid(gridPoint, current);
+				gridPoint.translate(0,1);
+				if(genes.size() == 0)
+					return;
 			}
-			if(genes.size() == 0)
-				return nodes;
 		}
-		return nodes;
-
 	}
 
 
+	public static Double arrayListAverage(ArrayList<Double> arrayList)
+	{
+		Double total = 0d;
+		for(Double value : arrayList)
+		{
+			total += value;
+		}
+		return total/arrayList.size();
+	}
+
 	void genDistance() {
 		
-		/* Stores every single distance.. perhaps this is not the best way */ 
-
 		primaryKeyColname = ia.inseqTable.getPrimaryKey().getName();
 		selectedNodes = new HashMap<Integer, CyNode>();
 		for(CyNode node : ia.selectedNodes)
@@ -382,40 +395,39 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		}
 
 		distances = new HashMap<String, Double>();
-		totalDistance = new HashMap<String, Double>();
+		totalDistance = new HashMap<String, ArrayList<Double>>();
 		numDistances = new HashMap<String, Integer>();
-		for(CyNode node1 : ia.selectedNodes)
+		for(CyNode node : ia.selectedNodes)
 		{
-			CyRow gridRow = ia.inseqTable.getRow(node1.getSUID());
-			
-			for(String name : ia.geneNames)
-			{
-				System.out.println(name + gridRow.get("grid_ID", Integer.class));
-				if(gridRow.get(name.substring(1), Integer.class) > 0)
-				{
-					Map<String, CyNode> nodes = getNodeWithTranscript(ia.selectedNodes, node1);
-				}
-			}
+			beginSearchPattern(ia.selectedNodes, node);
 		}
 		
-		// that was a lot more difficult than I had anticipated...
-
-		/*
 		// generate gene nodes
 		CyNetwork distanceNet = ia.networkFactory.createNetwork();
 		distanceNet.getRow(distanceNet).set(CyNetwork.NAME, "distance network");
 		CyTable distanceTable = distanceNet.getDefaultNodeTable();
 		
-
-		for(CyNode node : ia.selectedNodes)
+		
+		for(String name : ia.geneNames)
 		{
-			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
-			for (String name : ia.geneNames) {
-				int value = gridRow.get(name.substring(1), Integer.class);
-				if(value > 0)
-				{
-					double dist = getDistance(node, name.substring(1));
-				}
+			distanceTable.createColumn(name, Double.class, false);
+		}
+		
+		for(String name1 : ia.geneNames)
+		{
+			CyNode node = distanceNet.addNode();
+			CyRow row = distanceTable.getRow(node.getSUID());
+			row.set(CyNetwork.NAME, name1);
+		
+			for(String name2 : ia.geneNames)
+			{
+				String key = transcriptKeygen(name1, name2);
+				if(totalDistance.get(key) != null)
+					row.set(name2, arrayListAverage(totalDistance.get(key)));
+				/*
+				else
+					System.out.println("NO DATA FOR " + name1 + " to " + name2);
+					*/
 			}
 		}
 
@@ -423,7 +435,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		ia.networkManager.addNetwork(distanceNet);
 		ia.networkViewManager.addNetworkView(view);
 		view.updateView();
-		*/
+		
 	}
 
 	void layoutGrid() {
