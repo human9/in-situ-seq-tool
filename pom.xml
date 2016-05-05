@@ -159,6 +159,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
+			<artifactId>layout-api</artifactId>
+			<version>3.3.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.cytoscape</groupId>
 			<artifactId>presentation-api</artifactId>
 			<version>3.3.0</version>
 			<scope>provided</scope>
