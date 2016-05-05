@@ -24,10 +24,13 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualStyle;
+import org.cytoscape.work.TaskIterator;
 
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
@@ -201,6 +204,11 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 					(double) ratioTable.getRow(node.getSUID()).get("grids_in_pop", Integer.class));
 			gv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
 		}
+		
+		final CyLayoutAlgorithmManager algm = ia.appAdapter.getCyLayoutAlgorithmManager();
+		CyLayoutAlgorithm algor = algm.getDefaultLayout();
+		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
+		ia.appAdapter.getTaskManager().execute(itr);
 
 		ia.networkManager.addNetwork(ratioNet);
 		ia.networkViewManager.addNetworkView(view);

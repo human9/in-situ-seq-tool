@@ -13,7 +13,10 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.TaskIterator;
 
 public class DistanceNetwork {
 
@@ -255,9 +258,16 @@ public class DistanceNetwork {
 			}
 		}
 
+
 		CyNetworkView view = ia.networkViewFactory.createNetworkView(distanceNet);
 		ia.networkManager.addNetwork(distanceNet);
 		ia.networkViewManager.addNetworkView(view);
+		
+		final CyLayoutAlgorithmManager algm = ia.appAdapter.getCyLayoutAlgorithmManager();
+		CyLayoutAlgorithm algor = algm.getDefaultLayout();
+		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
+		ia.appAdapter.getTaskManager().execute(itr);
+
 		view.updateView();
 		
 	}

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
@@ -41,6 +42,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public CySwingAppAdapter swingAppAdapter;
 	public Dimension gridSize;
 	public VisualMappingManager visualManager;
+	public CyAppAdapter appAdapter;
 	public VisualStyleFactory visualFactory;
 	public VisualMappingFunctionFactory discreteMappingFactory;
 	public VisualMappingFunctionFactory continuousMappingFactory;
@@ -59,6 +61,7 @@ public class InseqActivator extends AbstractCyActivator {
 		networkFactory = getService(context, CyNetworkFactory.class);
 		tableFactory = getService(context, CyTableFactory.class);
 		tableManager = getService(context, CyTableManager.class);
+		appAdapter = getService(context, CyAppAdapter.class);
 		networkViewManager = getService(context, CyNetworkViewManager.class);
 		networkManager = getService(context, CyNetworkManager.class);
 		networkTableManager = getService(context, CyNetworkTableManager.class);

@@ -235,6 +235,9 @@ public class ImportDialog extends JDialog {
 		ia.networkViewManager.addNetworkView(view);
 		ia.inseqView = view;
 		ia.inseqTable = CSVTable;
+		double scale = view.getVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR).doubleValue();
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR, scale/numCol);
+
 		view.updateView();
 
 		return CSVNet;

@@ -30,6 +30,7 @@ class ImagePane extends JPanel {
 
 	public ImagePane(final BufferedImage image) {
 		this.image = image;
+		this.scale = 400d/(double)(image.getHeight());
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		setSize();
 	}
