@@ -251,6 +251,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 			double y = gridRow.get("SNEy", Double.class) * 100;
 			nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
 			nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y);
+			nv.setVisualProperty(BasicVisualLexicon.NODE_LABEL, gridRow.get("name", String.class).substring(1));
 			if (x > xmax)
 				xmax = x;
 			if (y > ymax)

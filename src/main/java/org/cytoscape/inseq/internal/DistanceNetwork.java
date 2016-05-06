@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,9 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.work.TaskIterator;
 
 public class DistanceNetwork {
@@ -52,7 +56,7 @@ public class DistanceNetwork {
 	private String transcriptKeygen(String first, String second)
 	{
 		List<String> names = Arrays.asList(first, second);
-		java.util.Collections.sort(names);
+		//java.util.Collections.sort(names);
 		return names.toString();
 	}
 	
@@ -261,6 +265,19 @@ public class DistanceNetwork {
 
 		CyNetworkView view = ia.networkViewFactory.createNetworkView(distanceNet);
 		ia.networkManager.addNetwork(distanceNet);
+		
+		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+
+		ia.visualManager.addVisualStyle(vs);
+		vs.apply(view);
+			
+		for(CyNode node : distanceNet.getNodeList())
+		{
+			View<CyNode> nv = view.getNodeView(node);
+			CyRow gridRow = distanceTable.getRow(node.getSUID());
+			nv.setVisualProperty(BasicVisualLexicon.NODE_LABEL, gridRow.get("name", String.class).substring(1));
+		}
+
 		ia.networkViewManager.addNetworkView(view);
 		
 		final CyLayoutAlgorithmManager algm = ia.appAdapter.getCyLayoutAlgorithmManager();
