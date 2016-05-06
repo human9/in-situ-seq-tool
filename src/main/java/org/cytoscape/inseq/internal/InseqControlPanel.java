@@ -20,6 +20,7 @@ import javax.swing.JSplitPane;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.imageselection.SelectionWindow;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -29,7 +30,9 @@ import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.vizmap.VisualMappingFunction;
 import org.cytoscape.view.vizmap.VisualStyle;
+import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskIterator;
 
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
@@ -174,6 +177,8 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 						/ (double) row.get("grids_in_pop", Integer.class) / average);
 			}
 		}
+		CyTable edges = ratioNet.getDefaultEdgeTable();
+		edges.createColumn("strength", Double.class, false);
 
 		for (String name : ia.geneNames) {
 			CyNode node = ratioNet.addNode();
@@ -181,7 +186,11 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 			nodeRow.set(CyNetwork.NAME, name.substring(1));
 			for (CyNode popNode : populationNodes) {
 				if (ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class) > 0.01)
-					ratioNet.addEdge(node, popNode, false);
+				{
+					CyEdge edge = ratioNet.addEdge(node, popNode, false);
+					CyRow row = edges.getRow(edge.getSUID());
+					row.set("strength", ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class)*100);
+				}
 
 			}
 		}
@@ -196,6 +205,10 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				break;
 			}
 		}
+		PassthroughMapping<String,String> pMap = (PassthroughMapping<String,String>)ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
+		vs.addVisualMappingFunction(pMap);
+		PassthroughMapping<Double,Double> edgeMap = (PassthroughMapping<Double,Double>)ia.passthroughMappingFactory.createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		vs.addVisualMappingFunction(edgeMap);
 		ia.visualManager.addVisualStyle(vs);
 		vs.apply(view);
 		for (CyNode node : populationNodes) {

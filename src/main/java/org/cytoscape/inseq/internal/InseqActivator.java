@@ -46,6 +46,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public VisualStyleFactory visualFactory;
 	public VisualMappingFunctionFactory discreteMappingFactory;
 	public VisualMappingFunctionFactory continuousMappingFactory;
+	public VisualMappingFunctionFactory passthroughMappingFactory;
 	public Set<CyNode> selectedNodes;
 	public List<String> geneNames;
 
@@ -71,6 +72,7 @@ public class InseqActivator extends AbstractCyActivator {
 		visualFactory = getService(context, VisualStyleFactory.class);
 		discreteMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
 		continuousMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=continuous)");
+		passthroughMappingFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=passthrough)");
 
 		ImportAction menuAction = new ImportAction(this);
 		registerAllServices(context, menuAction, properties);
