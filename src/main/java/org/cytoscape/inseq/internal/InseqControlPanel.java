@@ -32,6 +32,8 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualMappingFunction;
 import org.cytoscape.view.vizmap.VisualStyle;
+import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
+import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskIterator;
 
@@ -141,6 +143,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 			ratioTable.createColumn(name.substring(1), Double.class, false);
 		}
 		ratioTable.createColumn("grids_in_pop", Integer.class, false);
+		ratioTable.createColumn("size", Double.class, false);
 		ArrayList<CyNode> populationNodes = new ArrayList<CyNode>();
 		for (CyNode node : ia.selectedNodes) {
 			CyRow gridRow = ia.inseqTable.getRow(node.getSUID());
@@ -150,6 +153,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				populationNodes.add(popNode);
 				CyRow popRow = ratioTable.getRow(popNode.getSUID());
 				popRow.set("grids_in_pop", 1);
+				popRow.set("size", 1d);
 				popRow.set(CyNetwork.NAME, population.toString());
 				populations.put(population, popNode);
 				for (String name : ia.geneNames) {
@@ -163,6 +167,8 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 							+ gridRow.get(name.substring(1), Integer.class));
 				}
 				popRow.set("grids_in_pop", popRow.get("grids_in_pop", Integer.class) + 1);
+				int size = popRow.get("grids_in_pop", Integer.class);
+				popRow.set("size", (double)size);
 			}
 		}
 		for (String name : ia.geneNames) {
@@ -189,8 +195,12 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				{
 					CyEdge edge = ratioNet.addEdge(node, popNode, false);
 					CyRow row = edges.getRow(edge.getSUID());
-					row.set("strength", ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class)*100);
-				}
+					Double strength = ratioTable.getRow(popNode.getSUID()).get(name.substring(1), Double.class)*100;
+					if(strength <= 40)
+						row.set("strength", strength);
+					else
+						row.set("strength", 40d);
+			}
 
 			}
 		}
@@ -205,9 +215,16 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 				break;
 			}
 		}
-		PassthroughMapping<String,String> pMap = (PassthroughMapping<String,String>)ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
+		VisualMappingFunction<String,String> pMap = ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
 		vs.addVisualMappingFunction(pMap);
-		PassthroughMapping<Double,Double> edgeMap = (PassthroughMapping<Double,Double>)ia.passthroughMappingFactory.createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		VisualMappingFunction<Double,Double> sizeMap = ia.continuousMappingFactory.createVisualMappingFunction("size", Double.class, BasicVisualLexicon.NODE_SIZE);
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(1d,new  BoundaryRangeValues<Double>(20d,25d,30d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(30d,new  BoundaryRangeValues<Double>(40d,50d,60d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(100d,new  BoundaryRangeValues<Double>(80d,90d,100d));
+		vs.addVisualMappingFunction(sizeMap);
+		VisualMappingFunction<Double,Double> edgeMap = ia.continuousMappingFactory.createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(2d,new  BoundaryRangeValues<Double>(1d,2d,3d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(12d,new  BoundaryRangeValues<Double>(6d,7d,8d));
 		vs.addVisualMappingFunction(edgeMap);
 		ia.visualManager.addVisualStyle(vs);
 		vs.apply(view);
