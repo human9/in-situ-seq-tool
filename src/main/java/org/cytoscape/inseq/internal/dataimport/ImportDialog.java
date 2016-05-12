@@ -7,18 +7,23 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -47,6 +52,7 @@ public class ImportDialog extends JDialog {
 	private InseqActivator ia;
 	private String[] integerColumnNames = { "grid_ID", "population", "tumour" };
 	private String[] doubleColumnNames = { "SNEx", "SNEy", "grid_center_X", "grid_center_Y" };
+	boolean raw = false;
 
 	ImportDialog(final JFrame parent, final InseqActivator ia) {
 
@@ -100,7 +106,7 @@ public class ImportDialog extends JDialog {
 		});
 		add(browse, consBrowse);
 
-		GridBagConstraints consCancel = new GridBagConstraints(0, 2, GridBagConstraints.RELATIVE,
+		GridBagConstraints consCancel = new GridBagConstraints(0, 3, GridBagConstraints.RELATIVE,
 				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHWEST, 0, new Insets(4, 4, 4, 4), 1, 1);
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(new ActionListener() {
@@ -110,9 +116,22 @@ public class ImportDialog extends JDialog {
 			}
 		});
 		add(cancel, consCancel);
-
-		GridBagConstraints consConfirm = new GridBagConstraints(1, 2, GridBagConstraints.RELATIVE,
+		
+		GridBagConstraints consRaw = new GridBagConstraints(1, 2, GridBagConstraints.RELATIVE,
 				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
+		JCheckBox isRaw = new JCheckBox("raw XY");
+		isRaw.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				raw = !raw;
+				System.out.println(raw);
+
+			}
+		});
+
+		GridBagConstraints consConfirm = new GridBagConstraints(1, 3, GridBagConstraints.RELATIVE,
+				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
+
 		JButton confirm = new JButton("Import");
 		confirm.addActionListener(new ActionListener() {
 			@Override
@@ -133,6 +152,7 @@ public class ImportDialog extends JDialog {
 			}
 		});
 		add(confirm, consConfirm);
+		add(isRaw, consRaw);
 
 		pack();
 		setLocationRelativeTo(parent);
@@ -146,6 +166,52 @@ public class ImportDialog extends JDialog {
 			inseqParser = CSVFormat.EXCEL.withHeader().parse(csv);
 		} catch (IOException e) {
 			return null;
+		}
+
+		if(raw)
+		{
+
+			CyNetwork rawNet = ia.networkFactory.createNetwork();
+			rawNet.getRow(rawNet).set(CyNetwork.NAME, "raw data");
+//			CyTable rawTable = rawNet.getDefaultNodeTable();
+			Map<Point2D.Double, String> transcripts = new HashMap<Point2D.Double, String>();
+			ArrayList<String> names = new ArrayList<String>();
+//			rawTable.createColumn("x", Double.class, false);
+//			rawTable.createColumn("y", Double.class, false);
+			for(CSVRecord record : inseqParser)
+			{
+				String name = record.get("name");
+				if(name.equals("NNNN"))
+					continue;
+				if(!names.contains(name))
+					names.add(name);
+
+				Double x = Double.parseDouble(record.get("global_X_pos"));
+				Double y = Double.parseDouble(record.get("global_Y_pos"));
+				transcripts.put(new Point2D.Double(x, y), name);
+/*				
+				CyNode node = rawNet.addNode();
+				CyRow row = rawTable.getRow(node.getSUID());
+
+				row.set(CyNetwork.NAME, name);
+				row.set("x", x);
+				row.set("y", y);*/
+				
+			}
+			ia.transcripts = transcripts;		
+/*
+			CyNetworkView view = ia.networkViewFactory.createNetworkView(rawNet);
+			for (CyNode node : rawNet.getNodeList()) {
+				View<CyNode> nv = view.getNodeView(node);
+				CyRow row = rawTable.getRow(node.getSUID());
+				nv.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, row.get("x", Double.class));
+				nv.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, row.get("y", Double.class));
+			}
+
+			ia.networkManager.addNetwork(rawNet);
+			ia.networkViewManager.addNetworkView(view);
+			view.updateView();*/
+			return rawNet;
 		}
 
 		// Iterate through expected names and check that they are present in the

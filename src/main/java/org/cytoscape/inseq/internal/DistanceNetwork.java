@@ -1,6 +1,5 @@
 package org.cytoscape.inseq.internal;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,9 +16,11 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.vizmap.VisualMappingFunction;
 import org.cytoscape.view.vizmap.VisualStyle;
+import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
+import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.work.TaskIterator;
 
 public class DistanceNetwork {
@@ -267,16 +268,17 @@ public class DistanceNetwork {
 		ia.networkManager.addNetwork(distanceNet);
 		
 		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+		
+		VisualMappingFunction<String,String> pMap = ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
+		vs.addVisualMappingFunction(pMap);
+		VisualMappingFunction<Double,Double> edgeMap = ia.continuousMappingFactory.createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(2d,new  BoundaryRangeValues<Double>(1d,2d,3d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(12d,new  BoundaryRangeValues<Double>(6d,7d,8d));
+		vs.addVisualMappingFunction(edgeMap);
+		ia.visualManager.addVisualStyle(vs);
 
 		ia.visualManager.addVisualStyle(vs);
 		vs.apply(view);
-			
-		for(CyNode node : distanceNet.getNodeList())
-		{
-			View<CyNode> nv = view.getNodeView(node);
-			CyRow gridRow = distanceTable.getRow(node.getSUID());
-			nv.setVisualProperty(BasicVisualLexicon.NODE_LABEL, gridRow.get("name", String.class).substring(1));
-		}
 
 		ia.networkViewManager.addNetworkView(view);
 		
