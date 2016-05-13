@@ -11,7 +11,10 @@ import java.awt.event.ActionListener;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -84,13 +87,46 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 			}
 		});
 		
-		GridBagConstraints cons6 = new GridBagConstraints(0, 5, 1, 1, 1, 1, GridBagConstraints.CENTER,
+		GridBagConstraints cons6 = new GridBagConstraints(0, 6, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		JButton types = new JButton("Generate Cell Types Net");
+		JButton types = new JButton("Find distances");
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new TypeNetwork(ia);
+				ia.tn.calculateDistances();
+			}
+		});
+		
+		GridBagConstraints cons7 = new GridBagConstraints(0, 8, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
+		JButton gentype = new JButton("Generate Cell Types Net");
+		gentype.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ia.tn.makeNetwork();
+			}
+		});
+		
+		GridBagConstraints cons8 = new GridBagConstraints(0, 5, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
+		//JSpinner requiredNum = new JSpinner();
+		final JSpinner distanceCutoff = new JSpinner();
+		distanceCutoff.setValue(4);
+		distanceCutoff.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				ia.tn.distanceCutoff = Math.pow((double)((Integer)distanceCutoff.getValue()), 2);
+			}
+		});
+		
+		GridBagConstraints cons9 = new GridBagConstraints(0, 7, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
+		final JSpinner requiredNum = new JSpinner();
+		requiredNum.setValue(4);
+		requiredNum.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				ia.tn.requiredNum = (Integer)requiredNum.getValue();
 			}
 		});
 
@@ -100,6 +136,9 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		panel.add(ratio, cons4);
 		panel.add(distance, cons5);
 		panel.add(types, cons6);
+		panel.add(gentype, cons7);
+		panel.add(distanceCutoff, cons8);
+		panel.add(requiredNum, cons9);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, null);
 		this.add(splitPane, cons);

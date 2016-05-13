@@ -35,6 +35,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.inseq.internal.TypeNetwork;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -211,6 +212,7 @@ public class ImportDialog extends JDialog {
 			ia.networkManager.addNetwork(rawNet);
 			ia.networkViewManager.addNetworkView(view);
 			view.updateView();*/
+			ia.tn = new TypeNetwork(ia);
 			return rawNet;
 		}
 

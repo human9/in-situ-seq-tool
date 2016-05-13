@@ -52,6 +52,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public Set<CyNode> selectedNodes;
 	public List<String> geneNames;
 	public Map<Point2D.Double, String> transcripts;
+	public TypeNetwork tn;
 
 	private InseqControlPanel controlPanel;
 	private Properties properties;
