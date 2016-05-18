@@ -13,6 +13,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -109,24 +110,21 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		
 		GridBagConstraints cons8 = new GridBagConstraints(0, 5, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		//JSpinner requiredNum = new JSpinner();
-		final JSpinner distanceCutoff = new JSpinner();
-		distanceCutoff.setValue(4);
+		final JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(4d, 0d, 100d, 0.1d));
 		distanceCutoff.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				ia.tn.distanceCutoff = Math.pow((double)((Integer)distanceCutoff.getValue()), 2);
+				ia.tn.distanceCutoff = Math.pow((Double)(distanceCutoff.getValue()), 2);
 			}
 		});
 		
 		GridBagConstraints cons9 = new GridBagConstraints(0, 7, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		final JSpinner requiredNum = new JSpinner();
-		requiredNum.setValue(4);
+		final JSpinner requiredNum = new JSpinner(new SpinnerNumberModel(0.1d, 0d, 100d, 0.01d));
 		requiredNum.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				ia.tn.requiredNum = (Integer)requiredNum.getValue();
+				ia.tn.requiredNum = (Double)requiredNum.getValue();
 			}
 		});
 
