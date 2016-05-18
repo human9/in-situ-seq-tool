@@ -8,13 +8,17 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import org.cytoscape.inseq.internal.InseqActivator;
 
 class ImagePane extends JPanel {
 
@@ -27,9 +31,11 @@ class ImagePane extends JPanel {
 	public Point selectedOrigin = new Point();
 	public Point selectedFinish = new Point();
 	public Rectangle rect;
-
-	public ImagePane(final BufferedImage image) {
+	InseqActivator ia;
+	
+	public ImagePane(final BufferedImage image, InseqActivator ia) {
 		this.image = image;
+		this.ia = ia;
 		this.scale = 400d/(double)(image.getHeight());
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		setSize();
@@ -52,9 +58,31 @@ class ImagePane extends JPanel {
 		rect = new Rectangle(Math.min(lx, rx) + offset.width, Math.min(ly, ry) + offset.height, Math.abs(lx - rx),
 				Math.abs(ly - ry));
 		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
+		
+		int size = 8;
+		int scaledOffset = (int)(size/2*scale);
+
+		if(ia.pointsToDraw==null)
+			System.out.println("this is somehow null");
+		else
+		{
+			System.out.println("Begin loop");
+			for(ArrayList<Point2D.Double> arr : ia.pointsToDraw.values())
+			{
+				System.out.println("New array");
+				for(Point2D.Double p : arr)
+				{
+					gr.drawOval((int)(p.x*scale) + offset.width - scaledOffset,(int)(p.y*scale) + offset.height - scaledOffset,size,size);
+					System.out.println(p.x + ":" + p.y);
+				}
+			}
+			//TODO: this
+		}
+		
 		Color fill = new Color(255, 0, 0, 60);
 		gr.setColor(fill);
 		gr.fillRect(rect.x, rect.y, rect.width, rect.height);
+
 	}
 
 	public void scaleUp() {

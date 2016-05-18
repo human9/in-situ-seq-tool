@@ -2,6 +2,7 @@ package org.cytoscape.inseq.internal;
 
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -53,6 +54,8 @@ public class InseqActivator extends AbstractCyActivator {
 	public List<String> geneNames;
 	public Map<Point2D.Double, String> transcripts;
 	public TypeNetwork tn;
+	public Map<String, ArrayList<Point2D.Double>> mps;
+	public Map<String, ArrayList<Point2D.Double>> pointsToDraw;
 
 	private InseqControlPanel controlPanel;
 	private Properties properties;

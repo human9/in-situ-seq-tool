@@ -41,6 +41,9 @@ public class TypeNetwork {
 	InseqActivator ia;
 	Double distanceCutoff = 16d;
 	Double requiredNum = 0.1;
+	public CyNetwork tn;
+	public CyTable tt;
+	public CyTable et;
 
 	Map<DualPoint, Double> distances;
 
@@ -127,7 +130,7 @@ public class TypeNetwork {
 		edgeTable.createColumn("node2", String.class, false);
 		edgeTable.createColumn("normal", Double.class, false);
 
-		Map<String, ArrayList<Point2D.Double>> mps = new HashMap<String, ArrayList<Point2D.Double>>();
+		ia.mps = new HashMap<String, ArrayList<Point2D.Double>>();
 		
 		try	{
 			PrintWriter out = new PrintWriter("/home/jrs/Desktop/output.csv", "UTF-8");
@@ -139,23 +142,23 @@ public class TypeNetwork {
 				
 				//if (name1.equals(name2)) continue;
 
-				if(!mps.containsKey(name1))
+				if(!ia.mps.containsKey(name1))
 				{
 					ArrayList<Point2D.Double> al = new ArrayList<Point2D.Double>(); 
 					al.add(dp.p1);
-					mps.put(name1, al);
+					ia.mps.put(name1, al);
 				}
 				else
-					mps.get(name1).add(dp.p1);
+					ia.mps.get(name1).add(dp.p1);
 				
-				if(!mps.containsKey(name2))
+				if(!ia.mps.containsKey(name2))
 				{
 					ArrayList<Point2D.Double> al = new ArrayList<Point2D.Double>(); 
 					al.add(dp.p2);
-					mps.put(name2, al);
+					ia.mps.put(name2, al);
 				}
 				else
-					mps.get(name2).add(dp.p2);
+					ia.mps.get(name2).add(dp.p2);
 
 				CyNode n1 = getNodeWithName(typeNet, typeTable, name1); 
 				CyNode n2 = getNodeWithName(typeNet, typeTable, name2); 
@@ -209,8 +212,8 @@ public class TypeNetwork {
 			int startNum = row.get("num", Integer.class);
 			row.set("weight", row.get("weight", Double.class) / (double)startNum);
 			
-			int node1Num = mps.get(row.get("node1", String.class)).size();
-			int node2Num = mps.get(row.get("node2", String.class)).size();
+			int node1Num = ia.mps.get(row.get("node1", String.class)).size();
+			int node2Num = ia.mps.get(row.get("node2", String.class)).size();
 			row.set("normal", (double)startNum / (double)(node1Num+node2Num));
 			if(row.get("normal", Double.class) < requiredNum)
 				poorEdges.add(edge);
@@ -238,6 +241,12 @@ public class TypeNetwork {
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(6d,8d,10d));
 		vs.addVisualMappingFunction(edgeMap);
 		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.LIGHT_GRAY);
+		for (VisualStyle style : ia.visualManager.getAllVisualStyles()) {
+			if (style.getTitle() == "Ratio Style") {
+				ia.visualManager.removeVisualStyle(style);
+				break;
+			}
+		}
 		ia.visualManager.addVisualStyle(vs);
 		ia.visualManager.setCurrentVisualStyle(vs);
 		vs.apply(view);
@@ -247,10 +256,22 @@ public class TypeNetwork {
 		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		ia.appAdapter.getTaskManager().execute(itr);
 
+		// have to find it first, destroy it after already adding the new one, otherwise things get messed up
+		CyNetwork dnet = null;
+		for (CyNetwork net : ia.networkManager.getNetworkSet()) {
+			if(net.getRow(net).get(CyNetwork.NAME, String.class) == "type network") {
+				dnet = net;
+				break;
+			}
+		}
 		ia.networkManager.addNetwork(typeNet);
+		tn = typeNet;
+		tt = typeTable;
+		et = edgeTable;
 		ia.networkViewManager.addNetworkView(view);
 		view.updateView();
 
+		ia.networkManager.destroyNetwork(dnet);
 
 	}
 }
