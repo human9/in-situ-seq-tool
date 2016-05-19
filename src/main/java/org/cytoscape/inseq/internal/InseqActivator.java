@@ -12,6 +12,7 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
@@ -56,6 +57,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public TypeNetwork tn;
 	public Map<String, ArrayList<Point2D.Double>> mps;
 	public Map<String, ArrayList<Point2D.Double>> pointsToDraw;
+	public Map<CyEdge, ArrayList<DualPoint>> edgePoints;
 
 	private InseqControlPanel controlPanel;
 	private Properties properties;

@@ -40,6 +40,7 @@ class ImagePane extends JPanel {
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		setSize();
 	}
+			
 
 	@Override
 	public void paintComponent(Graphics g) {
@@ -62,19 +63,21 @@ class ImagePane extends JPanel {
 		int size = 8;
 		int scaledOffset = (int)(size/2*scale);
 
-		if(ia.pointsToDraw==null)
-			System.out.println("this is somehow null");
-		else
+		if(ia.pointsToDraw!=null)
 		{
-			System.out.println("Begin loop");
-			for(ArrayList<Point2D.Double> arr : ia.pointsToDraw.values())
+			int i = 0;
+			for(String key : ia.pointsToDraw.keySet())
 			{
-				System.out.println("New array");
+				ArrayList<Point2D.Double> arr = ia.pointsToDraw.get(key);
+				int hue = (int)(i*(360d/ia.pointsToDraw.size())+((i++%2)*90))%360;
+				System.out.println(i + " hue: " + hue);
+				gr.setColor(Color.getHSBColor(hue/360f,1,1));
+				
 				for(Point2D.Double p : arr)
 				{
 					gr.drawOval((int)(p.x*scale) + offset.width - scaledOffset,(int)(p.y*scale) + offset.height - scaledOffset,size,size);
-					System.out.println(p.x + ":" + p.y);
 				}
+				gr.drawString(key, 6 + offset.width, i*12 + offset.height);
 			}
 			//TODO: this
 		}

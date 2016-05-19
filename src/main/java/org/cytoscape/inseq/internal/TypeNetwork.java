@@ -24,18 +24,6 @@ import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.work.TaskIterator;
 
-class DualPoint
-{
-	Point2D.Double p1;
-	Point2D.Double p2;
-
-	public DualPoint(Point2D.Double p1, Point2D.Double p2)
-	{
-		this.p1 = p1;
-		this.p2 = p2;
-	}
-}
-
 public class TypeNetwork {
 
 	InseqActivator ia;
@@ -131,7 +119,7 @@ public class TypeNetwork {
 		edgeTable.createColumn("normal", Double.class, false);
 
 		ia.mps = new HashMap<String, ArrayList<Point2D.Double>>();
-		
+		ia.edgePoints = new HashMap<CyEdge, ArrayList<DualPoint>>();
 		try	{
 			PrintWriter out = new PrintWriter("/home/jrs/Desktop/output.csv", "UTF-8");
 			out.println("name1,name2,x1,y1,x2,y2");
@@ -175,6 +163,8 @@ public class TypeNetwork {
 				if(!typeNet.containsEdge(n1,n2))
 				{
 					CyEdge edge = typeNet.addEdge(n1, n2, false);
+					ia.edgePoints.put(edge, new ArrayList<DualPoint>());	
+					ia.edgePoints.get(edge).add(dp);	
 
 					CyRow edgeRow = edgeTable.getRow(edge.getSUID());
 					edgeRow.set(CyNetwork.NAME, name1 + " - " + name2);
@@ -186,6 +176,8 @@ public class TypeNetwork {
 				else
 				{
 					CyEdge edge = typeNet.getConnectingEdgeList(n1,n2, CyEdge.Type.ANY).get(0);
+					ia.edgePoints.get(edge).add(dp);	
+					
 					CyRow edgeRow = edgeTable.getRow(edge.getSUID());
 					edgeRow.set("weight", distance + edgeRow.get("weight", Double.class)); 
 					edgeRow.set("node1", name1); 

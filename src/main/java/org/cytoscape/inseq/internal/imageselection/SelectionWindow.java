@@ -20,6 +20,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
+import org.cytoscape.inseq.internal.DualPoint;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -50,7 +51,7 @@ public class SelectionWindow extends JDialog {
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
 
-		consPanel = new GridBagConstraints(0, 0, 2, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 1,
+		consPanel = new GridBagConstraints(0, 0, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 1,
 				1);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia);
 		zp = new ZoomPane(ip);
@@ -119,13 +120,18 @@ public class SelectionWindow extends JDialog {
 					for (CyEdge edge : edges) {
 						CyRow row = ia.tn.et.getRow(edge.getSUID());
 						String name1 = row.get("node1", String.class);
-						ArrayList<Point2D.Double> points1 = ia.mps.get(name1);
-						ia.pointsToDraw.put(name1, points1);
-						
 						String name2 = row.get("node2", String.class);
-						ArrayList<Point2D.Double> points2 = ia.mps.get(name2);
-						ia.pointsToDraw.put(name2, points2);
-							
+						
+						if(!ia.pointsToDraw.containsKey(name1))
+							ia.pointsToDraw.put(name1, new ArrayList<Point2D.Double>());
+						if(!ia.pointsToDraw.containsKey(name2))
+							ia.pointsToDraw.put(name2, new ArrayList<Point2D.Double>());
+						
+						for(DualPoint p : ia.edgePoints.get(edge))
+						{
+							ia.pointsToDraw.get(name1).add(p.p1);
+							ia.pointsToDraw.get(name2).add(p.p2);
+						}
 					}
 				}
 			}
