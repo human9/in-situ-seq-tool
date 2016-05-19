@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -45,6 +46,9 @@ class ImagePane extends JPanel {
 	@Override
 	public void paintComponent(Graphics g) {
 		Graphics2D gr = (Graphics2D) g;
+		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		//Although this looks nice it cuts the framerate a bit
+		//gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		gr.setColor(Color.BLACK);
 		gr.fillRect(0, 0, getWidth(), getHeight());
 
@@ -77,7 +81,7 @@ class ImagePane extends JPanel {
 				{
 					gr.drawOval((int)(p.x*scale) + offset.width - scaledOffset,(int)(p.y*scale) + offset.height - scaledOffset,size,size);
 				}
-				gr.drawString(key, 6 + offset.width, i*12 + offset.height);
+				gr.drawString(key, 6 + offset.width, i*14 + offset.height);
 			}
 			//TODO: this
 		}

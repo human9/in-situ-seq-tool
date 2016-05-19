@@ -19,6 +19,7 @@ import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualMappingFunction;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
@@ -80,7 +81,7 @@ public class TypeNetwork {
 
 	public void makeNetwork()
 	{
-		CyNetwork typeNet = ia.networkFactory.createNetwork();
+		CyNetwork typeNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
 		typeNet.getRow(typeNet).set(CyNetwork.NAME, "type network");
 		CyTable typeTable = typeNet.getDefaultNodeTable();
 
@@ -212,35 +213,39 @@ public class TypeNetwork {
 		}
 		typeNet.removeEdges(poorEdges);
 
-		CyNetworkView view = ia.networkViewFactory.createNetworkView(typeNet);
+		CyNetworkView view = ia.appAdapter.getCyNetworkViewFactory().createNetworkView(typeNet);
 
-		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+		VisualStyle vs = ia.appAdapter.getVisualStyleFactory().createVisualStyle("Inseq Style");
 		
+		VisualMappingFunctionFactory cvmf = ia.appAdapter.getVisualMappingFunctionContinuousFactory();
+		VisualMappingFunctionFactory pvmf = ia.appAdapter.getVisualMappingFunctionPassthroughFactory();
 		
-		VisualMappingFunction<String,String> ntool = ia.passthroughMappingFactory.createVisualMappingFunction("num", String.class, BasicVisualLexicon.NODE_TOOLTIP);
+		VisualMappingFunction<String,String> ntool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.NODE_TOOLTIP);
 		vs.addVisualMappingFunction(ntool);
-		VisualMappingFunction<String,String> etool = ia.passthroughMappingFactory.createVisualMappingFunction("num", String.class, BasicVisualLexicon.EDGE_TOOLTIP);
+		VisualMappingFunction<String,String> etool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.EDGE_TOOLTIP);
 		vs.addVisualMappingFunction(etool);
-		VisualMappingFunction<String,String> pMap = ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
+		VisualMappingFunction<String,String> pMap = pvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
 		vs.addVisualMappingFunction(pMap);
-		VisualMappingFunction<Integer,Double> sizeMap = ia.continuousMappingFactory.createVisualMappingFunction("num", Integer.class, BasicVisualLexicon.NODE_SIZE);
+		VisualMappingFunction<Integer,Double> sizeMap = cvmf.createVisualMappingFunction("num", Integer.class, BasicVisualLexicon.NODE_SIZE);
 		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(1,new  BoundaryRangeValues<Double>(20d,25d,30d));
 		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(100,new  BoundaryRangeValues<Double>(40d,50d,60d));
 		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(10000,new  BoundaryRangeValues<Double>(80d,90d,100d));
 		vs.addVisualMappingFunction(sizeMap);
-		VisualMappingFunction<Double,Double> edgeMap = ia.continuousMappingFactory.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		VisualMappingFunction<Double,Double> edgeMap = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(0d,0d,3d));
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(6d,8d,10d));
 		vs.addVisualMappingFunction(edgeMap);
 		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.LIGHT_GRAY);
-		for (VisualStyle style : ia.visualManager.getAllVisualStyles()) {
-			if (style.getTitle() == "Ratio Style") {
-				ia.visualManager.removeVisualStyle(style);
+		
+		for (VisualStyle style : ia.appAdapter.getVisualMappingManager().getAllVisualStyles()) {
+			if (style.getTitle() == "Inseq Style") {
+				ia.appAdapter.getVisualMappingManager().removeVisualStyle(style);
 				break;
 			}
 		}
-		ia.visualManager.addVisualStyle(vs);
-		ia.visualManager.setCurrentVisualStyle(vs);
+		
+		ia.appAdapter.getVisualMappingManager().addVisualStyle(vs);
+		ia.appAdapter.getVisualMappingManager().setCurrentVisualStyle(vs);
 		vs.apply(view);
 
 		final CyLayoutAlgorithmManager algm = ia.appAdapter.getCyLayoutAlgorithmManager();
@@ -250,20 +255,20 @@ public class TypeNetwork {
 
 		// have to find it first, destroy it after already adding the new one, otherwise things get messed up
 		CyNetwork dnet = null;
-		for (CyNetwork net : ia.networkManager.getNetworkSet()) {
+		for (CyNetwork net : ia.appAdapter.getCyNetworkManager().getNetworkSet()) {
 			if(net.getRow(net).get(CyNetwork.NAME, String.class) == "type network") {
 				dnet = net;
 				break;
 			}
 		}
-		ia.networkManager.addNetwork(typeNet);
+		ia.appAdapter.getCyNetworkManager().addNetwork(typeNet);
 		tn = typeNet;
 		tt = typeTable;
 		et = edgeTable;
-		ia.networkViewManager.addNetworkView(view);
+		ia.appAdapter.getCyNetworkViewManager().addNetworkView(view);
 		view.updateView();
 
-		ia.networkManager.destroyNetwork(dnet);
+		ia.appAdapter.getCyNetworkManager().destroyNetwork(dnet);
 
 	}
 }

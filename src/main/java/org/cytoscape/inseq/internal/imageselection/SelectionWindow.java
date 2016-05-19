@@ -104,7 +104,7 @@ public class SelectionWindow extends JDialog {
 
 		GridBagConstraints consShow = new GridBagConstraints(1, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
-		JButton showSelection = new JButton("See Selected");
+		JButton showSelection = new JButton("Show points");
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -134,6 +134,7 @@ public class SelectionWindow extends JDialog {
 						}
 					}
 				}
+				zp.repaint();
 			}
 		});
 		add(showSelection, consShow);

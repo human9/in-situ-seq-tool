@@ -16,7 +16,7 @@ public class ImportAction extends AbstractCyAction {
 	private final InseqActivator ia;
 
 	public ImportAction(InseqActivator ia) {
-		super("Import Inseq data", ia.applicationManager, null, null);
+		super("Import Inseq data", ia.appAdapter.getCyApplicationManager(), null, null);
 		this.ia = ia;
 		setPreferredMenu("Apps");
 	}
@@ -24,7 +24,7 @@ public class ImportAction extends AbstractCyAction {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 
-		new ImportDialog(ia.swingAppAdapter.getCySwingApplication().getJFrame(), ia);
+		new ImportDialog(ia);
 
 	}
 }

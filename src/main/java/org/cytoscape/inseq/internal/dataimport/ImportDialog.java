@@ -26,7 +26,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
@@ -55,9 +54,9 @@ public class ImportDialog extends JDialog {
 	private String[] doubleColumnNames = { "SNEx", "SNEy", "grid_center_X", "grid_center_Y" };
 	boolean raw = false;
 
-	ImportDialog(final JFrame parent, final InseqActivator ia) {
+	ImportDialog(final InseqActivator ia) {
 
-		super(parent, "Inseq Importer", true);
+		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Inseq Importer", true);
 		this.ia = ia;
 		setPreferredSize(new Dimension(300, 160));
 		GridBagLayout gbl = new GridBagLayout();
@@ -97,7 +96,7 @@ public class ImportDialog extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				final JFileChooser fc = new JFileChooser();
 
-				int returnVal = fc.showOpenDialog(parent);
+				int returnVal = fc.showOpenDialog(ia.swingAppAdapter.getCySwingApplication().getJFrame());
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					input.setText(fc.getSelectedFile().getAbsolutePath());
@@ -156,7 +155,7 @@ public class ImportDialog extends JDialog {
 		add(isRaw, consRaw);
 
 		pack();
-		setLocationRelativeTo(parent);
+		setLocationRelativeTo(ia.swingAppAdapter.getCySwingApplication().getJFrame());
 		setVisible(true);
 
 	}
@@ -172,7 +171,7 @@ public class ImportDialog extends JDialog {
 		if(raw)
 		{
 
-			CyNetwork rawNet = ia.networkFactory.createNetwork();
+			CyNetwork rawNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
 			rawNet.getRow(rawNet).set(CyNetwork.NAME, "raw data");
 //			CyTable rawTable = rawNet.getDefaultNodeTable();
 			Map<Point2D.Double, String> transcripts = new HashMap<Point2D.Double, String>();
@@ -228,7 +227,7 @@ public class ImportDialog extends JDialog {
 		}
 
 		// create network to store the grids in
-		CyNetwork CSVNet = ia.networkFactory.createNetwork();
+		CyNetwork CSVNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
 		CSVNet.getRow(CSVNet).set(CyNetwork.NAME, "test network");
 		// create table to store gene, tumour, and other info in
 		CyTable CSVTable = CSVNet.getDefaultNodeTable();
@@ -278,7 +277,7 @@ public class ImportDialog extends JDialog {
 		System.out.println("Assuming grid of " + numRow + " by " + numCol);
 		ia.gridSize = new Dimension(numRow, numCol);
 
-		CyNetworkView view = ia.networkViewFactory.createNetworkView(CSVNet);
+		CyNetworkView view = ia.appAdapter.getCyNetworkViewFactory().createNetworkView(CSVNet);
 		for (CyNode node : CSVNet.getNodeList()) {
 			View<CyNode> nv = view.getNodeView(node);
 			CyRow gridRow = CSVTable.getRow(node.getSUID());
@@ -288,19 +287,19 @@ public class ImportDialog extends JDialog {
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, maxX / 2);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, maxY / 2);
 
-		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+		VisualStyle vs = ia.appAdapter.getVisualStyleFactory().createVisualStyle("Inseq Style");
 		vs.setDefaultValue(BasicVisualLexicon.NODE_SIZE, 100d);
 		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
-		for (VisualStyle style : ia.visualManager.getAllVisualStyles()) {
+		for (VisualStyle style : ia.appAdapter.getVisualMappingManager().getAllVisualStyles()) {
 			if (style.getTitle() == "Inseq Style") {
-				ia.visualManager.removeVisualStyle(style);
+				ia.appAdapter.getVisualMappingManager().removeVisualStyle(style);
 				break;
 			}
 		}
-		ia.visualManager.addVisualStyle(vs);
+		ia.appAdapter.getVisualMappingManager().addVisualStyle(vs);
 		vs.apply(view);
-		ia.networkManager.addNetwork(CSVNet);
-		ia.networkViewManager.addNetworkView(view);
+		ia.appAdapter.getCyNetworkManager().addNetwork(CSVNet);
+		ia.appAdapter.getCyNetworkViewManager().addNetworkView(view);
 		ia.inseqView = view;
 		ia.inseqTable = CSVTable;
 		double scale = view.getVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR).doubleValue();

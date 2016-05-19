@@ -224,7 +224,7 @@ public class DistanceNetwork {
 		}
 		
 		// generate gene nodes
-		CyNetwork distanceNet = ia.networkFactory.createNetwork();
+		CyNetwork distanceNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
 		distanceNet.getRow(distanceNet).set(CyNetwork.NAME, "distance network");
 		CyTable distanceTable = distanceNet.getDefaultNodeTable();
 		
@@ -264,23 +264,23 @@ public class DistanceNetwork {
 		}
 
 
-		CyNetworkView view = ia.networkViewFactory.createNetworkView(distanceNet);
-		ia.networkManager.addNetwork(distanceNet);
+		CyNetworkView view = ia.appAdapter.getCyNetworkViewFactory().createNetworkView(distanceNet);
+		ia.appAdapter.getCyNetworkManager().addNetwork(distanceNet);
 		
-		VisualStyle vs = ia.visualFactory.createVisualStyle("Inseq Style");
+		VisualStyle vs = ia.appAdapter.getVisualStyleFactory().createVisualStyle("Inseq Style");
 		
-		VisualMappingFunction<String,String> pMap = ia.passthroughMappingFactory.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
+		VisualMappingFunction<String,String> pMap = ia.appAdapter.getVisualMappingFunctionPassthroughFactory().createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
 		vs.addVisualMappingFunction(pMap);
-		VisualMappingFunction<Double,Double> edgeMap = ia.continuousMappingFactory.createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		VisualMappingFunction<Double,Double> edgeMap = ia.appAdapter.getVisualMappingFunctionContinuousFactory().createVisualMappingFunction("strength", Double.class, BasicVisualLexicon.EDGE_WIDTH);
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(2d,new  BoundaryRangeValues<Double>(1d,2d,3d));
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(12d,new  BoundaryRangeValues<Double>(6d,7d,8d));
 		vs.addVisualMappingFunction(edgeMap);
-		ia.visualManager.addVisualStyle(vs);
+		ia.appAdapter.getVisualMappingManager().addVisualStyle(vs);
 
-		ia.visualManager.addVisualStyle(vs);
+		ia.appAdapter.getVisualMappingManager().addVisualStyle(vs);
 		vs.apply(view);
 
-		ia.networkViewManager.addNetworkView(view);
+		ia.appAdapter.getCyNetworkViewManager().addNetworkView(view);
 		
 		final CyLayoutAlgorithmManager algm = ia.appAdapter.getCyLayoutAlgorithmManager();
 		CyLayoutAlgorithm algor = algm.getDefaultLayout();
