@@ -81,7 +81,21 @@ public class SelectionWindow extends JDialog {
 		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+
+				ia.selTranscripts = new HashMap<Point2D.Double, String>();
+				//System.out.println(ia.rect.x + "-" + ia.rect.y + "-" + (ia.rect.x+ia.rect.width) + "-" + (ia.rect.y+ia.rect.height));
+				for(Point2D.Double point : ia.transcripts.keySet())
+				{
+					if(point.x > ia.rect.x && point.x < (ia.rect.x+ia.rect.width) && point.y > ia.rect.y && point.y < (ia.rect.y+ia.rect.height))
+					{
+						//System.out.println(point);
+						ia.selTranscripts.put(point, ia.transcripts.get(point));
+					}
+				}
+
+				/*
 				ArrayList<Integer> gridNums = zp.getSelectedGridNumbers(ia.gridSize);
+				
 
 				for (CyNode node : ia.inseqNetwork.getNodeList()) {
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
@@ -96,7 +110,7 @@ public class SelectionWindow extends JDialog {
 					View<CyNode> nv = ia.inseqView.getNodeView(node);
 					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN);
 				}
-				ia.inseqView.updateView();
+				ia.inseqView.updateView();*/
 
 			}
 		});

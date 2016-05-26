@@ -28,7 +28,11 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -49,6 +53,7 @@ public class ImportDialog extends JDialog {
 	private static final long serialVersionUID = 262657186016113345L;
 	JTextField input;
 	boolean listenersActive = true;
+	double xyScale = 1;
 	private InseqActivator ia;
 	private String[] integerColumnNames = { "grid_ID", "population", "tumour" };
 	private String[] doubleColumnNames = { "SNEx", "SNEy", "grid_center_X", "grid_center_Y" };
@@ -58,7 +63,7 @@ public class ImportDialog extends JDialog {
 
 		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Inseq Importer", true);
 		this.ia = ia;
-		setPreferredSize(new Dimension(300, 160));
+		setPreferredSize(new Dimension(300, 180));
 		GridBagLayout gbl = new GridBagLayout();
 		getContentPane().setLayout(gbl);
 
@@ -106,7 +111,7 @@ public class ImportDialog extends JDialog {
 		});
 		add(browse, consBrowse);
 
-		GridBagConstraints consCancel = new GridBagConstraints(0, 3, GridBagConstraints.RELATIVE,
+		GridBagConstraints consCancel = new GridBagConstraints(0, 4, GridBagConstraints.RELATIVE,
 				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHWEST, 0, new Insets(4, 4, 4, 4), 1, 1);
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(new ActionListener() {
@@ -117,8 +122,17 @@ public class ImportDialog extends JDialog {
 		});
 		add(cancel, consCancel);
 		
-		GridBagConstraints consRaw = new GridBagConstraints(1, 2, GridBagConstraints.RELATIVE,
-				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
+		GridBagConstraints consScaler = new GridBagConstraints(1, 3, 1,1, 0.1, 0.1, GridBagConstraints.NORTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
+		final JSpinner scaler = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.1d));
+		scaler.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				xyScale = (Double)scaler.getValue();
+			}
+		});
+		add(scaler, consScaler);
+
+		GridBagConstraints consRaw = new GridBagConstraints(1, 2, 1,1, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
 		JCheckBox isRaw = new JCheckBox("raw XY");
 		isRaw.addItemListener(new ItemListener() {
 			@Override
@@ -129,10 +143,11 @@ public class ImportDialog extends JDialog {
 			}
 		});
 
-		GridBagConstraints consConfirm = new GridBagConstraints(1, 3, GridBagConstraints.RELATIVE,
+		GridBagConstraints consConfirm = new GridBagConstraints(1, 4, GridBagConstraints.RELATIVE,
 				GridBagConstraints.RELATIVE, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
 
 		JButton confirm = new JButton("Import");
+		
 		confirm.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -188,9 +203,9 @@ public class ImportDialog extends JDialog {
 
 				Double x = Double.parseDouble(record.get("global_X_pos"));
 				Double y = Double.parseDouble(record.get("global_Y_pos"));
-				transcripts.put(new Point2D.Double(x, y), name);
+				transcripts.put(new Point2D.Double(x * xyScale, y * xyScale), name);
 /*				
-				CyNode node = rawNet.addNode();
+				CyNode node = rawNet.addNode();ca
 				CyRow row = rawTable.getRow(node.getSUID());
 
 				row.set(CyNetwork.NAME, name);
@@ -199,6 +214,7 @@ public class ImportDialog extends JDialog {
 				
 			}
 			ia.transcripts = transcripts;		
+			ia.selTranscripts = transcripts;		
 /*
 			CyNetworkView view = ia.networkViewFactory.createNetworkView(rawNet);
 			for (CyNode node : rawNet.getNodeList()) {

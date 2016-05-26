@@ -2,9 +2,6 @@ package org.cytoscape.inseq.internal;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +20,11 @@ import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
+import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskMonitor;
 
-public class TypeNetwork {
+public class TypeNetwork extends AbstractTask {
 
 	InseqActivator ia;
 	Double distanceCutoff = 16d;
@@ -52,11 +51,14 @@ public class TypeNetwork {
 		return null;
 	}
 
-	public void calculateDistances()
+	public void run(final TaskMonitor taskMonitor)
 	{
-		Point2D.Double[] points = new Point2D.Double[ia.transcripts.size()];
+		taskMonitor.setTitle("Calculate distances");
+		Point2D.Double[] points = new Point2D.Double[ia.selTranscripts.size()];
+		System.out.println("orig" + ia.transcripts.size());
+		System.out.println(ia.selTranscripts.size());
 		int i = 0;
-		for(Point2D.Double point : ia.transcripts.keySet())
+		for(Point2D.Double point : ia.selTranscripts.keySet())
 		{
 			points[i] = new Point2D.Double(point.x, point.y);
 			i++;
@@ -65,7 +67,9 @@ public class TypeNetwork {
 		for(int a = 0; a < points.length; a++)
 		{
 			Point2D.Double p1 = points[a];
-			if(a%1000 == 0)System.out.println(a);
+			if(a%1000 == 0) {
+				taskMonitor.setProgress((double)a/points.length);
+			}
 			for(int b = a+1; b < points.length; b++)
 			{
 				Point2D.Double p2 = points[b];
@@ -91,10 +95,10 @@ public class TypeNetwork {
 		for(DualPoint dp : distances.keySet())
 		{
 
-			String name1 = ia.transcripts.get(dp.p1);
+			String name1 = ia.selTranscripts.get(dp.p1);
 			if(!genes.contains(name1))
 				genes.add(name1);
-			String name2 = ia.transcripts.get(dp.p2);
+			String name2 = ia.selTranscripts.get(dp.p2);
 			if(!genes.contains(name2))
 				genes.add(name2);
 		}
@@ -121,13 +125,11 @@ public class TypeNetwork {
 
 		ia.mps = new HashMap<String, ArrayList<Point2D.Double>>();
 		ia.edgePoints = new HashMap<CyEdge, ArrayList<DualPoint>>();
-		try	{
-			PrintWriter out = new PrintWriter("/home/jrs/Desktop/output.csv", "UTF-8");
-			out.println("name1,name2,x1,y1,x2,y2");
+
 			for(DualPoint dp : distances.keySet())
 			{
-				String name1 = ia.transcripts.get(dp.p1);
-				String name2 = ia.transcripts.get(dp.p2);
+				String name1 = ia.selTranscripts.get(dp.p1);
+				String name2 = ia.selTranscripts.get(dp.p2);
 				
 				//if (name1.equals(name2)) continue;
 
@@ -158,8 +160,6 @@ public class TypeNetwork {
 				n2Row.set("num", n2Row.get("num", Integer.class) + 1);
 
 				Double distance = distances.get(dp);
-			
-				out.println(name1 + "," + name2 + "," + dp.p1.x + "," + dp.p1.y + "," + dp.p2.x + "," + dp.p2.y);
 
 				if(!typeNet.containsEdge(n1,n2))
 				{
@@ -189,14 +189,6 @@ public class TypeNetwork {
 			}
 		
 			
-			out.close();
-		}
-		catch(FileNotFoundException e) {
-			System.out.println("whoops");
-		}
-		catch(UnsupportedEncodingException e) {
-			System.out.println("whoops");
-		}
 
 		ArrayList<CyEdge> poorEdges = new ArrayList<CyEdge>();
 		for(CyEdge edge : typeNet.getEdgeList())
@@ -207,7 +199,7 @@ public class TypeNetwork {
 			
 			int node1Num = ia.mps.get(row.get("node1", String.class)).size();
 			int node2Num = ia.mps.get(row.get("node2", String.class)).size();
-			row.set("normal", (double)startNum / (double)(node1Num+node2Num));
+			row.set("normal", Math.sqrt((double)startNum / (double)(node1Num) / (double)(node2Num)) );
 			if(row.get("normal", Double.class) < requiredNum)
 				poorEdges.add(edge);
 		}

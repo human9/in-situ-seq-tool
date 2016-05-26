@@ -133,6 +133,24 @@ class ZoomPane extends JScrollPane {
 		imagePane.repaint();
 	}
 
+	// NOTE TO ME USE THIS TO GET REGION BLAG BGLAG
+	public ArrayList<Point> getSelectedPoints()
+	{
+		ArrayList<Point> points = new ArrayList<Point>();
+
+		Point p1 = new Point(imagePane.rect.x, imagePane.rect.y);	
+		Point p2 = new Point(imagePane.rect.width + p1.x, imagePane.rect.height + p1.y);	
+		/*
+		 *  GET RECTANGLE
+		 *  GET P1 AND P2 DEFINING THE RECTANGLE
+		 *  GO THROUGH POINTS
+		 *  REMOVE ALL POINTS LESS THAN P1 OR MORE THAN P2
+		 *
+		 */
+
+		return points; 
+	}
+
 	public ArrayList<Integer> getSelectedGridNumbers(Dimension gridSize) {
 		int stepX = (int) Math.round(imagePane.image.getWidth() / gridSize.width);
 		int stepY = (int) Math.round(imagePane.image.getHeight() / gridSize.height);

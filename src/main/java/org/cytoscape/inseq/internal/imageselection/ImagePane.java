@@ -62,6 +62,12 @@ class ImagePane extends JPanel {
 		int ry = (int) Math.round((selectedFinish.y) * scale);
 		rect = new Rectangle(Math.min(lx, rx) + offset.width, Math.min(ly, ry) + offset.height, Math.abs(lx - rx),
 				Math.abs(ly - ry));
+		
+		int alx = selectedOrigin.x;
+		int aly = selectedOrigin.y;
+		int arx = selectedFinish.x;
+		int ary = selectedFinish.y;
+		ia.rect = new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary));
 		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
 		
 		int size = 8;
@@ -136,10 +142,12 @@ class ImagePane extends JPanel {
 		try {
 			bimg = ImageIO.read(input);
 		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "Couldn't open the selected file.", "IO Error!",
-					JOptionPane.WARNING_MESSAGE);
+			//JOptionPane.showMessageDialog(null, "Couldn't open the selected file.", "IO Error!",
+			//		JOptionPane.WARNING_MESSAGE);
 			return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
 		}
+		if(bimg == null)
+			return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
 		return bimg;
 	}
 }

@@ -25,6 +25,7 @@ import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.work.TaskIterator;
 
 public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 
@@ -94,7 +95,8 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ia.tn.calculateDistances();
+				TaskIterator itr = new TaskIterator(ia.tn);	
+				ia.swingAppAdapter.getDialogTaskManager().execute(itr);
 			}
 		});
 		
