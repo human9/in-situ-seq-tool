@@ -58,6 +58,7 @@ public class ImportDialog extends JDialog {
 	private String[] integerColumnNames = { "grid_ID", "population", "tumour" };
 	private String[] doubleColumnNames = { "SNEx", "SNEy", "grid_center_X", "grid_center_Y" };
 	boolean raw = false;
+	boolean bpops = false;
 
 	ImportDialog(final InseqActivator ia) {
 
@@ -138,8 +139,15 @@ public class ImportDialog extends JDialog {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				raw = !raw;
-				System.out.println(raw);
-
+			}
+		});
+		
+		GridBagConstraints consPops = new GridBagConstraints(0, 2, 1,1, 0.1, 0.1, GridBagConstraints.SOUTHEAST, 0, new Insets(4, 4, 4, 4), 1, 1);
+		JCheckBox pops = new JCheckBox("cell data");
+		pops.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				bpops = !bpops;
 			}
 		});
 
@@ -168,6 +176,7 @@ public class ImportDialog extends JDialog {
 		});
 		add(confirm, consConfirm);
 		add(isRaw, consRaw);
+		add(pops, consPops);
 
 		pack();
 		setLocationRelativeTo(ia.swingAppAdapter.getCySwingApplication().getJFrame());
@@ -183,10 +192,11 @@ public class ImportDialog extends JDialog {
 			return null;
 		}
 
+		CyNetwork rawNet;
 		if(raw)
 		{
 
-			CyNetwork rawNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
+			rawNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
 			rawNet.getRow(rawNet).set(CyNetwork.NAME, "raw data");
 //			CyTable rawTable = rawNet.getDefaultNodeTable();
 			Map<Point2D.Double, String> transcripts = new HashMap<Point2D.Double, String>();
@@ -229,6 +239,34 @@ public class ImportDialog extends JDialog {
 			view.updateView();*/
 			ia.tn = new TypeNetwork(ia);
 			return rawNet;
+		}
+		if(bpops)
+		{
+			final JFileChooser fc = new JFileChooser();
+
+			int returnVal = fc.showOpenDialog(ia.swingAppAdapter.getCySwingApplication().getJFrame());
+
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				FileReader in;
+				try {
+					in = new FileReader(fc.getSelectedFile());
+				} catch (FileNotFoundException x) {
+					return null;
+				}
+				CSVParser parser;
+				try {
+					parser = CSVFormat.EXCEL.withHeader().parse(in);
+				} catch (IOException e) {
+					return null;
+				}
+
+				for(CSVRecord record : inseqParser)
+				{
+					String name = record.get("name");
+				}
+
+
+			}
 		}
 
 		// Iterate through expected names and check that they are present in the

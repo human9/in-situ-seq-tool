@@ -35,8 +35,8 @@ public class TypeNetwork extends AbstractTask {
 
 	Map<DualPoint, Double> distances;
 
-	public TypeNetwork(final InseqActivator iac) {
-		this.ia = iac;
+	public TypeNetwork(final InseqActivator ia) {
+		this.ia = ia;
 	}
 
 	// gets the first node with the specified name if it exists, else returns null
