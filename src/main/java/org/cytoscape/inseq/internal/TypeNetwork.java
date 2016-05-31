@@ -199,7 +199,7 @@ public class TypeNetwork extends AbstractTask {
 			
 			int node1Num = ia.mps.get(row.get("node1", String.class)).size();
 			int node2Num = ia.mps.get(row.get("node2", String.class)).size();
-			row.set("normal", Math.sqrt((double)startNum / (double)(node1Num) / (double)(node2Num)) );
+			row.set("normal", (double)startNum / (double)(node1Num + node2Num) );
 			if(row.get("normal", Double.class) < requiredNum)
 				poorEdges.add(edge);
 		}

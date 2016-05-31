@@ -41,6 +41,7 @@ public class SelectionWindow extends JDialog {
 	private GridBagConstraints consPanel;
 	private JFrame parent;
 	InseqActivator ia;
+	public ImagePane imagePane;
 
 	public SelectionWindow(final InseqActivator ia) {
 		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Select Region", false);
@@ -54,6 +55,7 @@ public class SelectionWindow extends JDialog {
 		consPanel = new GridBagConstraints(0, 0, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 1,
 				1);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia);
+		imagePane = ip;
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
 		add(zp, consPanel);
@@ -160,6 +162,7 @@ public class SelectionWindow extends JDialog {
 
 	private void changeImage(String path) {
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile(path), ia);
+		imagePane = ip;
 		zp.updateViewport(ip);
 		repaint();
 	}

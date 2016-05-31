@@ -27,6 +27,7 @@ class ZoomPane extends JScrollPane {
 
 	public ZoomPane(final ImagePane ip) {
 		this.imagePane = ip;
+		ip.zp = this;
 		this.imgDims = new Dimension(ip.image.getWidth(), ip.image.getHeight());
 		setViewportView(imagePane);
 		setWheelScrollingEnabled(false);
@@ -88,6 +89,7 @@ class ZoomPane extends JScrollPane {
 					Rectangle r = new Rectangle(move, vp.getExtentSize());
 					vp.scrollRectToVisible(r);
 					mouseClick.setLocation(e.getPoint());
+					//repaint();
 				}
 				if (selectButton) {
 					Point view = new Point(getViewport().getViewPosition());
@@ -98,6 +100,11 @@ class ZoomPane extends JScrollPane {
 				}
 			}
 		});
+	}
+
+	public Rectangle getView()
+	{
+		return getViewport().getViewRect();
 	}
 
 	void zoomImage(Point mouse, int direction) {
@@ -180,6 +187,7 @@ class ZoomPane extends JScrollPane {
 		view.setMinimumSize(getViewport().getExtentSize());
 		setViewportView(view);
 		this.vp = getViewport();
+		imagePane.zp = this;
 		view.setSize();
 	}
 }

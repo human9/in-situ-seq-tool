@@ -32,6 +32,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 	static final long serialVersionUID = 692;
 
 	InseqActivator ia;
+	public SelectionWindow sw;
 
 	public InseqControlPanel(final InseqActivator iac) {
 		this.ia = iac;
@@ -45,7 +46,7 @@ public class InseqControlPanel extends JPanel implements CytoPanelComponent {
 		openSelector.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new SelectionWindow(ia);
+				sw = new SelectionWindow(ia);
 			}
 		});
 
