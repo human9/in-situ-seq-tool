@@ -151,6 +151,7 @@ public class SelectionWindow extends JDialog {
 					}
 				}
 				zp.repaint();
+				imagePane.repaint();
 			}
 		});
 		add(showSelection, consShow);

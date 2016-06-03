@@ -27,6 +27,29 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>2.5.2</version>
+				<executions>
+					<execution>
+						<id>install-external</id>
+						<phase>clean</phase>
+						<configuration>
+							<file>${basedir}/lib/GC-0.1.0.jar</file>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>edu.wlu.cs.levy</groupId>
+							<artifactId>CG</artifactId>
+							<version>0.1.0</version>
+							<packaging>jar</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.5.1</version>
 				<executions>
@@ -188,11 +211,25 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- KD-Tree Implementation -->
+		<dependency>
+			<groupId>edu.wlu.cs.levy</groupId>
+			<artifactId>CG</artifactId>
+			<version>0.1.0</version>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Apache Commons -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
 			<version>1.2</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.2</version>
 			<optional>true</optional>
 		</dependency>
 

@@ -3,8 +3,12 @@ package org.cytoscape.inseq.internal;
 import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -23,6 +27,26 @@ import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+
+import edu.wlu.cs.levy.CG.KDTree;
+import edu.wlu.cs.levy.CG.KeyDuplicateException;
+import edu.wlu.cs.levy.CG.KeySizeException;
+
+class Transcript {
+
+	public Point2D.Double pos;
+	public String name;
+	
+	Transcript(Point2D.Double pos, String name) {
+		this.pos = pos;
+		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "Transcript: " + name + " X: " + pos.x + " Y: " + pos.y;
+	}
+}
 
 public class TypeNetwork extends AbstractTask {
 
@@ -51,36 +75,79 @@ public class TypeNetwork extends AbstractTask {
 		return null;
 	}
 
+	List<Point2D.Double> sortByAxis(Set<Point2D.Double> points, int axis) {
+		List<Point2D.Double> list = new ArrayList<Point2D.Double>(points);
+		Collections.sort(list, new Comparator<Point2D.Double>() {
+			@Override
+			public int compare(final Point2D.Double point1, final Point2D.Double point2) {
+				return Double.compare(axis == 0 ? point1.x : point2.y, axis == 0 ? point2.x : point2.y);
+			}
+		});
+		return list;
+	}
+				
+	boolean insertNextMedian(Point2D.Double point, KDTree<Transcript> tree)
+	{
+		try {
+			tree.insert(new double[]{point.x, point.y}, new Transcript(point, ia.selTranscripts.get(point)));			
+			return true;
+		}
+		catch (KeyDuplicateException e) {
+			//System.out.println("Duplicate");
+			return false;
+		}
+		catch (KeySizeException e) {
+			System.out.println("Array is wrong size: Programmer error");
+			return false;
+		}
+	}
+
 	public void run(final TaskMonitor taskMonitor)
 	{
-		taskMonitor.setTitle("Calculate distances");
-		Point2D.Double[] points = new Point2D.Double[ia.selTranscripts.size()];
-		System.out.println("orig" + ia.transcripts.size());
-		System.out.println(ia.selTranscripts.size());
-		int i = 0;
+		taskMonitor.setTitle("Constructing KD-tree");
+
+		List<Point2D.Double> xsorted = sortByAxis(ia.selTranscripts.keySet(), 0);
+		List<Point2D.Double> ysorted = sortByAxis(ia.selTranscripts.keySet(), 1);
+		
+		int xmed = ia.selTranscripts.size()/2;
+		int ymed = xmed;
+
+		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
+	
+		for(int i = 0, x = 0, y = 0; i < ia.selTranscripts.size(); i++)
+		{
+			boolean axis = (i % 2) == 0;
+			if(axis) {
+				do {
+					xmed += x * (((x++ % 2) == 0) ? -1 : 1);
+				} while(!insertNextMedian(xsorted.get(xmed), kdTree));
+			}
+			else {
+				do {
+					ymed += y * (((y++ % 2) == 0) ? -1 : 1);
+				} while(!insertNextMedian(ysorted.get(ymed), kdTree));
+			}
+		}
+
+		taskMonitor.setTitle("Searching for points within " + distanceCutoff + " px");
+		int z = 0;
 		for(Point2D.Double point : ia.selTranscripts.keySet())
 		{
-			points[i] = new Point2D.Double(point.x, point.y);
-			i++;
-		}
-		distances = new HashMap<DualPoint, Double>();
-		for(int a = 0; a < points.length; a++)
-		{
-			Point2D.Double p1 = points[a];
-			if(a%1000 == 0) {
-				taskMonitor.setProgress((double)a/points.length);
-			}
-			for(int b = a+1; b < points.length; b++)
-			{
-				Point2D.Double p2 = points[b];
-				Double distance = ((p1.x - p2.x) * (p1.x - p2.x)) + ((p1.y - p2.y) * (p1.y - p2.y));
-				if(distance < distanceCutoff)
-				{
-					distances.put(new DualPoint(p1,p2), Math.sqrt(distance));
-					//System.out.println(ia.transcripts.get(p1) + " - " + ia.transcripts.get(p2) + " = " + Math.sqrt(distance));
+			if(cancelled) break;
+			try { 
+				//System.out.println("POINT: " + point);
+				kdTree.nearestEuclidean(new double[]{point.x,point.y}, 10d);
+				if (z % 1000 == 0) {
+					taskMonitor.setProgress((double)z/ia.selTranscripts.size());
 				}
+				//System.out.println(list.size());
 			}
+			catch (KeySizeException e) {};
+			z++;
 		}
+		
+
+		
 	}
 
 	public void makeNetwork()
@@ -131,7 +198,7 @@ public class TypeNetwork extends AbstractTask {
 				String name1 = ia.selTranscripts.get(dp.p1);
 				String name2 = ia.selTranscripts.get(dp.p2);
 				
-				//if (name1.equals(name2)) continue;
+				if (name1.equals(name2)) continue;
 
 				if(!ia.mps.containsKey(name1))
 				{
@@ -199,7 +266,7 @@ public class TypeNetwork extends AbstractTask {
 			
 			int node1Num = ia.mps.get(row.get("node1", String.class)).size();
 			int node2Num = ia.mps.get(row.get("node2", String.class)).size();
-			row.set("normal", (double)startNum / (double)(node1Num + node2Num) );
+			row.set("normal", Math.sqrt((double)startNum / (double)(node1Num) / (double)node2Num) );
 			if(row.get("normal", Double.class) < requiredNum)
 				poorEdges.add(edge);
 		}

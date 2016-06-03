@@ -68,7 +68,7 @@ class ImagePane extends JPanel {
 
 		if(ia.pointsToDraw != null)
 		{
-			if(getWidth() > 5000 || getHeight() > 5000)
+			if(getWidth() > 4000 || getHeight() > 4000)
 			{
 				System.out.println("Close zoom mode");
 				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
