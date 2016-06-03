@@ -20,6 +20,8 @@ import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.view.model.CyNetworkView;
 import org.osgi.framework.BundleContext;
 
+import edu.wlu.cs.levy.CG.KDTree;
+
 public class InseqActivator extends AbstractCyActivator {
 
 	public CyTable inseqTable;
@@ -39,6 +41,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public Map<CyEdge, ArrayList<DualPoint>> edgePoints;
 	public Rectangle rect;
 	public Map<Point2D.Double, String> selTranscripts;
+	public KDTree<Transcript> kd;
 
 	private InseqControlPanel controlPanel;
 	private Properties properties;

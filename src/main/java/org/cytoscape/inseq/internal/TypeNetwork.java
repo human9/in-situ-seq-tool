@@ -104,7 +104,9 @@ public class TypeNetwork extends AbstractTask {
 
 	public void run(final TaskMonitor taskMonitor)
 	{
-		taskMonitor.setTitle("Constructing KD-tree");
+		taskMonitor.setTitle("Searching for co-occurrences");
+		
+		taskMonitor.setStatusMessage("Constructing KD-Tree");
 
 		List<Point2D.Double> xsorted = sortByAxis(ia.selTranscripts.keySet(), 0);
 		List<Point2D.Double> ysorted = sortByAxis(ia.selTranscripts.keySet(), 1);
@@ -129,22 +131,30 @@ public class TypeNetwork extends AbstractTask {
 			}
 		}
 
-		taskMonitor.setTitle("Searching for points within " + distanceCutoff + " px");
+		taskMonitor.setStatusMessage("Finding Euclidean distances");
 		int z = 0;
+		distances = new HashMap<DualPoint, Double>();
+
 		for(Point2D.Double point : ia.selTranscripts.keySet())
 		{
 			if(cancelled) break;
 			try { 
 				//System.out.println("POINT: " + point);
-				kdTree.nearestEuclidean(new double[]{point.x,point.y}, 10d);
+				List<Transcript> list = kdTree.nearestEuclidean(new double[]{point.x,point.y}, distanceCutoff);
 				if (z % 1000 == 0) {
 					taskMonitor.setProgress((double)z/ia.selTranscripts.size());
+				}
+				for(Transcript t : list) {
+					distances.put(new DualPoint(point, t.pos), 1d);
+
 				}
 				//System.out.println(list.size());
 			}
 			catch (KeySizeException e) {};
 			z++;
 		}
+
+		ia.kd = kdTree;
 		
 
 		

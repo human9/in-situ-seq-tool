@@ -380,7 +380,8 @@ public class KDTree<T> implements Serializable{
 	int n = nnl.getSize();
 	Stack<T> nbrs = new Stack<T>();
 	
-	for (int i=0; i<n; ++i) {
+	int i;
+	for (i=0; i<n; ++i) {
 	    KDNode<T> kd = nnl.removeHighest();
 	    HPoint p = kd.k;
 		//System.out.println(kd.k.coord[0] + "," + kd.k.coord[1]);
