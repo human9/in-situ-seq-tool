@@ -9,18 +9,21 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.inseq.internal.InseqSession;
+import org.cytoscape.inseq.internal.types.Transcript;
+
+import edu.wlu.cs.levy.CG.KeySizeException;
 
 class ImagePane extends JPanel {
 
@@ -37,11 +40,14 @@ class ImagePane extends JPanel {
 	public Point selectedOrigin = new Point();
 	public Point selectedFinish = new Point();
 	public Rectangle rect;
+	private InseqSession session;
+
 	InseqActivator ia;
 	Timer imageTimer = new Timer();
 	
 	public ImagePane(final BufferedImage image, InseqActivator ia) {
 		this.image = image;
+		this.session = ia.getSession();
 		this.ia = ia;
 		this.paintedImage = image;
 		this.scale = 400d/(double)(image.getHeight());
@@ -66,27 +72,31 @@ class ImagePane extends JPanel {
 		int scaledOffset = (int)(size/2);
 		Rectangle view = zp.getView();
 
-		if(ia.pointsToDraw != null)
+		if(session.edgeSelection != null)
 		{
+			List<Color> colours = new ArrayList<Color>();
+			for(String name : session.edgeSelection) {
+				int i = (int)(session.edgeSelection.indexOf(name)*(360d/session.edgeSelection.size())+((session.edgeSelection.indexOf(name)%2)*90))%360;
+				colours.add(Color.getHSBColor(i/360f, 1, 1));
+				gr.drawString(name, 6, session.edgeSelection.indexOf(name)*14);
+			}
 			if(getWidth() > 4000 || getHeight() > 4000)
 			{
 				System.out.println("Close zoom mode");
 				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 				rescaling = false;
-				int i = 0;
-				for(String key : ia.pointsToDraw.keySet())
-				{
-					ArrayList<Point2D.Double> arr = ia.pointsToDraw.get(key);
-					int hue = (int)(i*(360d/ia.pointsToDraw.size())+((i++%2)*90))%360;
-					//System.out.println(i + " hue: " + hue);
-					gr.setColor(Color.getHSBColor(hue/360f,1,1));
-					
-					for(Point2D.Double p : arr)
+				try {
+					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
-						if(p.x*scale > view.x && p.y*scale > view.y && p.x*scale < view.x+view.width && p.y*scale < view.y+view.height) 
-							gr.drawOval((int)(p.x*scale) - scaledOffset,(int)(p.y*scale) - scaledOffset,size,size);
+						if(t.neighbours == null) continue;
+						if(Double.compare(t.distance, session.distance) != 0) continue;
+					
+						gr.setColor(colours.get(session.edgeSelection.indexOf(t.name)));
+						gr.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
 					}
-					gr.drawString(key, 6, i*14);
+				}
+				catch (KeySizeException e) {
+					e.printStackTrace();
 				}
 			}
 			else
@@ -98,22 +108,19 @@ class ImagePane extends JPanel {
 					Graphics2D imgG2 = (Graphics2D) imgG;
 					imgG.drawImage(image, 0, 0, requested.width, requested.height, null);
 					rescaling = false;
-					int i = 0;
-					for(String key : ia.pointsToDraw.keySet())
-					{
-						ArrayList<Point2D.Double> arr = ia.pointsToDraw.get(key);
-						int hue = (int)(i*(360d/ia.pointsToDraw.size())+((i++%2)*90))%360;
-						//System.out.println(i + " hue: " + hue);
-						imgG2.setColor(Color.getHSBColor(hue/360f,1,1));
-						
-						for(Point2D.Double p : arr)
+					try {
+						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 						{
-							//if(p.x*scale > view.x && p.y*scale > view.y && p.x*scale < view.x+view.width && p.y*scale < view.y+view.height) 
-								imgG2.drawOval((int)(p.x*scale) - scaledOffset,(int)(p.y*scale) - scaledOffset,size,size);
+							if(t.neighbours == null) continue;
+							if(Double.compare(t.distance, session.distance) != 0) continue;
+						
+							imgG2.setColor(colours.get(session.edgeSelection.indexOf(t.name)));
+							imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
 						}
-						imgG2.drawString(key, 6, i*14);
 					}
-					//imgG.dispose();
+					catch (KeySizeException e) {
+						e.printStackTrace();
+					}
 				}
 				System.out.println("Far zoom mode");
 				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
@@ -139,10 +146,8 @@ class ImagePane extends JPanel {
 		int aly = selectedOrigin.y;
 		int arx = selectedFinish.x;
 		int ary = selectedFinish.y;
-		ia.rect = new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary));
+		session.rectangleSelection = new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary));
 		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
-		
-
 		
 		Color fill = new Color(255, 0, 0, 60);
 		gr.setColor(fill);

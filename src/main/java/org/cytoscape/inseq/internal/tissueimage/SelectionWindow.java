@@ -6,9 +6,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -16,9 +14,9 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import org.cytoscape.inseq.internal.DualPoint;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTableUtil;
 
@@ -35,8 +33,8 @@ public class SelectionWindow extends JDialog {
 	public ImagePane imagePane;
 
 	public SelectionWindow(final InseqActivator ia) {
-		super(ia.swingAppAdapter.getCySwingApplication().getJFrame(), "Select Region", false);
-		this.parent = ia.swingAppAdapter.getCySwingApplication().getJFrame();
+		super(ia.getCSAA().getCySwingApplication().getJFrame(), "Select Region", false);
+		this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 		this.setPreferredSize(new Dimension(400, 400));
 		this.ia = ia;
 
@@ -71,10 +69,9 @@ public class SelectionWindow extends JDialog {
 		GridBagConstraints consInfo = new GridBagConstraints(2, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton info = new JButton("Get Selection");
-		info.addActionListener(new ActionListener() {
+/*		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
 				ia.selTranscripts = new HashMap<Point2D.Double, String>();
 				//System.out.println(ia.rect.x + "-" + ia.rect.y + "-" + (ia.rect.x+ia.rect.width) + "-" + (ia.rect.y+ia.rect.height));
 				for(Point2D.Double point : ia.transcripts.keySet())
@@ -86,8 +83,8 @@ public class SelectionWindow extends JDialog {
 					}
 				}
 
-			}
 		});
+*/
 		add(info, consInfo);
 
 		GridBagConstraints consShow = new GridBagConstraints(1, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
@@ -96,31 +93,23 @@ public class SelectionWindow extends JDialog {
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.tn.tn,"selected",true);
+				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.getSession().network,"selected",true);
 				if(edges == null)
-					System.out.println("EDGES NULL");
+					System.out.println("No edges selected - showing no points");
 				else
 				{
-					ia.pointsToDraw = new HashMap<String, ArrayList<Point2D.Double>>();
+					ia.getSession().edgeSelection = new ArrayList<String>();
+					for(CyEdge edge : edges)
+					{
+						CyRow source = ia.getSession().nodeTable.getRow(edge.getSource());
+						ia.getSession().edgeSelection.add(source.get(CyNetwork.NAME, String.class));
+						CyRow target = ia.getSession().nodeTable.getRow(edge.getTarget());
+						ia.getSession().edgeSelection.add(target.get(CyNetwork.NAME, String.class));
+					}
 
 					System.out.println("Viewing points from " + edges.size() + " edges.");
 					// TODO: this
-					for (CyEdge edge : edges) {
-						CyRow row = ia.tn.et.getRow(edge.getSUID());
-						String name1 = row.get("node1", String.class);
-						String name2 = row.get("node2", String.class);
-						
-						if(!ia.pointsToDraw.containsKey(name1))
-							ia.pointsToDraw.put(name1, new ArrayList<Point2D.Double>());
-						if(!ia.pointsToDraw.containsKey(name2))
-							ia.pointsToDraw.put(name2, new ArrayList<Point2D.Double>());
-						
-						for(DualPoint p : ia.edgePoints.get(edge))
-						{
-							ia.pointsToDraw.get(name1).add(p.p1);
-							ia.pointsToDraw.get(name2).add(p.p2);
-						}
-					}
+					
 				}
 				zp.repaint();
 				imagePane.repaint();

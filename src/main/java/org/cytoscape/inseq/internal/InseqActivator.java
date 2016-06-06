@@ -10,6 +10,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.ControlPanel;
 import org.cytoscape.inseq.internal.types.Transcript;
+import org.cytoscape.inseq.internal.util.ConstructTreeTask;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.work.TaskIterator;
 import org.osgi.framework.BundleContext;

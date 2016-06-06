@@ -23,6 +23,8 @@ import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.tissueimage.SelectionWindow;
 import org.cytoscape.inseq.internal.util.FindNeighboursTask;
+import org.cytoscape.inseq.internal.util.TypeNetworkTask;
+import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 
 public class ControlPanel extends JPanel implements CytoPanelComponent {
@@ -31,7 +33,9 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 
 	InseqActivator ia;
 	public SelectionWindow sw;
+
 	private double distance;
+	private double cutoff;
 
 	public ControlPanel(final InseqActivator ia, InseqSession session) {
 		this.ia = ia;
@@ -55,10 +59,11 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				FindNeighboursTask neighboursTask = new FindNeighboursTask(session.tree, distance);
-				TaskIterator itr = new TaskIterator(neighboursTask);	
+				Task neighboursTask = new FindNeighboursTask(session.tree, distance);
+				Task networkTask = new TypeNetworkTask(ia, session.tree, cutoff);
+				
+				TaskIterator itr = new TaskIterator(neighboursTask, networkTask);	
 				ia.getCSAA().getDialogTaskManager().execute(itr);
-				TypeNetworkTask networkTask = new TypeNetworkTask(session.tree);
 			}
 		});
 		
@@ -74,18 +79,18 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 		
 		GridBagConstraints cons9 = new GridBagConstraints(0, 7, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		final JSpinner requiredNum = new JSpinner(new SpinnerNumberModel(0.1d, 0d, 100d, 0.01d));
-		requiredNum.addChangeListener(new ChangeListener() {
+		final JSpinner cutoffSpinner = new JSpinner(new SpinnerNumberModel(0.1d, 0d, 100d, 0.001d));
+		cutoffSpinner.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				session.tn.requiredNum = (Double)requiredNum.getValue();
+				cutoff = (Double)cutoffSpinner.getValue();
 			}
 		});
 
 		panel.add(openSelector, cons);
 		panel.add(types, cons6);
 		panel.add(distanceCutoff, cons8);
-		panel.add(requiredNum, cons9);
+		panel.add(cutoffSpinner, cons9);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, null);
 		this.add(splitPane, cons);
