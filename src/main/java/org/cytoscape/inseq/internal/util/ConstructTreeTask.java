@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.util;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,12 +12,12 @@ import edu.wlu.cs.levy.CG.KDTree;
 import edu.wlu.cs.levy.CG.KeyDuplicateException;
 import edu.wlu.cs.levy.CG.KeySizeException;
 
-public class KDTreeBuilder extends AbstractTask {
+public class ConstructTreeTask extends AbstractTask {
 
 	List<Transcript> raw;
 	KDTree<Transcript> output;
 
-	public KDTreeBuilder(List<Transcript> rawImport) {
+	public ConstructTreeTask(List<Transcript> rawImport) {
 		raw = rawImport;
 	}
 
@@ -45,6 +45,9 @@ public class KDTreeBuilder extends AbstractTask {
 	
 		for(int i = 0, x = 0, y = 0; i < raw.size(); i++)
 		{
+			if(cancelled) {
+				break;
+			}
 			if (i % 1000 == 0) {
 				taskMonitor.setProgress((double)i/raw.size());
 			}
@@ -65,32 +68,7 @@ public class KDTreeBuilder extends AbstractTask {
 
 	}
 
-	/*
-		taskMonitor.setStatusMessage("Finding Euclidean distances");
-		int z = 0;
-
-		for(Transcript t : raw)
-		{
-			if(cancelled) break;
-			try { 
-				List<Transcript> list = kdTree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, distanceCutoff);
-				if (z % 1000 == 0) {
-					taskMonitor.setProgress((double)z/ia.selTranscripts.size());
-				}
-				for(Transcript t : list) {
-					distances.put(new DualPoint(point, t.pos), 1d);
-
-				}
-				//System.out.println(list.size());
-			}
-			catch (KeySizeException e) {};
-			z++;
-		}
-
-		ia.kd = kdTree;
-	*/
 		
-	
 	/** Sorts a Transcript List in ascending order of the coordinates of a given axis.
 	 */
 	List<Transcript> sortByAxis(List<Transcript> list, int axis) {

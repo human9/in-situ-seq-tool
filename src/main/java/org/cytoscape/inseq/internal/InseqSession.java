@@ -38,12 +38,12 @@ public class InseqSession {
 	public Map<CyEdge, ArrayList<DualPoint>> edgePoints;
 	public Rectangle rect;
 	public Map<Point2D.Double, String> selTranscripts;
-	public KDTree<Transcript> kd;
+	public KDTree<Transcript> tree;
 
 	/** Components of a session are initialised as required.
 	 *  A session is created when the user imports data.
 	 */
-	public InseqSession(KDTree<Transcript> tree) {
-
+	public InseqSession(KDTree<Transcript> t) {
+		this.tree = t;
 	}
 }

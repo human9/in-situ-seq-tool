@@ -41,7 +41,7 @@ public class InseqActivator extends AbstractCyActivator {
 	
 	public KDTree<Transcript> constructTree(List<Transcript> rawImport) {
 
-		KDTreeBuilder builder = new KDTreeBuilder(rawImport);
+		ConstructTreeTask builder = new ConstructTreeTask(rawImport);
 		TaskIterator itr = new TaskIterator(builder);     
 		getCSAA().getDialogTaskManager().execute(itr);
 

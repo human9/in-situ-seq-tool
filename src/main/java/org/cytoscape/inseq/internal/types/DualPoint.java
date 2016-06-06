@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal;
+package org.cytoscape.inseq.internal.types;
 
 import java.awt.geom.Point2D;
 

@@ -22,6 +22,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.tissueimage.SelectionWindow;
+import org.cytoscape.inseq.internal.util.FindNeighboursTask;
 import org.cytoscape.work.TaskIterator;
 
 public class ControlPanel extends JPanel implements CytoPanelComponent {
@@ -30,6 +31,7 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 
 	InseqActivator ia;
 	public SelectionWindow sw;
+	private double distance;
 
 	public ControlPanel(final InseqActivator ia, InseqSession session) {
 		this.ia = ia;
@@ -49,22 +51,14 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 
 		GridBagConstraints cons6 = new GridBagConstraints(0, 6, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		JButton types = new JButton("Find distances");
+		JButton types = new JButton("Generate co-occurence network");
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				TaskIterator itr = new TaskIterator(session.tn);	
+				FindNeighboursTask neighboursTask = new FindNeighboursTask(session.tree, distance);
+				TaskIterator itr = new TaskIterator(neighboursTask);	
 				ia.getCSAA().getDialogTaskManager().execute(itr);
-			}
-		});
-		
-		GridBagConstraints cons7 = new GridBagConstraints(0, 8, 1, 1, 1, 1, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		JButton gentype = new JButton("Generate Cell Types Net");
-		gentype.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				session.tn.makeNetwork();
+				TypeNetworkTask networkTask = new TypeNetworkTask(session.tree);
 			}
 		});
 		
@@ -74,7 +68,7 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 		distanceCutoff.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				session.tn.distanceCutoff = Math.pow((Double)(distanceCutoff.getValue()), 2);
+				distance = Math.pow((Double)(distanceCutoff.getValue()), 2);
 			}
 		});
 		
@@ -90,7 +84,6 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 
 		panel.add(openSelector, cons);
 		panel.add(types, cons6);
-		panel.add(gentype, cons7);
 		panel.add(distanceCutoff, cons8);
 		panel.add(requiredNum, cons9);
 

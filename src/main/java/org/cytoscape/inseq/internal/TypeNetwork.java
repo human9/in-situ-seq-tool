@@ -1,41 +1,13 @@
 package org.cytoscape.inseq.internal;
 
-import java.awt.Color;
-import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.cytoscape.inseq.internal.types.DualPoint;
-import org.cytoscape.inseq.internal.types.Transcript;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.view.layout.CyLayoutAlgorithm;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.view.vizmap.VisualMappingFunction;
-import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualStyle;
-import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
-import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
-import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskMonitor;
-
-import edu.wlu.cs.levy.CG.KDTree;
-import edu.wlu.cs.levy.CG.KeyDuplicateException;
-import edu.wlu.cs.levy.CG.KeySizeException;
 
 
-public class TypeNetwork extends AbstractTask {
+public class TypeNetwork {
 
 	InseqActivator ia;
 	public Double distanceCutoff = 16d;
@@ -49,21 +21,9 @@ public class TypeNetwork extends AbstractTask {
 	public TypeNetwork(final InseqActivator ia) {
 		this.ia = ia;
 	}
+}
 
-	// gets the first node with the specified name if it exists, else returns null
-	public static CyNode getNodeWithName(CyNetwork net, CyTable table, String name)
-	{
-		for(CyNode node : net.getNodeList())
-		{
-			CyRow row  = table.getRow(node.getSUID());
-			String nodeName = row.get(CyNetwork.NAME, String.class);
-			if (nodeName.equals(name)) return node;
-		}
-		return null;
-	}
-
-
-
+/*
 	public void makeNetwork()
 	{
 		CyNetwork typeNet = ia.appAdapter.getCyNetworkFactory().createNetwork();
@@ -245,4 +205,4 @@ public class TypeNetwork extends AbstractTask {
 
 	}
 }
-
+*/
