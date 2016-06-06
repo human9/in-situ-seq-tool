@@ -1,6 +1,5 @@
-package org.cytoscape.inseq.internal.imageselection;
+package org.cytoscape.inseq.internal.tissueimage;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -9,11 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -23,19 +19,14 @@ import javax.swing.JFrame;
 import org.cytoscape.inseq.internal.DualPoint;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
-import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.view.model.View;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
+/** A window for displaying and selecting points plotted on an image
+ *  @author John Salamon
+ */
 public class SelectionWindow extends JDialog {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
 	private GridBagConstraints consPanel;
@@ -95,25 +86,6 @@ public class SelectionWindow extends JDialog {
 					}
 				}
 
-				/*
-				ArrayList<Integer> gridNums = zp.getSelectedGridNumbers(ia.gridSize);
-				
-
-				for (CyNode node : ia.inseqNetwork.getNodeList()) {
-					View<CyNode> nv = ia.inseqView.getNodeView(node);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_VISIBLE, true);
-				}
-
-				ia.selectedNodes = getNodesWithValue(ia.inseqNetwork, ia.inseqNetwork.getDefaultNodeTable(), "name",
-						gridNums);
-
-				for (CyNode node : ia.selectedNodes) {
-					View<CyNode> nv = ia.inseqView.getNodeView(node);
-					nv.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN);
-				}
-				ia.inseqView.updateView();*/
-
 			}
 		});
 		add(info, consInfo);
@@ -166,24 +138,5 @@ public class SelectionWindow extends JDialog {
 		imagePane = ip;
 		zp.updateViewport(ip);
 		repaint();
-	}
-
-	private static Set<CyNode> getNodesWithValue(final CyNetwork net, final CyTable table, final String colname,
-			final ArrayList<Integer> values) {
-		final Set<CyNode> nodes = new HashSet<CyNode>();
-		for (Integer value : values) {
-			final Collection<CyRow> matchingRows = table.getMatchingRows(colname, value.toString());
-			final String primaryKeyColname = table.getPrimaryKey().getName();
-			for (final CyRow row : matchingRows) {
-				final Long nodeId = row.get(primaryKeyColname, Long.class);
-				if (nodeId == null)
-					continue;
-				final CyNode node = net.getNode(nodeId);
-				if (node == null)
-					continue;
-				nodes.add(node);
-			}
-		}
-		return nodes;
 	}
 }

@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal.imageselection;
+package org.cytoscape.inseq.internal.tissueimage;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

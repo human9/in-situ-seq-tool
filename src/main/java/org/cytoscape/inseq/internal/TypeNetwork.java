@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.cytoscape.inseq.internal.types.DualPoint;
+import org.cytoscape.inseq.internal.types.Transcript;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -32,27 +34,12 @@ import edu.wlu.cs.levy.CG.KDTree;
 import edu.wlu.cs.levy.CG.KeyDuplicateException;
 import edu.wlu.cs.levy.CG.KeySizeException;
 
-class Transcript {
-
-	public Point2D.Double pos;
-	public String name;
-	
-	Transcript(Point2D.Double pos, String name) {
-		this.pos = pos;
-		this.name = name;
-	}
-
-	@Override
-	public String toString() {
-		return "Transcript: " + name + " X: " + pos.x + " Y: " + pos.y;
-	}
-}
 
 public class TypeNetwork extends AbstractTask {
 
 	InseqActivator ia;
-	Double distanceCutoff = 16d;
-	Double requiredNum = 0.1;
+	public Double distanceCutoff = 16d;
+	public Double requiredNum = 0.1;
 	public CyNetwork tn;
 	public CyTable tt;
 	public CyTable et;
@@ -64,7 +51,7 @@ public class TypeNetwork extends AbstractTask {
 	}
 
 	// gets the first node with the specified name if it exists, else returns null
-	private CyNode getNodeWithName(CyNetwork net, CyTable table, String name)
+	public static CyNode getNodeWithName(CyNetwork net, CyTable table, String name)
 	{
 		for(CyNode node : net.getNodeList())
 		{
@@ -75,90 +62,7 @@ public class TypeNetwork extends AbstractTask {
 		return null;
 	}
 
-	List<Point2D.Double> sortByAxis(Set<Point2D.Double> points, int axis) {
-		List<Point2D.Double> list = new ArrayList<Point2D.Double>(points);
-		Collections.sort(list, new Comparator<Point2D.Double>() {
-			@Override
-			public int compare(final Point2D.Double point1, final Point2D.Double point2) {
-				return Double.compare(axis == 0 ? point1.x : point2.y, axis == 0 ? point2.x : point2.y);
-			}
-		});
-		return list;
-	}
-				
-	boolean insertNextMedian(Point2D.Double point, KDTree<Transcript> tree)
-	{
-		try {
-			tree.insert(new double[]{point.x, point.y}, new Transcript(point, ia.selTranscripts.get(point)));			
-			return true;
-		}
-		catch (KeyDuplicateException e) {
-			//System.out.println("Duplicate");
-			return false;
-		}
-		catch (KeySizeException e) {
-			System.out.println("Array is wrong size: Programmer error");
-			return false;
-		}
-	}
 
-	public void run(final TaskMonitor taskMonitor)
-	{
-		taskMonitor.setTitle("Searching for co-occurrences");
-		
-		taskMonitor.setStatusMessage("Constructing KD-Tree");
-
-		List<Point2D.Double> xsorted = sortByAxis(ia.selTranscripts.keySet(), 0);
-		List<Point2D.Double> ysorted = sortByAxis(ia.selTranscripts.keySet(), 1);
-		
-		int xmed = ia.selTranscripts.size()/2;
-		int ymed = xmed;
-
-		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
-	
-		for(int i = 0, x = 0, y = 0; i < ia.selTranscripts.size(); i++)
-		{
-			boolean axis = (i % 2) == 0;
-			if(axis) {
-				do {
-					xmed += x * (((x++ % 2) == 0) ? -1 : 1);
-				} while(!insertNextMedian(xsorted.get(xmed), kdTree));
-			}
-			else {
-				do {
-					ymed += y * (((y++ % 2) == 0) ? -1 : 1);
-				} while(!insertNextMedian(ysorted.get(ymed), kdTree));
-			}
-		}
-
-		taskMonitor.setStatusMessage("Finding Euclidean distances");
-		int z = 0;
-		distances = new HashMap<DualPoint, Double>();
-
-		for(Point2D.Double point : ia.selTranscripts.keySet())
-		{
-			if(cancelled) break;
-			try { 
-				//System.out.println("POINT: " + point);
-				List<Transcript> list = kdTree.nearestEuclidean(new double[]{point.x,point.y}, distanceCutoff);
-				if (z % 1000 == 0) {
-					taskMonitor.setProgress((double)z/ia.selTranscripts.size());
-				}
-				for(Transcript t : list) {
-					distances.put(new DualPoint(point, t.pos), 1d);
-
-				}
-				//System.out.println(list.size());
-			}
-			catch (KeySizeException e) {};
-			z++;
-		}
-
-		ia.kd = kdTree;
-		
-
-		
-	}
 
 	public void makeNetwork()
 	{
