@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.types.Transcript;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
@@ -16,9 +17,13 @@ public class ConstructTreeTask extends AbstractTask {
 
 	List<Transcript> raw;
 	KDTree<Transcript> output;
+	
+	InseqActivator ia;
 
-	public ConstructTreeTask(List<Transcript> rawImport) {
+	public ConstructTreeTask(List<Transcript> rawImport, InseqActivator ia) {
+
 		raw = rawImport;
+		this.ia = ia;
 	}
 
 	public KDTree<Transcript> getTree() {
@@ -43,7 +48,7 @@ public class ConstructTreeTask extends AbstractTask {
 
 		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
 	
-		for(int i = 0, x = 0, y = 0; i < raw.size(); i++)
+		for(int i = 0, x = 0, y = 0; i < raw.size() - 1; i++)
 		{
 			if(cancelled) {
 				break;
@@ -65,7 +70,10 @@ public class ConstructTreeTask extends AbstractTask {
 		}
 
 		output = kdTree;
-
+		if(ia != null)
+		{
+			ia.initSession(output);
+		}
 	}
 
 		

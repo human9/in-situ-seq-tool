@@ -40,13 +40,11 @@ public class InseqActivator extends AbstractCyActivator {
 		registerAllServices(context, menuAction, properties);
 	}
 	
-	public KDTree<Transcript> constructTree(List<Transcript> rawImport) {
+	public void constructTree(List<Transcript> rawImport, InseqActivator ia) {
 
-		ConstructTreeTask builder = new ConstructTreeTask(rawImport);
+		ConstructTreeTask builder = new ConstructTreeTask(rawImport, ia);
 		TaskIterator itr = new TaskIterator(builder);     
 		getCSAA().getDialogTaskManager().execute(itr);
-
-		return builder.getTree();
 	}
 
 	/** Initializes the session.

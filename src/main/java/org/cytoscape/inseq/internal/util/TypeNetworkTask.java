@@ -2,6 +2,7 @@ package org.cytoscape.inseq.internal.util;
 
 import java.awt.Color;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.cytoscape.inseq.internal.InseqActivator;
@@ -60,12 +61,20 @@ public class TypeNetworkTask extends AbstractTask {
 	 */
 	public void run(TaskMonitor taskMonitor) {
 
+		taskMonitor.setTitle("Generating network view");
 		Map<String, Node> nodes = new HashMap<String, Node>();
 
 		// Iterate through all our transcripts
 		try {
-			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+		
+			int z = 0;
+			List<Transcript> list = tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
+			for (Transcript t : list)
 			{
+				if (z % 1000 == 0) {
+					taskMonitor.setProgress((double)z/list.size());
+				}
+
 				// If no neighbours were found for this transcript, go to next.
 				if(t.neighbours == null) continue;
 
@@ -196,7 +205,7 @@ public class TypeNetworkTask extends AbstractTask {
 		ia.getCAA().getCyNetworkViewManager().addNetworkView(view);
 		view.updateView();
 
-		ia.getCAA().getCyNetworkManager().destroyNetwork(dnet);
+		if(dnet != null) ia.getCAA().getCyNetworkManager().destroyNetwork(dnet);
 
 
 		ia.getSession().network = network;

@@ -110,7 +110,7 @@ public class ImportDialog extends JDialog {
 					rawImport = ParseUtil.parseXYFile(in);
 					in.close();
 					dispose();
-					ia.initSession(ia.constructTree(rawImport));
+					ia.constructTree(rawImport, ia);
 				} 
 				catch (FileNotFoundException e) {
 					JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.WARNING_MESSAGE);

@@ -31,6 +31,7 @@ public class FindNeighboursTask extends AbstractTask {
 		int z = 0;
 
 		try {
+			System.out.println(tree.size());
 			for(Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 			{
 				if(cancelled) break;

@@ -34,8 +34,8 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 	InseqActivator ia;
 	public SelectionWindow sw;
 
-	private double distance;
-	private double cutoff;
+	private double distance = 4;
+	private double cutoff = 0;
 
 	public ControlPanel(final InseqActivator ia, InseqSession session) {
 		this.ia = ia;
@@ -59,6 +59,7 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				System.out.println(session.tree.size());
 				Task neighboursTask = new FindNeighboursTask(session.tree, distance);
 				Task networkTask = new TypeNetworkTask(ia, session.tree, cutoff);
 				

@@ -101,9 +101,9 @@ public class SelectionWindow extends JDialog {
 					ia.getSession().edgeSelection = new ArrayList<String>();
 					for(CyEdge edge : edges)
 					{
-						CyRow source = ia.getSession().nodeTable.getRow(edge.getSource());
+						CyRow source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID());
 						ia.getSession().edgeSelection.add(source.get(CyNetwork.NAME, String.class));
-						CyRow target = ia.getSession().nodeTable.getRow(edge.getTarget());
+						CyRow target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID());
 						ia.getSession().edgeSelection.add(target.get(CyNetwork.NAME, String.class));
 					}
 
