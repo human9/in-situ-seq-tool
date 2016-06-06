@@ -61,10 +61,13 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println(session.tree.size());
 				Task neighboursTask = new FindNeighboursTask(session.tree, distance);
+				session.distance = distance;
 				Task networkTask = new TypeNetworkTask(ia, session.tree, cutoff);
 				
-				TaskIterator itr = new TaskIterator(neighboursTask, networkTask);	
+				TaskIterator itr= new TaskIterator(neighboursTask);
 				ia.getCSAA().getDialogTaskManager().execute(itr);
+				// adding the networkTask afterwards makes the progress bar work right
+				itr.append(networkTask);
 			}
 		});
 		

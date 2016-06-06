@@ -94,21 +94,22 @@ public class SelectionWindow extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.getSession().network,"selected",true);
-				if(edges == null)
-					System.out.println("No edges selected - showing no points");
+				if(edges == null || edges.size() < 1) ia.getSession().edgeSelection = null;
 				else
 				{
 					ia.getSession().edgeSelection = new ArrayList<String>();
 					for(CyEdge edge : edges)
 					{
-						CyRow source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID());
-						ia.getSession().edgeSelection.add(source.get(CyNetwork.NAME, String.class));
-						CyRow target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID());
-						ia.getSession().edgeSelection.add(target.get(CyNetwork.NAME, String.class));
+
+						String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+						String target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
+						if(!(ia.getSession().edgeSelection.contains(source)))
+							ia.getSession().edgeSelection.add(source);
+						if(!(ia.getSession().edgeSelection.contains(target)))
+							ia.getSession().edgeSelection.add(target);
 					}
 
 					System.out.println("Viewing points from " + edges.size() + " edges.");
-					// TODO: this
 					
 				}
 				zp.repaint();

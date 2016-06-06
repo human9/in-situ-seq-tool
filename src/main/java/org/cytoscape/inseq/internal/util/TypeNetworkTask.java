@@ -61,19 +61,14 @@ public class TypeNetworkTask extends AbstractTask {
 	 */
 	public void run(TaskMonitor taskMonitor) {
 
-		taskMonitor.setTitle("Generating network view");
+		taskMonitor.showMessage(TaskMonitor.Level.INFO, "Creating network view");
 		Map<String, Node> nodes = new HashMap<String, Node>();
 
 		// Iterate through all our transcripts
 		try {
 		
-			int z = 0;
-			List<Transcript> list = tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
-			for (Transcript t : list)
+			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 			{
-				if (z % 1000 == 0) {
-					taskMonitor.setProgress((double)z/list.size());
-				}
 
 				// If no neighbours were found for this transcript, go to next.
 				if(t.neighbours == null) continue;

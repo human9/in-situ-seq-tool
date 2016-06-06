@@ -74,25 +74,33 @@ class ImagePane extends JPanel {
 
 		if(session.edgeSelection != null)
 		{
+			gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
+			List<Integer> ints = new ArrayList<Integer>();
 			List<Color> colours = new ArrayList<Color>();
 			for(String name : session.edgeSelection) {
-				int i = (int)(session.edgeSelection.indexOf(name)*(360d/session.edgeSelection.size())+((session.edgeSelection.indexOf(name)%2)*90))%360;
-				colours.add(Color.getHSBColor(i/360f, 1, 1));
-				gr.drawString(name, 6, session.edgeSelection.indexOf(name)*14);
+				int i = (int)((session.edgeSelection.indexOf(name)+1)*(360d/session.edgeSelection.size()));
+				ints.add(i);
 			}
-			if(getWidth() > 4000 || getHeight() > 4000)
+			for(Integer i : ints) {
+				colours.add(Color.getHSBColor(((i - ints.get(0))%360)/360f, 1, 1));
+			}
+			if(getWidth() > 3000 || getHeight() > 3000)
 			{
 				System.out.println("Close zoom mode");
-				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 				rescaling = false;
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
-						if(t.neighbours == null) continue;
+						if(t.neighbours.size() < 2) continue;
 						if(Double.compare(t.distance, session.distance) != 0) continue;
 					
+						int index = session.edgeSelection.indexOf(t.name);
+						if(index < 0) continue;
+						gr.setColor(colours.get(index));
+
 						gr.setColor(colours.get(session.edgeSelection.indexOf(t.name)));
-						gr.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
+						gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
+
 					}
 				}
 				catch (KeySizeException e) {
@@ -111,10 +119,12 @@ class ImagePane extends JPanel {
 					try {
 						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 						{
-							if(t.neighbours == null) continue;
+							if(t.neighbours.size() < 2) continue;
 							if(Double.compare(t.distance, session.distance) != 0) continue;
 						
-							imgG2.setColor(colours.get(session.edgeSelection.indexOf(t.name)));
+							int index = session.edgeSelection.indexOf(t.name);
+							if(index < 0) continue;
+							imgG2.setColor(colours.get(index));
 							imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
 						}
 					}
@@ -124,6 +134,11 @@ class ImagePane extends JPanel {
 				}
 				System.out.println("Far zoom mode");
 				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
+			}
+			for(String name : session.edgeSelection)
+			{
+				gr.setColor(colours.get(session.edgeSelection.indexOf(name)));
+				gr.drawString(name, 6, (session.edgeSelection.indexOf(name)+1)*14);
 			}
 			
 		}
