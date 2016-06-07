@@ -9,7 +9,7 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.cytoscape.inseq.internal.types.Transcript;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 /** A collection of utilities not included in the Cytoscape API 
  *  @author various

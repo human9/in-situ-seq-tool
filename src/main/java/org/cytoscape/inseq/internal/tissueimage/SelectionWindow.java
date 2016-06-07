@@ -17,7 +17,6 @@ import javax.swing.JFrame;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTableUtil;
 
 /** A window for displaying and selecting points plotted on an image
@@ -101,12 +100,12 @@ public class SelectionWindow extends JDialog {
 					for(CyEdge edge : edges)
 					{
 
-						String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+						/*String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
 						String target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
 						if(!(ia.getSession().edgeSelection.contains(source)))
 							ia.getSession().edgeSelection.add(source);
 						if(!(ia.getSession().edgeSelection.contains(target)))
-							ia.getSession().edgeSelection.add(target);
+							ia.getSession().edgeSelection.add(target);*/
 					}
 
 					System.out.println("Viewing points from " + edges.size() + " edges.");

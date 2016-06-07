@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal.types;
+package org.cytoscape.inseq.internal.typenetwork;
 
 import java.awt.geom.Point2D;
 import java.util.List;

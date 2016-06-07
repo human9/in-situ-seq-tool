@@ -7,10 +7,10 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.inseq.internal.dataimport.ConstructTreeTask;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
-import org.cytoscape.inseq.internal.panel.ControlPanel;
-import org.cytoscape.inseq.internal.types.Transcript;
-import org.cytoscape.inseq.internal.util.ConstructTreeTask;
+import org.cytoscape.inseq.internal.panel.MainPanel;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.work.TaskIterator;
 import org.osgi.framework.BundleContext;
@@ -48,12 +48,13 @@ public class InseqActivator extends AbstractCyActivator {
 	}
 
 	/** Initializes the session.
-	 *  This is called by the ImportDialog on successful import.
+	 *  This is called by ImportAction on successful import.
 	 */
 	public void initSession(KDTree<Transcript> tree) {
 		session = new InseqSession(tree);
+		session.style = ViewStyler.initStyle(getCAA());
 
-		ControlPanel panel = new ControlPanel(this, session);
+		MainPanel panel = new MainPanel(this, session);
 		registerAllServices(context, panel, properties);
 
 		// Switch to the Inseq control panel.

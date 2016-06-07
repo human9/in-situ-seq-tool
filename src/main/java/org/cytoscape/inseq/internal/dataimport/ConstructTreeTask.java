@@ -1,11 +1,11 @@
-package org.cytoscape.inseq.internal.util;
+package org.cytoscape.inseq.internal.dataimport;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqActivator;
-import org.cytoscape.inseq.internal.types.Transcript;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 

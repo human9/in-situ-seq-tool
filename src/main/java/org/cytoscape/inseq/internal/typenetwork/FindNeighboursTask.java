@@ -1,6 +1,5 @@
-package org.cytoscape.inseq.internal.util;
+package org.cytoscape.inseq.internal.typenetwork;
 
-import org.cytoscape.inseq.internal.types.Transcript;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 

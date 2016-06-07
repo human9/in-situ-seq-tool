@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 
-class ZoomPane extends JScrollPane {
+public class ZoomPane extends JScrollPane {
 	static final long serialVersionUID = 355635l;
 
 	private Point mouseClick;

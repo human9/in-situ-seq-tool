@@ -21,13 +21,17 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
+import org.cytoscape.inseq.internal.ViewStyler;
+import org.cytoscape.inseq.internal.tissueimage.ImagePane;
 import org.cytoscape.inseq.internal.tissueimage.SelectionWindow;
-import org.cytoscape.inseq.internal.util.FindNeighboursTask;
-import org.cytoscape.inseq.internal.util.TypeNetworkTask;
+import org.cytoscape.inseq.internal.tissueimage.ZoomPane;
+import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
+import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
+import org.cytoscape.inseq.internal.typenetwork.TypeNetworkTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 
-public class ControlPanel extends JPanel implements CytoPanelComponent {
+public class MainPanel extends JPanel implements CytoPanelComponent {
 
 	static final long serialVersionUID = 692;
 
@@ -37,21 +41,12 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 	private double distance = 4;
 	private double cutoff = 0;
 
-	public ControlPanel(final InseqActivator ia, InseqSession session) {
+	public MainPanel(final InseqActivator ia, InseqSession session) {
 		this.ia = ia;
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridBagLayout());
 		this.setPreferredSize(new Dimension(400, 400));
 
-		GridBagConstraints cons = new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
-		JButton openSelector = new JButton("Open selection window");
-		openSelector.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				sw = new SelectionWindow(ia);
-			}
-		});
 
 		GridBagConstraints cons6 = new GridBagConstraints(0, 6, 1, 1, 1, 1, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
@@ -59,15 +54,20 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println(session.tree.size());
+				// Create and execute a task to find distances.
 				Task neighboursTask = new FindNeighboursTask(session.tree, distance);
-				session.distance = distance;
-				Task networkTask = new TypeNetworkTask(ia, session.tree, cutoff);
-				
 				TaskIterator itr= new TaskIterator(neighboursTask);
 				ia.getCSAA().getDialogTaskManager().execute(itr);
-				// adding the networkTask afterwards makes the progress bar work right
+
+				// Create a new network and add it to our list of TypeNetworks.
+				TypeNetwork network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
+				session.addNetwork(network);
+
+				// Construct and display the new network.
+				Task networkTask = new TypeNetworkTask(network, session.tree);
 				itr.append(networkTask);
+
+				itr.append(new ViewStyler(network.getNetwork(), session.style, ia.getCAA()));
 			}
 		});
 		
@@ -91,12 +91,31 @@ public class ControlPanel extends JPanel implements CytoPanelComponent {
 			}
 		});
 
-		panel.add(openSelector, cons);
 		panel.add(types, cons6);
 		panel.add(distanceCutoff, cons8);
 		panel.add(cutoffSpinner, cons9);
+		
+		GridBagConstraints cons = new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 1, 1);
+		JButton openSelector = new JButton("Choose image...");
+		openSelector.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				sw = new SelectionWindow(ia);
+			}
+		});
+		panel.add(openSelector, cons);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, null);
+		ZoomPane zp = new ZoomPane(new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/sd.png"), ia));
+		zp.setVisible(true);
+		GridBagConstraints consPanel = new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, 1, new Insets(0, 0, 0, 0), 1, 1);
+		JPanel lowerPanel = new JPanel();
+		lowerPanel.add(zp, consPanel);
+
+		// TODO: Fix this, make it sit nicely in the panel until we pop it out
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, lowerPanel);
+		lowerPanel.setVisible(true);
+		splitPane.setVisible(true);
 		this.add(splitPane, cons);
 		this.repaint();
 	}

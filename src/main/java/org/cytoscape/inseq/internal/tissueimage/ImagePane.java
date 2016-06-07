@@ -21,11 +21,11 @@ import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.inseq.internal.types.Transcript;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
 
-class ImagePane extends JPanel {
+public class ImagePane extends JPanel {
 
 	private static final long serialVersionUID = 178665L;
 	final public BufferedImage image;
@@ -92,7 +92,7 @@ class ImagePane extends JPanel {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
 						if(t.neighbours.size() < 2) continue;
-						if(Double.compare(t.distance, session.distance) != 0) continue;
+						//if(Double.compare(t.distance, session.distance) != 0) continue;
 					
 						int index = session.edgeSelection.indexOf(t.name);
 						if(index < 0) continue;
@@ -120,7 +120,7 @@ class ImagePane extends JPanel {
 						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 						{
 							if(t.neighbours.size() < 2) continue;
-							if(Double.compare(t.distance, session.distance) != 0) continue;
+						//	if(Double.compare(t.distance, session.distance) != 0) continue;
 						
 							int index = session.edgeSelection.indexOf(t.name);
 							if(index < 0) continue;
