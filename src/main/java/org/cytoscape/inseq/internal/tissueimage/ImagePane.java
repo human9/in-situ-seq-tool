@@ -19,7 +19,6 @@ import java.util.Timer;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
-import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
@@ -42,13 +41,11 @@ public class ImagePane extends JPanel {
 	public Rectangle rect;
 	private InseqSession session;
 
-	InseqActivator ia;
 	Timer imageTimer = new Timer();
 	
-	public ImagePane(final BufferedImage image, InseqActivator ia) {
+	public ImagePane(final BufferedImage image, InseqSession s) {
 		this.image = image;
-		this.session = ia.getSession();
-		this.ia = ia;
+		this.session = s;
 		this.paintedImage = image;
 		this.scale = 400d/(double)(image.getHeight());
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));

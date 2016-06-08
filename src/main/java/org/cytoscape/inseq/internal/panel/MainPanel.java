@@ -38,7 +38,6 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 	static final long serialVersionUID = 692;
 
 	InseqActivator ia;
-	public SelectionPanel sw;
 
 	private double distance = 4;
 	private double cutoff = 0;
@@ -95,6 +94,8 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				itr.append(networkTask);
 
 				itr.append(new ViewStyler(network.getNetwork(), session.getStyle(), ia.getCAA()));
+
+				selectionPanel.refreshNetworks();
 			}
 		});
 		
