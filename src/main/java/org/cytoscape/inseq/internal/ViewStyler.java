@@ -1,6 +1,8 @@
 package org.cytoscape.inseq.internal;
 
 import java.awt.Color;
+import java.awt.Paint;
+import java.util.Map;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.model.CyNetwork;
@@ -13,6 +15,7 @@ import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
+import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
@@ -27,19 +30,24 @@ public class ViewStyler extends AbstractTask {
 		this.a = a;
 		this.network = n;
 		this.style = s;
-
-		if(s == null)
-		{
-			s = initStyle(a);
-		}
 	}
 
-	public static VisualStyle initStyle(CyAppAdapter a) {
+	public static VisualStyle initStyle(Map<String, Color> geneColours, CyAppAdapter a) {
 
 		VisualStyle vs = a.getVisualStyleFactory().createVisualStyle("Inseq Style");
 		
 		VisualMappingFunctionFactory cvmf = a.getVisualMappingFunctionContinuousFactory();
 		VisualMappingFunctionFactory pvmf = a.getVisualMappingFunctionPassthroughFactory();
+		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
+
+		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.LIGHT_GRAY);
+		
+		VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_FILL_COLOR);
+		for(String name : geneColours.keySet())
+		{
+			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(name, geneColours.get(name));
+		}
+		vs.addVisualMappingFunction(nodeColour);
 		
 		VisualMappingFunction<String,String> ntool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.NODE_TOOLTIP);
 		vs.addVisualMappingFunction(ntool);
@@ -56,7 +64,6 @@ public class ViewStyler extends AbstractTask {
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(0d,0d,3d));
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(6d,8d,10d));
 		vs.addVisualMappingFunction(edgeMap);
-		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.LIGHT_GRAY);
 		
 		a.getVisualMappingManager().addVisualStyle(vs);
 

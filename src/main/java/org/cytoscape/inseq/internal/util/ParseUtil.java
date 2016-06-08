@@ -4,20 +4,27 @@ import java.awt.geom.Point2D;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
-/** A collection of utilities not included in the Cytoscape API 
- *  @author various
+import edu.wlu.cs.levy.CG.KDTree;
+import edu.wlu.cs.levy.CG.KeySizeException;
+
+/**
+ *  Utility methods for parsing input.
+ *  @author John Salamon
  */
 public class ParseUtil {
 
 
-	/** Parses XY coordinates and values from a CSV.
+	/** 
+	 *  Parses XY coordinates and values from a csv file.
 	 *  Returns a map using the coordinates as keys. 
 	 */
 	public static List<Transcript> parseXYFile(FileReader csv)
@@ -45,6 +52,33 @@ public class ParseUtil {
 
 		}
 		return transcripts;
+	}
+
+	/**
+	 *  Returns a map of all genes in the tree and how often they occur.
+	 */
+	public static Map<String, Integer> getGenes(KDTree<Transcript> tree) {
+
+		Map<String, Integer> genes = new HashMap<String, Integer>();
+
+		// Iterate through all our transcripts
+		try {
+		
+			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+			{
+				if(!genes.containsKey(t.name)) {
+					genes.put(t.name, 0);
+				}
+				else {
+					genes.put(t.name, genes.get(t.name) + 1);
+				}
+			}
+		}
+		catch (KeySizeException e) {
+			e.printStackTrace();
+		}
+
+		return genes;
 	}
 
 }

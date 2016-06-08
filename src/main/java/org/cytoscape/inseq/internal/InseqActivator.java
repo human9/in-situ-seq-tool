@@ -51,8 +51,7 @@ public class InseqActivator extends AbstractCyActivator {
 	 *  This is called by ImportAction on successful import.
 	 */
 	public void initSession(KDTree<Transcript> tree) {
-		session = new InseqSession(tree);
-		session.style = ViewStyler.initStyle(getCAA());
+		session = new InseqSession(tree, getCAA());
 
 		MainPanel panel = new MainPanel(this, session);
 		registerAllServices(context, panel, properties);

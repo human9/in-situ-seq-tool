@@ -1,28 +1,32 @@
 package org.cytoscape.inseq.internal.tissueimage;
 
-import java.awt.Dimension;
+import java.awt.BorderLayout;
+import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTableUtil;
 
-/** A window for displaying and selecting points plotted on an image
+/** 
+ *  A panel containing the zoomable imageplot as well as controls.
+ *  It will start embedded in the MainPanel, but can become a seperate window.
  *  @author John Salamon
  */
-public class SelectionWindow extends JDialog {
+public class SelectionPanel extends JPanel {
 
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
@@ -31,41 +35,58 @@ public class SelectionWindow extends JDialog {
 	InseqActivator ia;
 	public ImagePane imagePane;
 
-	public SelectionWindow(final InseqActivator ia) {
-		super(ia.getCSAA().getCySwingApplication().getJFrame(), "Select Region", false);
+	public void setParent(JFrame parent) {
+		this.parent = parent;
+	}
+
+	public SelectionPanel(final InseqActivator ia) {
 		this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
-		this.setPreferredSize(new Dimension(400, 400));
+		this.setLayout(new BorderLayout());
 		this.ia = ia;
 
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
 
-		consPanel = new GridBagConstraints(0, 0, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 1,
-				1);
+		GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 3, 1, 0.5, 0, GridBagConstraints.SOUTH, 0,
+				new Insets(4, 4, 4, 4), 1, 1);
+		JComboBox<String> netBox = new JComboBox<String>();
+		add(netBox, netBoxCons);
+
+
+
+		consPanel = new GridBagConstraints(0, 1, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia);
 		imagePane = ip;
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
 		add(zp, consPanel);
 
-		GridBagConstraints consBrowse = new GridBagConstraints(0, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		GridBagConstraints consBrowse = new GridBagConstraints(0, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton browse = new JButton("Change Image");
 		browse.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fc = new JFileChooser();
+				FileDialog dialog = new FileDialog(parent, "Choose image", FileDialog.LOAD);
+				// This works on Windowsy things 
+				dialog.setFile("*.png;*.jpg;*.jpeg");
+				// This works on Unixy things
+				dialog.setFilenameFilter(new FilenameFilter() {
+					@Override
+					public boolean accept(File dir, String name) {
+						return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg");
+					}
+				});
+				dialog.setVisible(true);
+				String filename = dialog.getFile();
+				if (filename == null) return;
 
-				int returnVal = fc.showOpenDialog(parent);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					changeImage(fc.getSelectedFile().getAbsolutePath());
-				}
+				changeImage(dialog.getDirectory() + filename);
 			}
 		});
 		add(browse, consBrowse);
 
-		GridBagConstraints consInfo = new GridBagConstraints(2, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		GridBagConstraints consInfo = new GridBagConstraints(2, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton info = new JButton("Get Selection");
 /*		info.addActionListener(new ActionListener() {
@@ -86,7 +107,7 @@ public class SelectionWindow extends JDialog {
 */
 		add(info, consInfo);
 
-		GridBagConstraints consShow = new GridBagConstraints(1, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		GridBagConstraints consShow = new GridBagConstraints(1, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton showSelection = new JButton("Show points");
 		showSelection.addActionListener(new ActionListener() {
@@ -117,8 +138,6 @@ public class SelectionWindow extends JDialog {
 		});
 		add(showSelection, consShow);
 		
-		pack();
-		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
 
