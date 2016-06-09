@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
@@ -10,11 +11,15 @@ public class FindNeighboursTask extends AbstractTask {
 
 	KDTree<Transcript> tree;
 	Double distance;
+	boolean subset;
+	InseqSession session;
 	
-	public FindNeighboursTask(KDTree<Transcript> t, Double d) {
+	public FindNeighboursTask(InseqSession session, Double d, boolean s) {
 
-		tree = t;
+		tree = session.tree;
+		this.session = session;
 		distance = d;
+		subset = s;
 	}
 
 
@@ -25,12 +30,11 @@ public class FindNeighboursTask extends AbstractTask {
 	{
 		
 		taskMonitor.setTitle("Finding co-occurring neighbours");
-		taskMonitor.setStatusMessage("Searching within a Euclidean distance of " + Math.sqrt(distance));
+		taskMonitor.setStatusMessage("Searching within a Euclidean distance of " + distance);
 
 		int z = 0;
 
 		try {
-			System.out.println(tree.size());
 			for(Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 			{
 				if(cancelled) break;
@@ -42,7 +46,7 @@ public class FindNeighboursTask extends AbstractTask {
 				// don't compare again if we've already searched at this distance
 				if(Double.compare(t.distance, distance) == 0) continue;
 
-				t.neighbours = tree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, distance);
+				t.neighbours = tree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, Math.pow(distance,2));
 				t.distance = distance;
 
 				z++;

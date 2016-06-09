@@ -11,15 +11,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqActivator;
-import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTableUtil;
 
@@ -36,17 +33,9 @@ public class SelectionPanel extends JPanel {
 	private JFrame parent;
 	InseqActivator ia;
 	public ImagePane imagePane;
-	private Vector<TypeNetwork> networkVector;
 
 	public void setParent(JFrame parent) {
 		this.parent = parent;
-	}
-
-	public void refreshNetworks() {
-		for(TypeNetwork t : ia.getSession().getNetworkList())
-		{
-			networkVector.add(t);
-		}
 	}
 
 	public SelectionPanel(final InseqActivator ia) {
@@ -56,14 +45,6 @@ public class SelectionPanel extends JPanel {
 
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
-
-		GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 3, 1, 0.5, 0, GridBagConstraints.SOUTH, 0,
-				new Insets(4, 4, 4, 4), 1, 1);
-		networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
-		JComboBox<TypeNetwork> netBox = new JComboBox<TypeNetwork>(networkVector);
-		add(netBox, netBoxCons);
-
-
 
 		consPanel = new GridBagConstraints(0, 1, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia.getSession());
@@ -129,17 +110,17 @@ public class SelectionPanel extends JPanel {
 				else
 				{
 					ia.getSession().edgeSelection = new ArrayList<String>();
-					for(CyEdge edge : edges)
+				/*	for(CyEdge edge : edges)
 					{
 
-						/*String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+						String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
 						String target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
 						if(!(ia.getSession().edgeSelection.contains(source)))
 							ia.getSession().edgeSelection.add(source);
 						if(!(ia.getSession().edgeSelection.contains(target)))
-							ia.getSession().edgeSelection.add(target);*/
+							ia.getSession().edgeSelection.add(target);
 					}
-
+*/
 					System.out.println("Viewing points from " + edges.size() + " edges.");
 					
 				}

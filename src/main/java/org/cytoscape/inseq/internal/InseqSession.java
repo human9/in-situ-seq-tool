@@ -60,8 +60,15 @@ public class InseqSession {
 		networks = new ArrayList<TypeNetwork>();
 	}
 
-	public void addNetwork(TypeNetwork net) {
-		networks.add(net);
+	public void addNetwork(TypeNetwork staleNetwork, TypeNetwork freshNetwork) {
+		if(staleNetwork == null)
+		{
+			networks.add(freshNetwork);
+		}
+		else {
+			networks.set(networks.indexOf(staleNetwork), freshNetwork);
+			CAA.getCyNetworkManager().destroyNetwork(staleNetwork.getNetwork());
+		}
 	}
 
 	public TypeNetwork getNetwork(int index) {

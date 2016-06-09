@@ -127,7 +127,15 @@ public class TypeNetworkTask extends AbstractTask {
 					CyEdge edge = network.addEdge(thisNode, otherNode, false);
 
 					CyRow row = edgeTable.getRow(edge.getSUID());
-					row.set(CyNetwork.NAME, "Co-occurence");
+					String edgeName;
+
+					if(n.name.compareTo(s) > 0)
+						edgeName = n.name + "-" + s;
+					else
+						edgeName = s + "-" + n.name;
+
+					row.set(CyNetwork.NAME, edgeName);
+					row.set(CyEdge.INTERACTION, "Co-occurence");
 					row.set("num", nonNormalScore); 
 					row.set("normal", normal); 
 				}

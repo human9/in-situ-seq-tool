@@ -83,7 +83,6 @@ public class ImagePane extends JPanel {
 			}
 			if(getWidth() > 3000 || getHeight() > 3000)
 			{
-				System.out.println("Close zoom mode");
 				rescaling = false;
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
@@ -107,7 +106,6 @@ public class ImagePane extends JPanel {
 			else
 			{
 				if(rescaling) {
-					System.out.println("Rescaling far zoom");
 					paintedImage = new BufferedImage(requested.width, requested.height, image.getType());
 					Graphics imgG = paintedImage.getGraphics();
 					Graphics2D imgG2 = (Graphics2D) imgG;
@@ -129,7 +127,6 @@ public class ImagePane extends JPanel {
 						e.printStackTrace();
 					}
 				}
-				System.out.println("Far zoom mode");
 				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
 			}
 			for(String name : session.edgeSelection)
@@ -141,7 +138,6 @@ public class ImagePane extends JPanel {
 		}
 		else
 		{
-			System.out.println("Null points mode");
 			gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 		}
 

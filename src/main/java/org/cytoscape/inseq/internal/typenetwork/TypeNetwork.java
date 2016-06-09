@@ -36,4 +36,16 @@ public class TypeNetwork {
 	public double getCutoff() {
 		return cutoff;
 	}
+	
+	/**
+	 *  This is what is displayed in the SelectionPanel's combobox.
+	 *  It returns the name of the network, which is user modifiable.
+	 */
+	@Override
+	public String toString() {
+		if(network.getDefaultNetworkTable() != null)
+			return network.getRow(network).get(CyNetwork.NAME, String.class);
+		else
+			return "Empty selection";
+	}
 }
