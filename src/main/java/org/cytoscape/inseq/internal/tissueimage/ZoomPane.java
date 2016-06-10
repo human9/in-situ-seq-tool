@@ -10,6 +10,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
@@ -25,6 +27,10 @@ public class ZoomPane extends JScrollPane {
 	private Dimension imgDims;
 	private JViewport vp;
 
+	private Timer imageTimer = new Timer();
+	boolean taskdone = true;
+	TimerTask task;
+	
 	public ZoomPane(final ImagePane ip) {
 		this.imagePane = ip;
 		ip.zp = this;
@@ -47,6 +53,16 @@ public class ZoomPane extends JScrollPane {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				zoomImage(e.getPoint(), e.getWheelRotation());
+				if(!taskdone) task.cancel();
+				taskdone = false;
+				task = new TimerTask() {
+					public void run() {
+						System.out.println("RUNNING TIMER TASK!");
+						taskdone = true;
+					}
+				};
+
+				imageTimer.schedule(task, 300);
 			}
 		});
 		addMouseListener(new MouseAdapter() {

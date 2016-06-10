@@ -12,7 +12,6 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Timer;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -40,8 +39,6 @@ public class ImagePane extends JPanel {
 	public Rectangle rect;
 	private InseqSession session;
 
-	Timer imageTimer = new Timer();
-	
 	public ImagePane(final BufferedImage image, InseqSession s) {
 		this.image = image;
 		this.session = s;
