@@ -43,12 +43,13 @@ public class ConstructTreeTask extends AbstractTask {
 		List<Transcript> xsorted = sortByAxis(raw, 0);
 		List<Transcript> ysorted = sortByAxis(raw, 1);
 		
-		int xmed = raw.size()/2;
+		int xmed = raw.size()/2 - 1;
 		int ymed = xmed;
 
 		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
 	
-		for(int i = 0, x = 0, y = 0; i < raw.size() - 1; i++)
+		System.out.println(raw.size());
+		for(int i = 0, x = 0, y = 0; ; i++)
 		{
 			if(cancelled) {
 				break;
@@ -59,14 +60,19 @@ public class ConstructTreeTask extends AbstractTask {
 			boolean axis = (i % 2) == 0;
 			if(axis) {
 				do {
+					if(x == raw.size()) break;
 					xmed += x * (((x++ % 2) == 0) ? -1 : 1);
+					System.out.println("X: " + xmed);
 				} while(!insertTranscript(xsorted.get(xmed), kdTree));
 			}
 			else {
 				do {
+					if(y == raw.size()) break;
 					ymed += y * (((y++ % 2) == 0) ? -1 : 1);
+					System.out.println("Y: " + ymed);
 				} while(!insertTranscript(ysorted.get(ymed), kdTree));
 			}
+			if (x == raw.size() && y == raw.size()) break;
 		}
 
 		output = kdTree;

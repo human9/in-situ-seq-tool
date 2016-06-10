@@ -52,7 +52,7 @@ public class FindNeighboursTask extends AbstractTask {
 			for(Transcript t : searchArea) 
 			{
 				if(cancelled) break;
-				
+				System.out.println(t);
 				if (z % 1000 == 0) {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
@@ -66,7 +66,7 @@ public class FindNeighboursTask extends AbstractTask {
 				}
 
 				t.setNeighboursForNetwork(network, tree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, Math.pow(distance,2)));
-
+				System.out.println(t.getNeighboursForNetwork(network));
 				z++;
 			}
 		}

@@ -78,13 +78,16 @@ public class ImagePane extends JPanel {
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
-						if(t.getNeighboursForNetwork(sel).size() < 2) continue;
-					
-						int index = session.edgeSelection.indexOf(t.name);
-						if(index < 0) continue;
+						// something not right here
+						System.out.println("generic: " + t.pos);
+						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
 
 						gr.setColor(session.getGeneColour(t.name));
 
+						System.out.println("MASTER: " + t.pos);
+						for(Transcript n : t.getNeighboursForNetwork(sel)){
+							System.out.println(n.pos);
+						}
 						gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
 
 					}
@@ -104,10 +107,7 @@ public class ImagePane extends JPanel {
 					try {
 						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 						{
-							if(t.getNeighboursForNetwork(sel).size() < 2) continue;
-						
-							int index = session.edgeSelection.indexOf(t.name);
-							if(index < 0) continue;
+							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
 
 							imgG2.setColor(session.getGeneColour(t.name));
 							imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
