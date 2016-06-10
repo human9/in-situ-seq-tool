@@ -48,7 +48,6 @@ public class ConstructTreeTask extends AbstractTask {
 
 		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
 	
-		System.out.println(raw.size());
 		for(int i = 0, x = 0, y = 0; ; i++)
 		{
 			if(cancelled) {
@@ -62,14 +61,12 @@ public class ConstructTreeTask extends AbstractTask {
 				do {
 					if(x == raw.size()) break;
 					xmed += x * (((x++ % 2) == 0) ? -1 : 1);
-					System.out.println("X: " + xmed);
 				} while(!insertTranscript(xsorted.get(xmed), kdTree));
 			}
 			else {
 				do {
 					if(y == raw.size()) break;
 					ymed += y * (((y++ % 2) == 0) ? -1 : 1);
-					System.out.println("Y: " + ymed);
 				} while(!insertTranscript(ysorted.get(ymed), kdTree));
 			}
 			if (x == raw.size() && y == raw.size()) break;

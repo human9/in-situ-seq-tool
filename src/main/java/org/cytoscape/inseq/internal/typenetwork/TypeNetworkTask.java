@@ -35,7 +35,7 @@ public class TypeNetworkTask extends AbstractTask {
 	 */
 	private class Node {
 		String name;
-		Integer num = 0;
+		int num = 0;
 		Map<String, Integer> coNodes;
 
 		Node(String name) {

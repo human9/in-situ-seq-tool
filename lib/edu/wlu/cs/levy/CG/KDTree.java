@@ -359,7 +359,7 @@ public class KDTree<T> implements Serializable{
 	
 	// initial call is with infinite hyper-rectangle and max distance
 	HRect hr = HRect.infiniteHRect(key.length);
-	double max_dist_sqd = Double.MAX_VALUE;
+	double max_dist_sqd = 64d;
 	HPoint keyp = new HPoint(key);
 	
         if (m_count > 0) {
@@ -372,25 +372,54 @@ public class KDTree<T> implements Serializable{
 	return nnl;
 	
     }
+
+	/**
+	 *  Alternate distance method for eucdist.
+	 */
+	private NearestNeighborList<KDNode<T>> getnbrs(double [] key, int n, 
+    Checker<T> checker, double dist) throws KeySizeException {
+	
+	if (key.length != m_K) {
+	    throw new KeySizeException();
+	}
+	
+	NearestNeighborList<KDNode<T>> nnl = new NearestNeighborList<KDNode<T>>(n, key);
+	
+	// initial call is with infinite hyper-rectangle and max distance
+	HRect hr = HRect.infiniteHRect(key.length);
+	double max_dist_sqd = dist;
+	HPoint keyp = new HPoint(key);
+	
+        if (m_count > 0) {
+            long timeout = (this.m_timeout > 0) ? 
+	    (System.currentTimeMillis() + this.m_timeout) : 
+	    0;
+            KDNode.ennbr(m_root, keyp, hr, max_dist_sqd, 0, m_K, nnl, checker, timeout);
+        }
+	
+	return nnl;
+	
+    }
     
+	
     private  List<T> nearestDistance(double [] key, double dist, 
     DistanceMetric metric) throws KeySizeException {
 	
-	NearestNeighborList<KDNode<T>> nnl = getnbrs(key, 20, null);	    
+	NearestNeighborList<KDNode<T>> nnl = getnbrs(key, 11, null, dist);	    
 	int n = nnl.getSize();
 	Stack<T> nbrs = new Stack<T>();
 	
 	int i;
 	for (i=0; i<n; ++i) {
 	    KDNode<T> kd = nnl.removeHighest();
-	    HPoint p = kd.k;
+	    //HPoint p = kd.k;
 		//System.out.println(kd.k.coord[0] + "," + kd.k.coord[1]);
 		//System.out.println(metric.distance(kd.k.coord, key));
 
-	    if (metric.distance(kd.k.coord, key) < dist) {
-			nbrs.push(kd.v);
-		}
-		else break;
+	    //if (metric.distance(kd.k.coord, key) < dist) {
+		nbrs.push(kd.v);
+		//}
+		//else break;
 	}
 	
 	return nbrs;

@@ -47,11 +47,18 @@ class NearestNeighborList<T> {
 
     java.util.PriorityQueue<NeighborEntry<T>> m_Queue;
     int m_Capacity = 0;
+	double[] m_Key;
 
     // constructor
     public NearestNeighborList(int capacity) {
         m_Capacity = capacity;
-        m_Queue = new java.util.PriorityQueue<NeighborEntry<T>>(m_Capacity, Collections.reverseOrder());
+        m_Queue = new java.util.PriorityQueue<NeighborEntry<T>>(m_Capacity);
+    }
+    
+	public NearestNeighborList(int capacity, double[] key) {
+        m_Capacity = capacity;
+		m_Key = key;
+        m_Queue = new java.util.PriorityQueue<NeighborEntry<T>>(m_Capacity);
     }
 
     public double getMaxPriority() {
@@ -72,6 +79,12 @@ class NearestNeighborList<T> {
             m_Queue.add(new NeighborEntry<T>(object, priority));
         }
         return true;
+    }
+
+    // Alternate youknowwhat
+	public void einsert(T object, double[] coord, double priority, double dist) {
+		if(EuclideanDistance.sqrdist(coord, m_Key) < dist)
+    		m_Queue.add(new NeighborEntry<T>((T)object, priority));
     }
 
     public boolean isCapacityReached() {

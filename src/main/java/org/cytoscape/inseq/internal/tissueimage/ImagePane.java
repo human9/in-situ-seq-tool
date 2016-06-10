@@ -79,15 +79,10 @@ public class ImagePane extends JPanel {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
 						// something not right here
-						System.out.println("generic: " + t.pos);
 						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
 
 						gr.setColor(session.getGeneColour(t.name));
 
-						System.out.println("MASTER: " + t.pos);
-						for(Transcript n : t.getNeighboursForNetwork(sel)){
-							System.out.println(n.pos);
-						}
 						gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
 
 					}
