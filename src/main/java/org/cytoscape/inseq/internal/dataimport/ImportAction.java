@@ -1,15 +1,16 @@
 package org.cytoscape.inseq.internal.dataimport;
 
-import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.inseq.internal.InseqActivator;
@@ -34,21 +35,16 @@ public class ImportAction extends AbstractCyAction {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		FileDialog dialog = new FileDialog(ia.getCSAA().getCySwingApplication().getJFrame(), "Choose csv file", FileDialog.LOAD);
-		// This works on Windowsy things 
-		dialog.setFile("*.csv");
-		// This works on Unixy things
-		dialog.setFilenameFilter(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".csv");
-			}
-		});
-		dialog.setVisible(true);
-		String filename = dialog.getFile();
-		if (filename == null) return;
 
-		File raw = new File(dialog.getDirectory() + filename);
+		JFileChooser fc = new JFileChooser();
+		FileFilter filter = new FileNameExtensionFilter("csv files", "csv");
+		fc.addChoosableFileFilter(filter);
+		fc.setFileFilter(filter);
+		
+		int returnVal = fc.showOpenDialog(ia.getCSAA().getCySwingApplication().getJFrame());
+		if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
+
+		File raw = new File(fc.getSelectedFile().getAbsolutePath());
 
 		FileReader in;
 		try {

@@ -1,5 +1,8 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.awt.Rectangle;
+import java.util.List;
+
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
@@ -13,12 +16,14 @@ public class FindNeighboursTask extends AbstractTask {
 	Double distance;
 	boolean subset;
 	InseqSession session;
+	TypeNetwork network;
 	
-	public FindNeighboursTask(InseqSession session, Double d, boolean s) {
+	public FindNeighboursTask(InseqSession session, TypeNetwork net, double d, boolean s) {
 
 		tree = session.tree;
 		this.session = session;
-		distance = d;
+		distance = d; 
+		network = net;
 		subset = s;
 	}
 
@@ -30,12 +35,21 @@ public class FindNeighboursTask extends AbstractTask {
 	{
 		
 		taskMonitor.setTitle("Finding co-occurring neighbours");
-		taskMonitor.setStatusMessage("Searching within a Euclidean distance of " + distance);
+		taskMonitor.setStatusMessage(String.format("Searching within a Euclidean distance of %.2f", distance));
 
 		int z = 0;
 
+		List<Transcript> searchArea;
 		try {
-			for(Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+			if(subset) {
+				Rectangle rect = session.rectangleSelection;
+				searchArea = tree.range(new double[]{rect.x, rect.y}, new double[]{rect.x+rect.width, rect.y+rect.height});
+			}
+			else {
+				searchArea = tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
+			}
+			
+			for(Transcript t : searchArea) 
 			{
 				if(cancelled) break;
 				
@@ -44,16 +58,21 @@ public class FindNeighboursTask extends AbstractTask {
 				}
 
 				// don't compare again if we've already searched at this distance
-				if(Double.compare(t.distance, distance) == 0) continue;
+				if(t.getNeighboursForNetwork(network) != null)
+				{
+					if(Double.compare(network.distance, distance) == 0) {
+						continue;
+					}
+				}
 
-				t.neighbours = tree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, Math.pow(distance,2));
-				t.distance = distance;
+				t.setNeighboursForNetwork(network, tree.nearestEuclidean(new double[]{t.pos.x,t.pos.y}, Math.pow(distance,2)));
 
 				z++;
 			}
 		}
 		catch (KeySizeException e) {
 			e.printStackTrace();
+			return;
 		};
 
 	}

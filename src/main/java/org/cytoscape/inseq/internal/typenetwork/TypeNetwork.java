@@ -8,8 +8,8 @@ import org.cytoscape.model.CyTable;
  */
 public class TypeNetwork {
 
-	CyNetwork network;
-	CyTable nodeTable;
+	private CyNetwork network;
+	private CyTable nodeTable;
 	double distance;
 	double cutoff;
 
@@ -24,6 +24,12 @@ public class TypeNetwork {
 	public CyNetwork getNetwork() {
 		return network;
 	}
+
+	public void setNetwork(CyNetwork n) {
+		network = n;
+		nodeTable = n.getDefaultNodeTable();
+	}
+	
 	
 	public CyTable getNodeTable() {
 		return nodeTable;
@@ -31,6 +37,10 @@ public class TypeNetwork {
 
 	public double getDistance() {
 		return distance;
+	}
+	
+	public void setDistance(double distance) {
+		this.distance = distance;
 	}
 
 	public double getCutoff() {

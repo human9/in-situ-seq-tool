@@ -3,6 +3,8 @@ package org.cytoscape.inseq.internal.typenetwork;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -20,10 +22,12 @@ public class TypeNetworkTask extends AbstractTask {
 
 	private TypeNetwork net;
 	private KDTree<Transcript> tree;
+	private CyAppAdapter a;
 
-	public TypeNetworkTask(TypeNetwork n, KDTree<Transcript> t) {
+	public TypeNetworkTask(TypeNetwork n, InseqSession s, CyAppAdapter a) {
 		this.net = n;
-		this.tree = t;
+		this.tree = s.tree;
+		this.a = a;
 	}
 
 	/** A temporary node class for constructing the network. 
@@ -56,7 +60,8 @@ public class TypeNetworkTask extends AbstractTask {
 			{
 
 				// If no neighbours were found for this transcript, go to next.
-				if(t.neighbours == null) continue;
+				if(t.getNeighboursForNetwork(net) == null) continue;
+				if(t.getNeighboursForNetwork(net).size() < 1) continue;
 
 				// If we haven't made a node for this transcript name, make one
 				if(!nodes.containsKey(t.name)) {
@@ -67,7 +72,7 @@ public class TypeNetworkTask extends AbstractTask {
 				node.num++;
 
 				// Iterate through neighbours of this transcript
-				for(Transcript n : t.neighbours) {
+				for(Transcript n : t.getNeighboursForNetwork(net)) {
 
 					// Register this transcript as a neighbour of this node if we haven't already
 					if(!node.coNodes.containsKey(n.name)) {
@@ -106,6 +111,7 @@ public class TypeNetworkTask extends AbstractTask {
 			row.set(CyNetwork.NAME, n.name);
 			row.set("num", n.num);
 		}
+		a.getCyEventHelper().flushPayloadEvents();
 
 		// Add edges into actual network
 		for (Node n : nodes.values()) 

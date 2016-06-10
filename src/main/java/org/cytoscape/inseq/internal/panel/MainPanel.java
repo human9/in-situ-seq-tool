@@ -8,6 +8,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Vector;
@@ -57,7 +59,10 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 	private Vector<TypeNetwork> networkVector;
 	private JComboBox<TypeNetwork> netBox; 
 
+	private TaskIterator itr; 
+
 	class SeparateFrame extends JFrame {
+		static final long serialVersionUID = 4324324l;
 		SeparateFrame(String title, Dimension size) {
 			super(title);
 			this.setMinimumSize(new Dimension(100,100));
@@ -150,29 +155,46 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		JButton types = new JButton("Generate co-occurence network");
 		panel.add(types, consTypes);
+		itr = new TaskIterator();
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
+				if(itr.hasNext()) return;
+				
+				// Create a new TypeNetwork
+				TypeNetwork network;
+				if((TypeNetwork)(netBox.getSelectedItem()) == null)
+					network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
+				else
+					network = (TypeNetwork)(netBox.getSelectedItem());
+				
 				// Create and execute a task to find distances.
-				Task neighboursTask = new FindNeighboursTask(session, distance, useSubset);
-				TaskIterator itr = new TaskIterator(neighboursTask);
+				Task neighboursTask = new FindNeighboursTask(session, network, distance, useSubset);
+				itr = new TaskIterator(neighboursTask);
 				ia.getCSAA().getDialogTaskManager().execute(itr);
 
-				// Create a new network and add it to our list of TypeNetworks.
-				TypeNetwork network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
-				session.addNetwork((TypeNetwork)netBox.getSelectedItem(), network);
+				
+				// Register the network
+				itr.append(new AbstractTask() {
+					public void run (TaskMonitor monitor) {
+						session.addNetwork(network, distance);
+					}
+				});
 
 				// Construct and display the new network.
-				Task networkTask = new TypeNetworkTask(network, session.tree);
+				Task networkTask = new TypeNetworkTask(network, session, ia.getCAA());
 				itr.append(networkTask);
 
-				itr.append(new ViewStyler(network.getNetwork(), session.getStyle(), ia.getCAA()));
+				
+				itr.append(new ViewStyler(network, session.getStyle(), ia.getCAA()));
 
 				itr.append(new AbstractTask() {
 					public void run(TaskMonitor monitor) {
 						refreshNetworks(network);
 					}
 				});
+
 			}
 		});
 
@@ -190,6 +212,13 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
 		netBox = new JComboBox<TypeNetwork>(networkVector);
+
+		netBox.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				session.setSelectedNetwork((TypeNetwork)(netBox.getSelectedItem()));
+			}
+		});
 		small.add(netBox, netBoxCons);
 
 		GridBagConstraints newNetCons = new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,

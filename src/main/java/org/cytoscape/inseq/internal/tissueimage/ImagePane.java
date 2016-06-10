@@ -12,8 +12,6 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 
 import javax.imageio.ImageIO;
@@ -21,6 +19,7 @@ import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
+import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
 
@@ -64,37 +63,28 @@ public class ImagePane extends JPanel {
 		gr.setColor(Color.BLACK);
 		gr.fillRect(0, 0, getWidth(), getHeight());
 
-		
 		int size = 8;
 		int scaledOffset = (int)(size/2);
 		Rectangle view = zp.getView();
 
 		if(session.edgeSelection != null)
 		{
+			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
 			gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
-			List<Integer> ints = new ArrayList<Integer>();
-			List<Color> colours = new ArrayList<Color>();
-			for(String name : session.edgeSelection) {
-				int i = (int)((session.edgeSelection.indexOf(name)+1)*(360d/session.edgeSelection.size()));
-				ints.add(i);
-			}
-			for(Integer i : ints) {
-				colours.add(Color.getHSBColor(((i - ints.get(0))%360)/360f, 1, 1));
-			}
+			
 			if(getWidth() > 3000 || getHeight() > 3000)
 			{
 				rescaling = false;
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
-						if(t.neighbours.size() < 2) continue;
-						//if(Double.compare(t.distance, session.distance) != 0) continue;
+						if(t.getNeighboursForNetwork(sel).size() < 2) continue;
 					
 						int index = session.edgeSelection.indexOf(t.name);
 						if(index < 0) continue;
-						gr.setColor(colours.get(index));
 
-						gr.setColor(colours.get(session.edgeSelection.indexOf(t.name)));
+						gr.setColor(session.getGeneColour(t.name));
+
 						gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
 
 					}
@@ -114,12 +104,12 @@ public class ImagePane extends JPanel {
 					try {
 						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 						{
-							if(t.neighbours.size() < 2) continue;
-						//	if(Double.compare(t.distance, session.distance) != 0) continue;
+							if(t.getNeighboursForNetwork(sel).size() < 2) continue;
 						
 							int index = session.edgeSelection.indexOf(t.name);
 							if(index < 0) continue;
-							imgG2.setColor(colours.get(index));
+
+							imgG2.setColor(session.getGeneColour(t.name));
 							imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
 						}
 					}
@@ -131,7 +121,7 @@ public class ImagePane extends JPanel {
 			}
 			for(String name : session.edgeSelection)
 			{
-				gr.setColor(colours.get(session.edgeSelection.indexOf(name)));
+				gr.setColor(session.getGeneColour(name));
 				gr.drawString(name, 6, (session.edgeSelection.indexOf(name)+1)*14);
 			}
 			

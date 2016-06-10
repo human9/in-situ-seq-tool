@@ -11,7 +11,6 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 import edu.wlu.cs.levy.CG.KDTree;
@@ -23,13 +22,13 @@ import edu.wlu.cs.levy.CG.KDTree;
 public class InseqSession {
 	
 	public KDTree<Transcript> tree;
-	public CyNetwork network;
 	public List<String> edgeSelection;
 	public Rectangle rectangleSelection;
 	private VisualStyle style;
 
 	private CyAppAdapter CAA;
 	private List<TypeNetwork> networks;
+	private Integer selectedNetwork;
 
 	private Map<String, Integer> geneCounts;
 	private Map<String, Color> geneColours;
@@ -60,23 +59,37 @@ public class InseqSession {
 		networks = new ArrayList<TypeNetwork>();
 	}
 
-	public void addNetwork(TypeNetwork staleNetwork, TypeNetwork freshNetwork) {
-		if(staleNetwork == null)
-		{
-			networks.add(freshNetwork);
+	public void addNetwork(TypeNetwork n, Double distance) {
+		if(!(networks.contains(n))) {
+			networks.add(n);
 		}
 		else {
-			networks.set(networks.indexOf(staleNetwork), freshNetwork);
-			CAA.getCyNetworkManager().destroyNetwork(staleNetwork.getNetwork());
+			CAA.getCyNetworkManager().destroyNetwork(n.getNetwork());
+			n.setNetwork(CAA.getCyNetworkFactory().createNetwork());
+			n.setDistance(distance);
 		}
 	}
 
-	public TypeNetwork getNetwork(int index) {
-		return networks.get(index);
+	public TypeNetwork getNetwork(Integer index) {
+		if (index == null) return null;
+		try {
+			return networks.get(index);
+		}
+		catch(IndexOutOfBoundsException e) {
+			return null;
+		}
 	}
 
 	public List<TypeNetwork> getNetworkList() {
 		return networks;
+	}
+
+	public void setSelectedNetwork(TypeNetwork n) {
+		selectedNetwork = networks.indexOf(n);
+	}
+	
+	public Integer getSelectedNetwork() {
+		return selectedNetwork;
 	}
 
 	public void setGeneColour(String name, Color color) {

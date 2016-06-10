@@ -1,23 +1,24 @@
 package org.cytoscape.inseq.internal.tissueimage;
 
 import java.awt.BorderLayout;
-import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTableUtil;
 
 /** 
@@ -59,28 +60,24 @@ public class SelectionPanel extends JPanel {
 		browse.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				FileDialog dialog = new FileDialog(parent, "Choose image", FileDialog.LOAD);
-				// This works on Windowsy things 
-				dialog.setFile("*.png;*.jpg;*.jpeg");
-				// This works on Unixy things
-				dialog.setFilenameFilter(new FilenameFilter() {
-					@Override
-					public boolean accept(File dir, String name) {
-						return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg");
-					}
-				});
-				dialog.setVisible(true);
-				String filename = dialog.getFile();
-				if (filename == null) return;
 
-				changeImage(dialog.getDirectory() + filename);
+				JFileChooser fc = new JFileChooser();
+				FileFilter filter = new FileNameExtensionFilter("Supported image formats (jpg, png, gif)", "jpg", "jpeg", "png", "gif");
+				fc.addChoosableFileFilter(filter);
+				fc.setFileFilter(filter);
+				
+				int returnVal = fc.showOpenDialog(ia.getCSAA().getCySwingApplication().getJFrame());
+				if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
+
+				changeImage(fc.getSelectedFile().getAbsolutePath());
 			}
+
 		});
 		add(browse, consBrowse);
 
 		GridBagConstraints consInfo = new GridBagConstraints(2, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
-		JButton info = new JButton("Get Selection");
+		JButton info = new JButton("this does nothing");
 /*		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -105,22 +102,21 @@ public class SelectionPanel extends JPanel {
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.getSession().network,"selected",true);
+				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork(),"selected",true);
 				if(edges == null || edges.size() < 1) ia.getSession().edgeSelection = null;
 				else
 				{
 					ia.getSession().edgeSelection = new ArrayList<String>();
-				/*	for(CyEdge edge : edges)
+					for(CyEdge edge : edges)
 					{
 
-						String source = ia.getSession().nodeTable.getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
-						String target = ia.getSession().nodeTable.getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
+						String source = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+						String target = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
 						if(!(ia.getSession().edgeSelection.contains(source)))
 							ia.getSession().edgeSelection.add(source);
 						if(!(ia.getSession().edgeSelection.contains(target)))
 							ia.getSession().edgeSelection.add(target);
 					}
-*/
 					System.out.println("Viewing points from " + edges.size() + " edges.");
 					
 				}

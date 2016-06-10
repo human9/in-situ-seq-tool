@@ -5,6 +5,7 @@ import java.awt.Paint;
 import java.util.Map;
 
 import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
@@ -23,10 +24,10 @@ import org.cytoscape.work.TaskMonitor;
 public class ViewStyler extends AbstractTask {
 
 	private CyAppAdapter a;
-	private CyNetwork network;
+	private TypeNetwork network;
 	private VisualStyle style;
 
-	public ViewStyler(CyNetwork n, VisualStyle s, CyAppAdapter a) {
+	public ViewStyler(TypeNetwork n, VisualStyle s, CyAppAdapter a) {
 		this.a = a;
 		this.network = n;
 		this.style = s;
@@ -73,7 +74,7 @@ public class ViewStyler extends AbstractTask {
 
 	public void run(TaskMonitor monitor) {
 		
-		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network);
+		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network.getNetwork());
 		style.apply(view);
 
 		final CyLayoutAlgorithmManager algm = a.getCyLayoutAlgorithmManager();
@@ -81,7 +82,8 @@ public class ViewStyler extends AbstractTask {
 		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		a.getTaskManager().execute(itr);
 
-		a.getCyNetworkManager().addNetwork(network);
+		a.getCyEventHelper().flushPayloadEvents();
+		a.getCyNetworkManager().addNetwork(network.getNetwork());
 		a.getCyNetworkViewManager().addNetworkView(view);
 		view.updateView();
 	}
