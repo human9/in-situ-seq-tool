@@ -6,6 +6,10 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -31,13 +35,14 @@ public class ImagePane extends JPanel {
 	public Dimension offset = new Dimension();
 	private Dimension requested;
 	public ZoomPane zp;
-	private boolean rescaling;
 	public boolean ratioIsCurrent;
 	boolean timerDone = true;
 	public Point selectedOrigin = new Point();
 	public Point selectedFinish = new Point();
 	public Rectangle rect;
 	private InseqSession session;
+	private boolean cacheStopped;
+	private boolean cacheAvailable;
 
 	public ImagePane(final BufferedImage image, InseqSession s) {
 		this.image = image;
@@ -48,7 +53,39 @@ public class ImagePane extends JPanel {
 		setSize();
 	}
 			
+	public void stopCache() {
+		cacheStopped = true;
+	}
 
+	public void cacheImage() {
+		if(getWidth() < 3000 || getHeight() < 3000) {
+			cacheStopped = false;
+			paintedImage = new BufferedImage(requested.width, requested.height, image.getType());
+			Graphics imgG = paintedImage.getGraphics();
+			Graphics2D imgG2 = (Graphics2D) imgG;
+			imgG.drawImage(image, 0, 0, requested.width, requested.height, null);
+			cacheAvailable = false;
+			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
+			int size = 8;
+			int scaledOffset = (int)(size/2);
+			try {
+				for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+				{
+					if(cacheStopped) return;
+					if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
+
+					imgG2.setColor(session.getGeneColour(t.name));
+					imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
+				}
+			}
+			catch (KeySizeException e) {
+				e.printStackTrace();
+			}
+			imgG2.dispose();
+			imgG.dispose();
+			cacheAvailable = true;
+		}
+	}
 	@Override
 	public void paintComponent(Graphics g) {
 
@@ -67,11 +104,13 @@ public class ImagePane extends JPanel {
 		if(session.edgeSelection != null)
 		{
 			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
-			gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 			
-			if(getWidth() > 3000 || getHeight() > 3000)
+			if(cacheAvailable) {
+				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
+			}
+			else
 			{
-				rescaling = false;
+				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
@@ -87,29 +126,6 @@ public class ImagePane extends JPanel {
 				catch (KeySizeException e) {
 					e.printStackTrace();
 				}
-			}
-			else
-			{
-				if(rescaling) {
-					paintedImage = new BufferedImage(requested.width, requested.height, image.getType());
-					Graphics imgG = paintedImage.getGraphics();
-					Graphics2D imgG2 = (Graphics2D) imgG;
-					imgG.drawImage(image, 0, 0, requested.width, requested.height, null);
-					rescaling = false;
-					try {
-						for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
-						{
-							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
-
-							imgG2.setColor(session.getGeneColour(t.name));
-							imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
-						}
-					}
-					catch (KeySizeException e) {
-						e.printStackTrace();
-					}
-				}
-				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
 			}
 			for(String name : session.edgeSelection)
 			{
@@ -143,6 +159,7 @@ public class ImagePane extends JPanel {
 		gr.setColor(fill);
 		gr.fillRect(rect.x, rect.y, rect.width, rect.height);
 		gr.dispose();
+		g.dispose();
 
 	}
 
@@ -173,7 +190,7 @@ public class ImagePane extends JPanel {
 		g.dispose();
 		repaint();*/
 		if (scale <= 100) {
-			rescaling = true;
+			cacheAvailable = false;
 			scale *= 1.1;
 			if ((int) scale == 100)
 				scale = 100;
@@ -183,7 +200,7 @@ public class ImagePane extends JPanel {
 	public void scaleDown() {
 		if (scale > 0.01)
 		{
-			rescaling = true;
+			cacheAvailable = false;
 			scale *= 0.9;
 		}
 	}
@@ -216,15 +233,29 @@ public class ImagePane extends JPanel {
 	static public BufferedImage getImageFile(String path) {
 		File input = new File(path);
 		BufferedImage bimg;
+		BufferedImage optImage;
 		try {
 			bimg = ImageIO.read(input);
-		} catch (IOException e) {
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+				
+			// Create the buffered image
+			GraphicsDevice gs = ge.getDefaultScreenDevice();
+			GraphicsConfiguration gc = gs.getDefaultConfiguration();
+
+			optImage = gc.createCompatibleImage(bimg.getWidth(), bimg.getHeight());
+			
+			// Copy image to buffered image
+			Graphics g = optImage.createGraphics();
+			g.drawImage(bimg, 0, 0, null);
+			g.dispose();
+
+
+		} catch (IOException|NullPointerException e) {
 			//JOptionPane.showMessageDialog(null, "Couldn't open the selected file.", "IO Error!",
 			//		JOptionPane.WARNING_MESSAGE);
 			return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
 		}
-		if(bimg == null)
-			return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
-		return bimg;
+		
+		return optImage;
 	}
 }

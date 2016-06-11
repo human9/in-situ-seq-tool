@@ -234,6 +234,7 @@
 		</dependency>
 
 		<!-- ImageIO Plugins -->
+
 		<dependency>
 			<groupId>com.twelvemonkeys.imageio</groupId>
 			<artifactId>imageio-tiff</artifactId>

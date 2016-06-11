@@ -43,7 +43,7 @@ public class ConstructTreeTask extends AbstractTask {
 		List<Transcript> xsorted = sortByAxis(raw, 0);
 		List<Transcript> ysorted = sortByAxis(raw, 1);
 		
-		int xmed = raw.size()/2 - 1;
+		int xmed = (int)Math.ceil(raw.size()/2d) - 1;
 		int ymed = xmed;
 
 		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);

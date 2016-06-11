@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -20,6 +22,8 @@ import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTableUtil;
+
+import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
 
 /** 
  *  A panel containing the zoomable imageplot as well as controls.
@@ -62,7 +66,12 @@ public class SelectionPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 
 				JFileChooser fc = new JFileChooser();
-				FileFilter filter = new FileNameExtensionFilter("Supported image formats (jpg, png, gif)", "jpg", "jpeg", "png", "gif");
+				
+				// Force TIF support into ImageIO
+				IIORegistry reg = IIORegistry.getDefaultInstance();
+				reg.registerServiceProvider(new TIFFImageReaderSpi());
+
+				FileFilter filter = new FileNameExtensionFilter("Supported image formats", ImageIO.getReaderFileSuffixes());
 				fc.addChoosableFileFilter(filter);
 				fc.setFileFilter(filter);
 				
