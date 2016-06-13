@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.dataimport;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -40,14 +41,20 @@ public class ConstructTreeTask extends AbstractTask {
 		taskMonitor.setStatusMessage(raw.size() + " unique transcripts found.");
 
 		// Getting sorted lists of the transcripts makes finding the median easy.
-		List<Transcript> xsorted = sortByAxis(raw, 0);
-		List<Transcript> ysorted = sortByAxis(raw, 1);
+		sortByAxis(raw, 0);
+		ArrayList<Transcript> xsorted = new ArrayList<Transcript>(raw);
+		sortByAxis(raw, 1);
+		ArrayList<Transcript> ysorted = new ArrayList<Transcript>(raw);
+
 		
 		int xmed = (int)Math.ceil(raw.size()/2d) - 1;
 		int ymed = xmed;
 
 		KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
 	
+
+		// Probably overengineered, but quickly and reliably gets the next median
+		// based on x or y and inserts it into the tree
 		for(int i = 0, x = 0, y = 0; ; i++)
 		{
 			if(cancelled) {

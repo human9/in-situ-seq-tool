@@ -9,13 +9,14 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -72,10 +73,14 @@ public class ImagePane extends JPanel {
 				for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 				{
 					if(cacheStopped) return;
-					if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
+					if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+					for(Transcript n : t.getNeighboursForNetwork(sel)) {
+						if(session.edgeSelection.get(t.name).contains(n.name)) {
+								imgG2.setColor(session.getGeneColour(t.name));
+								imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
+						}
+					}
 
-					imgG2.setColor(session.getGeneColour(t.name));
-					imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
 				}
 			}
 			catch (KeySizeException e) {
@@ -115,22 +120,25 @@ public class ImagePane extends JPanel {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
 					{
 						// something not right here
-						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 2) continue;
-
-						gr.setColor(session.getGeneColour(t.name));
-
-						gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
-
+						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+						for(Transcript n : t.getNeighboursForNetwork(sel)) {
+							if(session.edgeSelection.get(t.name).contains(n.name)) {
+									gr.setColor(session.getGeneColour(t.name));
+									gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
+							}
+						}
 					}
 				}
 				catch (KeySizeException e) {
 					e.printStackTrace();
 				}
 			}
-			for(String name : session.edgeSelection)
+			List<String> names = new ArrayList<String>();
+			names.addAll(session.edgeSelection.keySet());
+			for(String name : names)
 			{
 				gr.setColor(session.getGeneColour(name));
-				gr.drawString(name, 6, (session.edgeSelection.indexOf(name)+1)*14);
+				gr.drawString(name, 6, (names.indexOf(name)+1)*14);
 			}
 			
 		}
@@ -152,7 +160,8 @@ public class ImagePane extends JPanel {
 		int aly = selectedOrigin.y;
 		int arx = selectedFinish.x;
 		int ary = selectedFinish.y;
-		session.rectangleSelection = new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary));
+		
+		session.setSelection(new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary)));
 		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
 		
 		Color fill = new Color(255, 0, 0, 60);
@@ -161,6 +170,11 @@ public class ImagePane extends JPanel {
 		gr.dispose();
 		g.dispose();
 
+	}
+
+	public void forceRepaint() {
+		cacheAvailable = false;
+		repaint();
 	}
 
 	public void scaleUp() {

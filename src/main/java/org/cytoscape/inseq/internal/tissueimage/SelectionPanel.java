@@ -7,7 +7,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
@@ -115,22 +117,37 @@ public class SelectionPanel extends JPanel {
 				if(edges == null || edges.size() < 1) ia.getSession().edgeSelection = null;
 				else
 				{
-					ia.getSession().edgeSelection = new ArrayList<String>();
+					ia.getSession().edgeSelection = new HashMap<String, List<String>>();
+					Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
 					for(CyEdge edge : edges)
 					{
 
 						String source = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
 						String target = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
-						if(!(ia.getSession().edgeSelection.contains(source)))
-							ia.getSession().edgeSelection.add(source);
-						if(!(ia.getSession().edgeSelection.contains(target)))
-							ia.getSession().edgeSelection.add(target);
+						if(!(edgeSelection.keySet().contains(source)))
+						{
+							List<String> n = new ArrayList<String>();
+							n.add(target);
+							edgeSelection.put(source, n);
+						}
+						else {
+							edgeSelection.get(source).add(target);
+						}
+						if(!(edgeSelection.keySet().contains(target)))
+						{
+							List<String> n = new ArrayList<String>();
+							n.add(source);
+							ia.getSession().edgeSelection.put(target, n);
+						}
+						else {
+							edgeSelection.get(target).add(source);
+						}
 					}
 					System.out.println("Viewing points from " + edges.size() + " edges.");
 					
 				}
 				zp.repaint();
-				imagePane.repaint();
+				imagePane.forceRepaint();
 			}
 		});
 		add(showSelection, consShow);

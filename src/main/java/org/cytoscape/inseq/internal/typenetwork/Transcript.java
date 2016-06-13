@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.awt.Shape;
 import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,8 @@ public class Transcript {
 
 	public Point2D.Double pos;
 	public String name;
+	// The shape of the selection area, null if entire dataset
+	private Shape selection;
 
 	private Map<TypeNetwork, List<Transcript>> neighbours;
 	
@@ -27,7 +30,18 @@ public class Transcript {
 	}
 	
 	public void setNeighboursForNetwork(TypeNetwork n, List<Transcript> l) {
+		// The neighbour search returns the node that is used for the search also,
+		// so we should remove this from the list.
+		l.remove(l.size()-1);
 		neighbours.put(n, l);
+	}
+
+	public void setSelection(Shape shape) {
+		this.selection = shape;
+	}
+
+	public Shape getSelection() {
+		return selection;
 	}
 
 	

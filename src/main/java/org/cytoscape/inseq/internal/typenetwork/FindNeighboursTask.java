@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
@@ -41,13 +42,17 @@ public class FindNeighboursTask extends AbstractTask {
 
 		List<Transcript> searchArea;
 		try {
+			Shape selection = null;
 			if(subset) {
-				Rectangle rect = session.rectangleSelection;
+				selection = session.getSelection();
+				Rectangle rect = (Rectangle) selection;
 				searchArea = tree.range(new double[]{rect.x, rect.y}, new double[]{rect.x+rect.width, rect.y+rect.height});
 			}
 			else {
 				searchArea = tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
 			}
+
+			network.setSelection(selection);
 			
 			for(Transcript t : searchArea) 
 			{
@@ -57,6 +62,8 @@ public class FindNeighboursTask extends AbstractTask {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
 
+				t.setSelection(selection);
+				
 				// don't compare again if we've already searched at this distance
 				if(t.getNeighboursForNetwork(network) != null)
 				{

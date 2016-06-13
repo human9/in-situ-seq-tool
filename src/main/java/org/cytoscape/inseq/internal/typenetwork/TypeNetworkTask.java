@@ -61,7 +61,7 @@ public class TypeNetworkTask extends AbstractTask {
 
 				// If no neighbours were found for this transcript, go to next.
 				if(t.getNeighboursForNetwork(net) == null) continue;
-				if(t.getNeighboursForNetwork(net).size() < 2) continue;
+				if(t.getNeighboursForNetwork(net).size() < 1) continue;
 
 				// If we haven't made a node for this transcript name, make one
 				if(!nodes.containsKey(t.name)) {

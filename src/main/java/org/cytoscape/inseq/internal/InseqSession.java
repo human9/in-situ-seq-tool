@@ -1,7 +1,7 @@
 package org.cytoscape.inseq.internal;
 
 import java.awt.Color;
-import java.awt.Rectangle;
+import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +22,8 @@ import edu.wlu.cs.levy.CG.KDTree;
 public class InseqSession {
 	
 	public KDTree<Transcript> tree;
-	public List<String> edgeSelection;
-	public Rectangle rectangleSelection;
+	public Map<String, List<String>> edgeSelection;
+	private Shape selection;
 	private VisualStyle style;
 
 	private CyAppAdapter CAA;
@@ -111,4 +111,13 @@ public class InseqSession {
 	public Integer geneCount(String name) {
 		return geneCounts.get(name);
 	}
+	
+	public void setSelection(Shape shape) {
+		this.selection = shape;
+	}
+
+	public Shape getSelection() {
+		return selection;
+	}
+
 }

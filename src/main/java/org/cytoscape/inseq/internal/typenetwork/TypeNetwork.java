@@ -1,5 +1,7 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.awt.Shape;
+
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTable;
 
@@ -12,6 +14,7 @@ public class TypeNetwork {
 	private CyTable nodeTable;
 	double distance;
 	double cutoff;
+	private Shape selection;
 
 	public TypeNetwork(CyNetwork n, double d, double c)
 	{
@@ -45,6 +48,14 @@ public class TypeNetwork {
 
 	public double getCutoff() {
 		return cutoff;
+	}
+	
+	public void setSelection(Shape shape) {
+		this.selection = shape;
+	}
+
+	public Shape getSelection() {
+		return selection;
 	}
 	
 	/**
