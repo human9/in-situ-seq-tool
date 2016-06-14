@@ -26,6 +26,7 @@ public class InseqActivator extends AbstractCyActivator {
 	private InseqSession session;
 	private Properties properties;
 	private BundleContext context;
+	private MainPanel panel;
 
 	/** The entry point for app execution.
  	 *  The only immediate visible change should be a new menu option.
@@ -53,7 +54,7 @@ public class InseqActivator extends AbstractCyActivator {
 	public void initSession(KDTree<Transcript> tree) {
 		session = new InseqSession(tree, getCAA());
 
-		MainPanel panel = new MainPanel(this, session);
+		panel = new MainPanel(this, session);
 		registerAllServices(context, panel, properties);
 
 		// Switch to the Inseq control panel.
@@ -82,6 +83,7 @@ public class InseqActivator extends AbstractCyActivator {
 
 	@Override
 	public void shutDown() {
+		if(panel != null) panel.shutDown();
 		super.shutDown();
 	}
 }

@@ -235,7 +235,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		panel.add(small, smallCons);
 		
 		
-		GridBagConstraints consPop = new GridBagConstraints(0, 0, 3, 1, 0.5, 0, GridBagConstraints.SOUTH,
+		GridBagConstraints consPop = new GridBagConstraints(0, 0, 4, 1, 0.5, 0, GridBagConstraints.SOUTH,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		pop = new JButton("Move image to separate window");
 		pop.addActionListener(new ActionListener() {
@@ -293,5 +293,11 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 	@Override
 	public String getTitle() {
 		return "Inseq";
+	}
+
+	public void shutDown() {
+		if(frame != null) {
+			frame.dispose();
+		}
 	}
 }

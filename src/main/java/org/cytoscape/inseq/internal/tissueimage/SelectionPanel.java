@@ -14,15 +14,22 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 
 import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
@@ -53,7 +60,7 @@ public class SelectionPanel extends JPanel {
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
 
-		consPanel = new GridBagConstraints(0, 1, 3, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
+		consPanel = new GridBagConstraints(0, 1, 4, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia.getSession());
 		imagePane = ip;
 		zp = new ZoomPane(ip);
@@ -86,9 +93,30 @@ public class SelectionPanel extends JPanel {
 		});
 		add(browse, consBrowse);
 
-		GridBagConstraints consInfo = new GridBagConstraints(2, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		//node selection shows all points checkbox
+		JCheckBox nodeBox = new JCheckBox("Show all points from selected nodes");
+		GridBagConstraints consCheckBox = new GridBagConstraints(0, 3, 4, 1, 1, 0, GridBagConstraints.CENTER, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
-		JButton info = new JButton("this does nothing");
+		nodeBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				imagePane.setShowNodes(nodeBox.isSelected());
+				zp.restartTimer();
+			}
+		});
+		add(nodeBox, consCheckBox);
+
+		GridBagConstraints consPointScale = new GridBagConstraints(3, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0, new Insets(4, 4, 4, 4), 1, 1);
+		JLabel label = new JLabel("Point scaling:");
+		GridBagConstraints consLabel = new GridBagConstraints(2,2,1,1,0.1,0,GridBagConstraints.CENTER,0,new Insets(4,4,4,4),1,1);
+		add(label, consLabel);
+		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
+		pointScale.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				imagePane.setPointScale((Double)pointScale.getValue());	
+			}
+		});
 /*		info.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -105,48 +133,51 @@ public class SelectionPanel extends JPanel {
 
 		});
 */
-		add(info, consInfo);
+		add(pointScale, consPointScale);
 
-		GridBagConstraints consShow = new GridBagConstraints(1, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		GridBagConstraints consShow = new GridBagConstraints(1, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton showSelection = new JButton("Show points");
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				List<CyEdge> edges = CyTableUtil.getEdgesInState(ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork(),"selected",true);
-				if(edges == null || edges.size() < 1) ia.getSession().edgeSelection = null;
-				else
+				CyNetwork network = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork();
+				List<CyNode> nodes = CyTableUtil.getNodesInState(network, "selected", true);
+				List<CyEdge> edges = CyTableUtil.getEdgesInState(network, "selected",true);
+	
+				ia.getSession().nodeSelection = new ArrayList<String>();
+				for(CyNode node : nodes) {
+					String name = network.getDefaultNodeTable().getRow(node.getSUID()).get(CyNetwork.NAME, String.class);
+					ia.getSession().nodeSelection.add(name);
+				}
+				ia.getSession().edgeSelection = new HashMap<String, List<String>>();
+				Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
+				for(CyEdge edge : edges)
 				{
-					ia.getSession().edgeSelection = new HashMap<String, List<String>>();
-					Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
-					for(CyEdge edge : edges)
-					{
 
-						String source = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
-						String target = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
-						if(!(edgeSelection.keySet().contains(source)))
-						{
-							List<String> n = new ArrayList<String>();
-							n.add(target);
-							edgeSelection.put(source, n);
-						}
-						else {
-							edgeSelection.get(source).add(target);
-						}
-						if(!(edgeSelection.keySet().contains(target)))
-						{
-							List<String> n = new ArrayList<String>();
-							n.add(source);
-							ia.getSession().edgeSelection.put(target, n);
-						}
-						else {
-							edgeSelection.get(target).add(source);
-						}
+					String source = network.getDefaultNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+					String target = network.getDefaultNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
+					if(!(edgeSelection.keySet().contains(source)))
+					{
+						List<String> n = new ArrayList<String>();
+						n.add(target);
+						edgeSelection.put(source, n);
 					}
-					System.out.println("Viewing points from " + edges.size() + " edges.");
-					
+					else {
+						edgeSelection.get(source).add(target);
+					}
+					if(!(edgeSelection.keySet().contains(target)))
+					{
+						List<String> n = new ArrayList<String>();
+						n.add(source);
+						ia.getSession().edgeSelection.put(target, n);
+					}
+					else {
+						edgeSelection.get(target).add(source);
+					}
 				}
 				zp.repaint();
+				zp.restartTimer();
 				imagePane.forceRepaint();
 			}
 		});

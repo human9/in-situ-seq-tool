@@ -44,6 +44,8 @@ public class ImagePane extends JPanel {
 	private InseqSession session;
 	private boolean cacheStopped;
 	private boolean cacheAvailable;
+	private boolean showNodes = false;
+	private double pointScale = 1;
 
 	public ImagePane(final BufferedImage image, InseqSession s) {
 		this.image = image;
@@ -53,7 +55,15 @@ public class ImagePane extends JPanel {
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		setSize();
 	}
-			
+
+	public void setPointScale(double d) {
+		pointScale = d;
+	}
+
+	public void setShowNodes(boolean b) {
+		showNodes = b;
+	}
+	
 	public void stopCache() {
 		cacheStopped = true;
 	}
@@ -73,14 +83,19 @@ public class ImagePane extends JPanel {
 				for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 				{
 					if(cacheStopped) return;
-					if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
-					for(Transcript n : t.getNeighboursForNetwork(sel)) {
-						if(session.edgeSelection.get(t.name).contains(n.name)) {
+					if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
+						imgG2.setColor(session.getGeneColour(t.name));
+						imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
+					}
+					else {
+						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+						for(Transcript n : t.getNeighboursForNetwork(sel)) {
+							if(session.edgeSelection.get(t.name).contains(n.name)) {
 								imgG2.setColor(session.getGeneColour(t.name));
-								imgG2.drawOval((int)(t.pos.x*scale) - scaledOffset,(int)(t.pos.y*scale) - scaledOffset,size,size);
+								imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
+							}
 						}
 					}
-
 				}
 			}
 			catch (KeySizeException e) {
@@ -117,14 +132,19 @@ public class ImagePane extends JPanel {
 			{
 				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
 				try {
-					for(Transcript t : session.tree.range(new double[]{view.x/scale,view.y/scale}, new double[]{view.x/scale + view.width/scale, view.y/scale + view.height/scale}))
+					for(Transcript t : session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
 					{
-						// something not right here
-						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
-						for(Transcript n : t.getNeighboursForNetwork(sel)) {
-							if(session.edgeSelection.get(t.name).contains(n.name)) {
-									gr.setColor(session.getGeneColour(t.name));
-									gr.drawOval((int)(t.pos.x*scale) - scaledOffset + offset.width,(int)(t.pos.y*scale) - scaledOffset + offset.height,size,size);
+						if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
+							gr.setColor(session.getGeneColour(t.name));
+							gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
+						}
+						else {
+							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection() != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+							for(Transcript n : t.getNeighboursForNetwork(sel)) {
+								if(session.edgeSelection.get(t.name).contains(n.name)) {
+										gr.setColor(session.getGeneColour(t.name));
+										gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
+								}
 							}
 						}
 					}
@@ -135,10 +155,16 @@ public class ImagePane extends JPanel {
 			}
 			List<String> names = new ArrayList<String>();
 			names.addAll(session.edgeSelection.keySet());
+			for(String name : session.nodeSelection) {
+				if(names.contains(name))
+					continue;
+				else
+					names.add(name);
+			}
 			for(String name : names)
 			{
 				gr.setColor(session.getGeneColour(name));
-				gr.drawString(name, 6, (names.indexOf(name)+1)*14);
+				gr.drawString(name, view.x+6, view.y+(names.indexOf(name)+1)*14);
 			}
 			
 		}

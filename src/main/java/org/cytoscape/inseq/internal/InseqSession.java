@@ -23,6 +23,7 @@ public class InseqSession {
 	
 	public KDTree<Transcript> tree;
 	public Map<String, List<String>> edgeSelection;
+	public List<String> nodeSelection;
 	private Shape selection;
 	private VisualStyle style;
 
