@@ -15,7 +15,7 @@ public class Transcript {
 	public Point2D.Double pos;
 	public String name;
 	// The shape of the selection area, null if entire dataset
-	private Shape selection;
+	private Map<TypeNetwork, Shape> selection;
 
 	private Map<TypeNetwork, List<Transcript>> neighbours;
 	
@@ -23,6 +23,7 @@ public class Transcript {
 		this.pos = pos;
 		this.name = name;
 		neighbours = new HashMap<TypeNetwork, List<Transcript>>();
+		selection = new HashMap<TypeNetwork, Shape>();
 	}
 
 	public List<Transcript> getNeighboursForNetwork(TypeNetwork n) {
@@ -36,12 +37,12 @@ public class Transcript {
 		neighbours.put(n, l);
 	}
 
-	public void setSelection(Shape shape) {
-		this.selection = shape;
+	public void setSelection(TypeNetwork network, Shape shape) {
+		this.selection.put(network, shape);
 	}
 
-	public Shape getSelection() {
-		return selection;
+	public Shape getSelection(TypeNetwork network) {
+		return selection.get(network);
 	}
 
 	

@@ -62,7 +62,7 @@ public class FindNeighboursTask extends AbstractTask {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
 
-				t.setSelection(selection);
+				t.setSelection(network, selection);
 				
 				// don't compare again if we've already searched at this distance
 				if(t.getNeighboursForNetwork(network) != null)
