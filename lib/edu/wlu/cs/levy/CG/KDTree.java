@@ -359,7 +359,7 @@ public class KDTree<T> implements Serializable{
 	
 	// initial call is with infinite hyper-rectangle and max distance
 	HRect hr = HRect.infiniteHRect(key.length);
-	double max_dist_sqd = 64d;
+	double max_dist_sqd = Double.MAX_VALUE;
 	HPoint keyp = new HPoint(key);
 	
         if (m_count > 0) {
