@@ -1,0 +1,23 @@
+SNAPSHOT, 2016-06-14
+--------------------
+- TIFF images can now be imported.
+- All image types are converted on import - takes slightly longer to
+  to import and uses more memory but makes zooming etc faster.
+- Genes are assigned a colour when csv is first imported, this colour is
+  displayed in both the tissue imageplot and network.
+- Legend now stays visible in the image/plot panel
+- Point scaling for different image sizes can now be altered at any point
+  after data import.
+- Imageplot panel now starts embedded in control panel, but can be popped into
+  separate window.
+- Multiple selections can be made by pressing new, and old selections are
+  selectable from a combobox. Default behaviour is to overwrite existing.
+- KD-Tree lib from http://home.wlu.edu/~levys/software/kd/ incorporated and
+  modified to speed up euclidean distance search. Source is in /lib.
+- XY data, names, and nearest neighbours are stored within the KD-Tree as
+  Transcript objects.
+- Checking option on Imageplot panel makes all transcripts from selected nodes
+  appear.
+- If image is zoomed out far enough, the image+points are cached to speed up
+  scrolling.
+- Various UI alterations to remove useless buttons, etc.
