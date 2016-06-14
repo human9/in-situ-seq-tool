@@ -178,7 +178,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				// Register the network
 				itr.append(new AbstractTask() {
 					public void run (TaskMonitor monitor) {
-						session.addNetwork(network, distance);
+						session.addNetwork(network, distance, cutoff);
 					}
 				});
 

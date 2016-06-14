@@ -50,6 +50,10 @@ public class TypeNetwork {
 		return cutoff;
 	}
 	
+	public void setCutoff(Double c) {
+		cutoff = c;
+	}
+	
 	public void setSelection(Shape shape) {
 		this.selection = shape;
 	}

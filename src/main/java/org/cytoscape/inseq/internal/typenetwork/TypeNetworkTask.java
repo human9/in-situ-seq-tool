@@ -121,7 +121,7 @@ public class TypeNetworkTask extends AbstractTask {
 				int nonNormalScore = n.coNodes.get(s);
 				int thisNodeNumber = n.num;
 				int otherNodeNumber = nodes.get(s).num;
-				double normal = (double)nonNormalScore / thisNodeNumber / otherNodeNumber;
+				double normal = Math.sqrt((double)nonNormalScore / thisNodeNumber / otherNodeNumber);
 
 				// Skip adding the edge if it doesn't qualify
 				if(normal < net.getCutoff()) continue;

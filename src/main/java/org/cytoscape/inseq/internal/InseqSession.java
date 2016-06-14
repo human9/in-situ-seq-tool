@@ -60,7 +60,7 @@ public class InseqSession {
 		networks = new ArrayList<TypeNetwork>();
 	}
 
-	public void addNetwork(TypeNetwork n, Double distance) {
+	public void addNetwork(TypeNetwork n, Double distance, Double cutoff) {
 		if(!(networks.contains(n))) {
 			networks.add(n);
 		}
@@ -68,6 +68,7 @@ public class InseqSession {
 			CAA.getCyNetworkManager().destroyNetwork(n.getNetwork());
 			n.setNetwork(CAA.getCyNetworkFactory().createNetwork());
 			n.setDistance(distance);
+			n.setCutoff(cutoff);
 		}
 	}
 
