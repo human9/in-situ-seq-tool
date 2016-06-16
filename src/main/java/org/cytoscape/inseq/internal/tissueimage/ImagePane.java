@@ -193,8 +193,6 @@ public class ImagePane extends JPanel {
 		Color fill = new Color(255, 0, 0, 60);
 		gr.setColor(fill);
 		gr.fillRect(rect.x, rect.y, rect.width, rect.height);
-		gr.dispose();
-		g.dispose();
 
 	}
 

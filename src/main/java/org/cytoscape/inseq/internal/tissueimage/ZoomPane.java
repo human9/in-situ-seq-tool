@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 
@@ -31,6 +32,13 @@ public class ZoomPane extends JScrollPane {
 	boolean taskdone = true;
 	TimerTask task;
 	
+		/*
+	@Override
+	public void setLayout(LayoutManager layout) {
+		if (layout instanceof ScrollPaneLayout) {
+			super.setLayout(layout);
+			((ScrollPaneLayout)layout).syncWithScrollPane
+	}*/
 	public void restartTimer() {
 
 		imageTimer.purge();
@@ -70,7 +78,6 @@ public class ZoomPane extends JScrollPane {
 		this.vp = getViewport();
 		vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
 		vp.setBackground(Color.BLACK);
-
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
@@ -125,6 +132,8 @@ public class ZoomPane extends JScrollPane {
 					Point move = new Point(mouseClick.x - e.getX(), mouseClick.y - e.getY());
 					Rectangle r = new Rectangle(move, vp.getExtentSize());
 					vp.scrollRectToVisible(r);
+					System.out.println("Drag event registered");
+					System.out.println(r);
 					mouseClick.setLocation(e.getPoint());
 					//repaint();
 				}
@@ -220,5 +229,43 @@ public class ZoomPane extends JScrollPane {
 		this.vp = getViewport();
 		imagePane.zp = this;
 		view.setSize();
+	}
+		
+
+	/**
+	 *  The following overrides are to hijack the normal scroll behaviour of
+	 *  JScrollPane. Without this, moving with the scrollbars causes graphical
+	 *  glitches. Basically unless the call is made to scrollViewToRect, things
+	 *  break. Especially text. BACKINGSTORE_SCROLL_MODE is responsible for this.
+	 *  However, the other ways introduce other unfixable problems.
+	 */
+	@Override
+	public JScrollBar createHorizontalScrollBar() {
+		return new ScrollBar(JScrollBar.HORIZONTAL) {
+			@Override	
+			public void setValue(int i) {
+				//super.setValue(i);
+				// REMINDER TO SELF: scrollRectToVisible XY coordinates are RELATIVE!!!!
+				Point p = new Point(i - getViewport().getViewPosition().x, 0);
+				Dimension d = new Dimension(vp.getExtentSize());
+				Rectangle r = new Rectangle(p,d);
+				vp.scrollRectToVisible(r);
+				return;
+			}
+		};
+	}
+	
+	@Override
+	public JScrollBar createVerticalScrollBar() {
+		return new ScrollBar(JScrollBar.VERTICAL) {
+			@Override	
+			public void setValue(int i) {
+				Point p = new Point(0, i - getViewport().getViewPosition().y);
+				Dimension d = new Dimension(vp.getExtentSize());
+				Rectangle r = new Rectangle(p,d);
+				vp.scrollRectToVisible(r);
+				return;
+			}
+		};
 	}
 }
