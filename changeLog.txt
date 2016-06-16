@@ -1,5 +1,12 @@
-SNAPSHOT, 2016-06-14
---------------------
+1.0.1-SNAPSHOT, 2016-06-16
+--------------------------
+- JScrollPane was forced to use scrollRectToVisible method, fixing graphical
+  errors when scrolling.
+- Names of networks are persistant - ie. unless you press new, the old name
+  will be used. Name can be changed from the "Network" control pane. 
+
+1.0-SNAPSHOT, 2016-06-14
+------------------------
 - TIFF images can now be imported.
 - All image types are converted on import - takes slightly longer to
   to import and uses more memory but makes zooming etc faster.

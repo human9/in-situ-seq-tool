@@ -11,6 +11,7 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 import edu.wlu.cs.levy.CG.KDTree;
@@ -65,8 +66,13 @@ public class InseqSession {
 			networks.add(n);
 		}
 		else {
+			String name = n.getNetwork().getRow(n.getNetwork()).get(CyNetwork.NAME, String.class);
 			CAA.getCyNetworkManager().destroyNetwork(n.getNetwork());
 			n.setNetwork(CAA.getCyNetworkFactory().createNetwork());
+			if(name != null)
+			{
+				n.getNetwork().getRow(n.getNetwork()).set(CyNetwork.NAME, name);
+			}
 			n.setDistance(distance);
 			n.setCutoff(cutoff);
 		}

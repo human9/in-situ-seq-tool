@@ -63,6 +63,9 @@ public class TypeNetworkTask extends AbstractTask {
 				if(t.getNeighboursForNetwork(net) == null) continue;
 				if(t.getNeighboursForNetwork(net).size() < 1) continue;
 
+				// If the neighbours aren't within the selection, go to next.
+				if(t.getSelection(net) != net.getSelection()) continue;
+
 				// If we haven't made a node for this transcript name, make one
 				if(!nodes.containsKey(t.name)) {
 					nodes.put(t.name, new Node(t.name));
@@ -92,7 +95,14 @@ public class TypeNetworkTask extends AbstractTask {
 		CyNetwork network = net.getNetwork();
 
 		// Name the network
-		network.getRow(network).set(CyNetwork.NAME, String.format("%.2f-unit TypeNetwork", net.getDistance()));
+		String name = network.getRow(network).get(CyNetwork.NAME, String.class);
+		if(name != null)
+		{
+			network.getRow(network).set(CyNetwork.NAME, name);
+		}
+		else {
+			network.getRow(network).set(CyNetwork.NAME, String.format("%.2f-unit TypeNetwork", net.getDistance()));
+		}
 
 		// Get the node table and add columns
 		CyTable nodeTable = net.getNodeTable();

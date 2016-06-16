@@ -132,8 +132,6 @@ public class ZoomPane extends JScrollPane {
 					Point move = new Point(mouseClick.x - e.getX(), mouseClick.y - e.getY());
 					Rectangle r = new Rectangle(move, vp.getExtentSize());
 					vp.scrollRectToVisible(r);
-					System.out.println("Drag event registered");
-					System.out.println(r);
 					mouseClick.setLocation(e.getPoint());
 					//repaint();
 				}
