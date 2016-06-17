@@ -88,9 +88,13 @@ public class ImagePane extends JPanel {
 						imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
 					}
 					else {
-						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) continue;
 						for(Transcript n : t.getNeighboursForNetwork(sel)) {
-							if(session.edgeSelection.get(t.name).contains(n.name)) {
+							if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
+								imgG2.setColor(session.getGeneColour(t.name));
+								imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
+							}
+							else if(session.nodeSelection.contains(t.name)) {
 								imgG2.setColor(session.getGeneColour(t.name));
 								imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
 							}
@@ -139,11 +143,17 @@ public class ImagePane extends JPanel {
 							gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
 						}
 						else {
-							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || !session.edgeSelection.keySet().contains(t.name)) continue;
+							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) continue;
 							for(Transcript n : t.getNeighboursForNetwork(sel)) {
-								if(session.edgeSelection.get(t.name).contains(n.name)) {
-										gr.setColor(session.getGeneColour(t.name));
-										gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
+								if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
+									gr.setColor(session.getGeneColour(t.name));
+									gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
+								}
+								else if(session.nodeSelection.contains(t.name))
+								{
+									gr.setColor(session.getGeneColour(t.name));
+									gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
+
 								}
 							}
 						}

@@ -36,6 +36,7 @@ public class TypeNetworkTask extends AbstractTask {
 	private class Node {
 		String name;
 		int num = 0;
+		int totalNum = 0;
 		Map<String, Integer> coNodes;
 
 		Node(String name) {
@@ -59,6 +60,15 @@ public class TypeNetworkTask extends AbstractTask {
 			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 			{
 
+				// If we haven't made a node for this transcript name, make one
+				if(!nodes.containsKey(t.name)) {
+					nodes.put(t.name, new Node(t.name));
+				}
+
+				Node node = nodes.get(t.name);
+
+				node.totalNum++;
+
 				// If no neighbours were found for this transcript, go to next.
 				if(t.getNeighboursForNetwork(net) == null) continue;
 				if(t.getNeighboursForNetwork(net).size() < 1) continue;
@@ -66,12 +76,6 @@ public class TypeNetworkTask extends AbstractTask {
 				// If the neighbours aren't within the selection, go to next.
 				if(t.getSelection(net) != net.getSelection()) continue;
 
-				// If we haven't made a node for this transcript name, make one
-				if(!nodes.containsKey(t.name)) {
-					nodes.put(t.name, new Node(t.name));
-				}
-
-				Node node = nodes.get(t.name);
 				node.num++;
 
 				// Iterate through neighbours of this transcript
@@ -107,6 +111,7 @@ public class TypeNetworkTask extends AbstractTask {
 		// Get the node table and add columns
 		CyTable nodeTable = net.getNodeTable();
 		nodeTable.createColumn("num", Integer.class, false);
+		nodeTable.createColumn("selfnorm", Double.class, false);
 		
 		// Get the edge table and add columns
 		CyTable edgeTable = network.getDefaultEdgeTable();	
@@ -119,7 +124,7 @@ public class TypeNetworkTask extends AbstractTask {
 			CyNode node = network.addNode();
 			CyRow row = nodeTable.getRow(node.getSUID());
 			row.set(CyNetwork.NAME, n.name);
-			row.set("num", n.num);
+			row.set("num", n.totalNum);
 		}
 		a.getCyEventHelper().flushPayloadEvents();
 
@@ -128,16 +133,24 @@ public class TypeNetworkTask extends AbstractTask {
 		{
 			for(String s : n.coNodes.keySet()) {
 				
-				int nonNormalScore = n.coNodes.get(s);
-				int thisNodeNumber = n.num;
-				int otherNodeNumber = nodes.get(s).num;
-				double normal = Math.sqrt((double)nonNormalScore / thisNodeNumber / otherNodeNumber);
+				int rawScore = n.coNodes.get(s);
+				int n1 = n.totalNum;
+				int n2 = nodes.get(s).totalNum;
+				// The normalised score is the raw co-occurence count divided by
+				// the geometric mean of the total counts of both genes
+				double normal = (double)rawScore / Math.sqrt((double)n1 * (double)n2);
 
 				// Skip adding the edge if it doesn't qualify
 				if(normal < net.getCutoff()) continue;
 
 				CyNode thisNode = NetworkUtil.getNodeWithName(network, nodeTable, n.name);
 				CyNode otherNode = NetworkUtil.getNodeWithName(network, nodeTable, s);
+
+				// If this would be a self-link, give the normal to selfnorm property instead
+				if(thisNode == otherNode) {
+					nodeTable.getRow(thisNode.getSUID()).set("selfnorm", normal);
+					continue;
+				}
 					
 				if(!network.containsEdge(thisNode, otherNode)) {
 					CyEdge edge = network.addEdge(thisNode, otherNode, false);
@@ -152,7 +165,7 @@ public class TypeNetworkTask extends AbstractTask {
 
 					row.set(CyNetwork.NAME, edgeName);
 					row.set(CyEdge.INTERACTION, "Co-occurence");
-					row.set("num", nonNormalScore); 
+					row.set("num", rawScore); 
 					row.set("normal", normal); 
 				}
 			}

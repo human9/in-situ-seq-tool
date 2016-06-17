@@ -6,13 +6,13 @@ import java.util.Map;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualMappingFunction;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualPropertyDependency;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
@@ -41,14 +41,23 @@ public class ViewStyler extends AbstractTask {
 		VisualMappingFunctionFactory pvmf = a.getVisualMappingFunctionPassthroughFactory();
 		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
 
-		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.LIGHT_GRAY);
+		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.DARK_GRAY);
+		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, new Color(5,20,2));
+		vs.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, new Color(204,255,204));
 		
-		VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_FILL_COLOR);
+		VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
 		for(String name : geneColours.keySet())
 		{
 			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(name, geneColours.get(name));
 		}
 		vs.addVisualMappingFunction(nodeColour);
+		
+		VisualMappingFunction<String,Paint> labelColor = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
+		for(String name : geneColours.keySet())
+		{
+			((DiscreteMapping<String,Paint>)labelColor).putMapValue(name, geneColours.get(name));
+		}
+		vs.addVisualMappingFunction(labelColor);
 		
 		VisualMappingFunction<String,String> ntool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.NODE_TOOLTIP);
 		vs.addVisualMappingFunction(ntool);
@@ -62,9 +71,18 @@ public class ViewStyler extends AbstractTask {
 		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(10000,new  BoundaryRangeValues<Double>(80d,90d,100d));
 		vs.addVisualMappingFunction(sizeMap);
 		VisualMappingFunction<Double,Double> edgeMap = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(0d,0d,3d));
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(6d,8d,10d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.0d,new  BoundaryRangeValues<Double>(0d,0d,1d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(1d,2d,3d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(3d,5d,10d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(1.0d,new  BoundaryRangeValues<Double>(10d,15d,20d));
 		vs.addVisualMappingFunction(edgeMap);
+		
+		VisualMappingFunction<Double,Double> selfMap = cvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.0d,new  BoundaryRangeValues<Double>(0d,0d,1d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(1d,2d,3d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(3d,5d,10d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(1.0d,new  BoundaryRangeValues<Double>(10d,15d,20d));
+		vs.addVisualMappingFunction(selfMap);
 		
 		a.getVisualMappingManager().addVisualStyle(vs);
 
@@ -85,6 +103,8 @@ public class ViewStyler extends AbstractTask {
 		a.getCyEventHelper().flushPayloadEvents();
 		a.getCyNetworkManager().addNetwork(network.getNetwork());
 		a.getCyNetworkViewManager().addNetworkView(view);
+		a.getVisualMappingManager().setVisualStyle(style, view);
+		a.getVisualMappingManager().setCurrentVisualStyle(style);
 		view.updateView();
 	}
 
