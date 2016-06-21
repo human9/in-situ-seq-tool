@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal.typenetwork;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
@@ -38,10 +39,12 @@ public class TypeNetworkTask extends AbstractTask {
 		int num = 0;
 		int totalNum = 0;
 		Map<String, Integer> coNodes;
+		Map<String, Integer> baseCoNodes;
 
 		Node(String name) {
 			this.name = name;
 			coNodes = new HashMap<String, Integer>();
+			baseCoNodes = new HashMap<String, Integer>();
 		}
 	}
 
@@ -54,12 +57,15 @@ public class TypeNetworkTask extends AbstractTask {
 		taskMonitor.showMessage(TaskMonitor.Level.INFO, "Creating network view");
 		Map<String, Node> nodes = new HashMap<String, Node>();
 
+		int N = 0;
+		int K = 0;
 		// Iterate through all our transcripts
 		try {
 		
 			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 			{
 
+				N++;
 				// If we haven't made a node for this transcript name, make one
 				if(!nodes.containsKey(t.name)) {
 					nodes.put(t.name, new Node(t.name));
@@ -77,6 +83,9 @@ public class TypeNetworkTask extends AbstractTask {
 				if(t.getSelection(net) != net.getSelection()) continue;
 
 				node.num++;
+				//K++;
+
+				Map<String, Boolean> hasAdded = new HashMap<String, Boolean>();
 
 				// Iterate through neighbours of this transcript
 				for(Transcript n : t.getNeighboursForNetwork(net)) {
@@ -88,6 +97,14 @@ public class TypeNetworkTask extends AbstractTask {
 
 					// Increment the count for this relationship
 					node.coNodes.put(n.name, node.coNodes.get(n.name) + 1);
+					
+					if(hasAdded.get(n.name) == null) {
+						if(!node.baseCoNodes.containsKey(n.name)) {
+							node.baseCoNodes.put(n.name, 0);
+						}
+						node.baseCoNodes.put(n.name, node.baseCoNodes.get(n.name) + 1);
+						hasAdded.put(n.name, true);
+					}
 				}
 			}
 		}
@@ -95,6 +112,21 @@ public class TypeNetworkTask extends AbstractTask {
 			e.printStackTrace();
 			return;
 		}
+
+
+		/* THE HYPERGEOMETRIC DISTRIBUTION
+		 *
+		 *            (K)(N-K)
+		 *            (k)(n-k)
+		 * P(X = k) = --------
+		 *              (N)
+		 *              (n)
+		 *
+		 * N = total number of transcripts
+		 * K = number of transcripts involved in a co-occurence
+		 * n = total no. of this + other transcript
+		 * k = no. times these transcripts co-occur
+		 */
 
 		CyNetwork network = net.getNetwork();
 
@@ -129,22 +161,45 @@ public class TypeNetworkTask extends AbstractTask {
 		a.getCyEventHelper().flushPayloadEvents();
 
 		// Add edges into actual network
-		for (Node n : nodes.values()) 
+		for (Node node : nodes.values()) 
 		{
-			for(String s : n.coNodes.keySet()) {
+			for(String s : node.coNodes.keySet()) {
 				
-				int rawScore = n.coNodes.get(s);
-				int n1 = n.totalNum;
+				CyNode thisNode = NetworkUtil.getNodeWithName(network, nodeTable, node.name);
+				CyNode otherNode = NetworkUtil.getNodeWithName(network, nodeTable, s);
+				
+				int rawScore = node.coNodes.get(s);
+				int n1 = node.totalNum;
 				int n2 = nodes.get(s).totalNum;
+				int n;
+				int k;
+				if(thisNode == otherNode)
+				{
+					n = n1;
+					K = node.num;
+					k = node.baseCoNodes.get(s);
+				}
+				else
+				{
+					n = n1 + n2;
+					K = node.num + nodes.get(s).num;
+					k = node.baseCoNodes.get(s) + nodes.get(s).baseCoNodes.get(node.name);
+				}
+
+				HypergeometricDistribution hgd = new HypergeometricDistribution(N,K,n);
+
+				double cpf = hgd.cumulativeProbability(k);
+				System.out.println();
+				System.out.print(String.format("N:%d K:%d n:%d k:%d\n", N, K, n, k));
+				System.out.println("SIG:"+node.name + "-" + s +": "+ cpf);
+
 				// The normalised score is the raw co-occurence count divided by
 				// the geometric mean of the total counts of both genes
 				double normal = (double)rawScore / Math.sqrt((double)n1 * (double)n2);
 
 				// Skip adding the edge if it doesn't qualify
-				if(normal < net.getCutoff()) continue;
-
-				CyNode thisNode = NetworkUtil.getNodeWithName(network, nodeTable, n.name);
-				CyNode otherNode = NetworkUtil.getNodeWithName(network, nodeTable, s);
+				//if(normal < net.getCutoff()) continue;
+				if(cpf < 0.95) continue;
 
 				// If this would be a self-link, give the normal to selfnorm property instead
 				if(thisNode == otherNode) {
@@ -158,10 +213,10 @@ public class TypeNetworkTask extends AbstractTask {
 					CyRow row = edgeTable.getRow(edge.getSUID());
 					String edgeName;
 
-					if(n.name.compareTo(s) > 0)
-						edgeName = n.name + "-" + s;
+					if(node.name.compareTo(s) > 0)
+						edgeName = node.name + "-" + s;
 					else
-						edgeName = s + "-" + n.name;
+						edgeName = s + "-" + node.name;
 
 					row.set(CyNetwork.NAME, edgeName);
 					row.set(CyEdge.INTERACTION, "Co-occurence");

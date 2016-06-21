@@ -27,6 +27,7 @@ public class ZoomPane extends JScrollPane {
 	private double ratioX, ratioY;
 	private Dimension imgDims;
 	private JViewport vp;
+	private Point start;
 
 	private Timer imageTimer = new Timer();
 	boolean taskdone = true;
@@ -99,6 +100,7 @@ public class ZoomPane extends JScrollPane {
 				if (e.getButton() == MouseEvent.BUTTON1) {
 					dragButton = true;
 					mouseClick = e.getPoint();
+					start = e.getPoint();
 				}
 				if (e.getButton() == MouseEvent.BUTTON3) {
 					selectButton = true;
@@ -112,6 +114,16 @@ public class ZoomPane extends JScrollPane {
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				if (e.getButton() == MouseEvent.BUTTON1) {
+					if(e.getPoint().equals(start))
+					{
+						// Run point selection methods
+						Point pix = e.getPoint();
+						Point viewp = vp.getViewPosition();
+						Point actual = new Point((int)((pix.x + viewp.x - imagePane.offset.width) / imagePane.getScale()),
+												 (int)((pix.y + viewp.y - imagePane.offset.height) / imagePane.getScale()));
+						imagePane.clickAtPoint(actual);
+
+					}
 					dragButton = false;
 				}
 				if (e.getButton() == MouseEvent.BUTTON3) {
@@ -163,6 +175,7 @@ public class ZoomPane extends JScrollPane {
 			imagePane.ratioIsCurrent = true;
 		}
 
+		imagePane.zoomAltered = true;
 		if (direction < 0) {
 			imagePane.scaleUp();
 		} else {

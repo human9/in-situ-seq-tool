@@ -37,6 +37,7 @@ public class ImagePane extends JPanel {
 	private Dimension requested;
 	public ZoomPane zp;
 	public boolean ratioIsCurrent;
+	public boolean zoomAltered;
 	boolean timerDone = true;
 	public Point selectedOrigin = new Point();
 	public Point selectedFinish = new Point();
@@ -46,6 +47,7 @@ public class ImagePane extends JPanel {
 	private boolean cacheAvailable;
 	private boolean showNodes = false;
 	private double pointScale = 1;
+	private Transcript pointClicked;
 
 	public ImagePane(final BufferedImage image, InseqSession s) {
 		this.image = image;
@@ -113,6 +115,7 @@ public class ImagePane extends JPanel {
 	@Override
 	public void paintComponent(Graphics g) {
 
+		zoomAltered = false;
 		Graphics2D gr = (Graphics2D) g;
 		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		//Although this looks nice it cuts the framerate a bit
@@ -138,6 +141,7 @@ public class ImagePane extends JPanel {
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
 					{
+						if(zoomAltered) break;
 						if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
 							gr.setColor(session.getGeneColour(t.name));
 							gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
@@ -170,6 +174,17 @@ public class ImagePane extends JPanel {
 					continue;
 				else
 					names.add(name);
+			}
+
+			if(pointClicked != null) {
+				System.out.println(pointClicked);
+				size = 12;
+				scaledOffset = (int)(size/2);
+				gr.setStroke(new BasicStroke(2));
+				gr.setColor(session.getGeneColour(pointClicked.name));
+				Point drawLocation = new Point((int)(pointScale * pointClicked.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * pointClicked.pos.y*scale) - scaledOffset + offset.height);
+				gr.drawOval(drawLocation.x, drawLocation.y, size, size);
+				gr.drawString(pointClicked.name, drawLocation.x + size + 2, drawLocation.y+6);
 			}
 			for(String name : names)
 			{
@@ -276,6 +291,19 @@ public class ImagePane extends JPanel {
 			offset.height = (minimum.height - requested.height) / 2;
 		}
 		setPreferredSize(resize);
+	}
+
+	public void clickAtPoint(Point p) {
+		System.out.println(p);
+		Transcript x;
+		try {
+			x = session.tree.nearest(new double[]{p.x, p.y});
+		}
+		catch (KeySizeException e) {
+			x = null;
+		}
+		pointClicked = x;
+		repaint();
 	}
 
 	static public BufferedImage getImageFile(String path) {
