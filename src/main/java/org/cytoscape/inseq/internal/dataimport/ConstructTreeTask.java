@@ -82,7 +82,7 @@ public class ConstructTreeTask extends AbstractTask {
 		output = kdTree;
 		if(ia != null)
 		{
-			ia.initSession(output);
+			ia.initSession(output, raw);
 		}
 	}
 

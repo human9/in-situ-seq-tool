@@ -36,8 +36,8 @@ import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.ViewStyler;
 import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
+import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
-import org.cytoscape.inseq.internal.typenetwork.TypeNetworkTask;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -133,24 +133,19 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				distance = (Double)(distanceCutoff.getValue());
 			}
 		});
-		
-		GridBagConstraints nlabelCons = new GridBagConstraints(0, 2, 1, 1, 0, 0, GridBagConstraints.CENTER,
+	/*	
+		GridBagConstraints nlabelCons = new GridBagConstraints(0, 2, 2, 1, 0, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JLabel nlabel = new JLabel("Normal cutoff:");
-		panel.add(nlabel, nlabelCons);
-
-		GridBagConstraints normalCons = new GridBagConstraints(1, 2, 1, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JSpinner normalCutoff = new JSpinner(new SpinnerNumberModel(cutoff, 0d, 100d, 0.001d));
-		normalCutoff.addChangeListener(new ChangeListener() {
+		JButton distButton = new JButton("Find distribution");
+		panel.add(distButton, nlabelCons);
+		distButton.addActionListener(new ActionListener() {
 			@Override
-			public void stateChanged(ChangeEvent e) {
-				cutoff = (Double)normalCutoff.getValue();
+			public void actionPerformed(ActionEvent e) {
+				TaskIterator ti = new TaskIterator(new ShuffleTask(session.getNetwork(session.getSelectedNetwork()), session, ia.getCAA()));
+				ia.getCSAA().getDialogTaskManager().execute(ti);
 			}
 		});
-
-		panel.add(normalCutoff, normalCons);
-
+*/
 		GridBagConstraints consTypes = new GridBagConstraints(0, 4, 2, 1, 1, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		JButton types = new JButton("Generate co-occurence network");
@@ -160,6 +155,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
+				System.out.println("Beginning");
 				if(itr.hasNext()) return;
 				
 				// Create a new TypeNetwork
@@ -183,7 +179,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				});
 
 				// Construct and display the new network.
-				Task networkTask = new TypeNetworkTask(network, session, ia.getCAA());
+				Task networkTask = new ShuffleTask(network, session, ia.getCAA());
 				itr.append(networkTask);
 
 				
@@ -194,6 +190,8 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 						refreshNetworks(network);
 					}
 				});
+				
+				System.out.println("Iterator set");
 
 			}
 		});

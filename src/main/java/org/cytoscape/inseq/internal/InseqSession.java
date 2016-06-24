@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal;
 import java.awt.Color;
 import java.awt.Shape;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 import edu.wlu.cs.levy.CG.KDTree;
+import edu.wlu.cs.levy.CG.KeySizeException;
 
 /** Encapsulates the components generated during a session.
  *  It should be possible to serialize this class for restoring sessions.
@@ -30,18 +32,33 @@ public class InseqSession {
 
 	private CyAppAdapter CAA;
 	private List<TypeNetwork> networks;
+	private List<Transcript> raw;
+	private List<Integer> originalNames;
 	private Integer selectedNetwork;
 
 	private Map<String, Integer> geneCounts;
 	private Map<String, Color> geneColours;
+	private List<String> nodes;
+	private List<Integer> shuffledNames; 
 
 	/** Components of a session are initialised as required.
 	 *  A session is created when the user imports data.
 	 */
-	public InseqSession(KDTree<Transcript> t, CyAppAdapter CAA) {
+	public InseqSession(KDTree<Transcript> t, List<Transcript>raw, CyAppAdapter CAA) {
 		this.tree = t;
 		this.CAA = CAA;
+		this.raw = raw;
 
+
+		originalNames = new ArrayList<Integer>();
+		nodes = new ArrayList<String>();
+		for(Transcript tr : raw) {
+			if(!nodes.contains(tr.name)) {
+				nodes.add(tr.name);
+			}
+			originalNames.add(nodes.indexOf(tr.name));
+		}
+		shuffledNames = new ArrayList<Integer>(originalNames);
 
 		// List and count the genes present.
 		this.geneCounts = ParseUtil.getGenes(tree);
@@ -86,6 +103,23 @@ public class InseqSession {
 		catch(IndexOutOfBoundsException e) {
 			return null;
 		}
+	}
+
+	public void shuffleNames() {
+		Collections.shuffle(shuffledNames);
+		for(int i = 0; i < raw.size(); i++) {
+			raw.get(i).type = shuffledNames.get(i);
+		}
+	}
+	
+	public void restoreNames() {
+		for(int i = 0; i < raw.size(); i++) {
+			raw.get(i).type = originalNames.get(i);
+		}
+	}
+
+	public String getTypeName(int i) {
+		return nodes.get(i);
 	}
 
 	public List<TypeNetwork> getNetworkList() {

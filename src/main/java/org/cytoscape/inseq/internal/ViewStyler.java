@@ -65,23 +65,32 @@ public class ViewStyler extends AbstractTask {
 		vs.addVisualMappingFunction(etool);
 		VisualMappingFunction<String,String> pMap = pvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL);
 		vs.addVisualMappingFunction(pMap);
-		VisualMappingFunction<Integer,Double> sizeMap = cvmf.createVisualMappingFunction("num", Integer.class, BasicVisualLexicon.NODE_SIZE);
-		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(1,new  BoundaryRangeValues<Double>(20d,25d,30d));
-		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(100,new  BoundaryRangeValues<Double>(40d,50d,60d));
-		((ContinuousMapping<Integer,Double>)sizeMap).addPoint(10000,new  BoundaryRangeValues<Double>(80d,90d,100d));
+		VisualMappingFunction<Double,Double> sizeMap = cvmf.createVisualMappingFunction("proportion", Double.class, BasicVisualLexicon.NODE_SIZE);
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(0d,new  BoundaryRangeValues<Double>(10d,15d,20d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(0.001d,new  BoundaryRangeValues<Double>(20d,25d,30d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(30d,40d,50d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(60d,70d,80d));
+		((ContinuousMapping<Double,Double>)sizeMap).addPoint(1d,new  BoundaryRangeValues<Double>(80d,100d,110d));
 		vs.addVisualMappingFunction(sizeMap);
+
+		VisualMappingFunction<Double,Double> edges = pvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		vs.addVisualMappingFunction(edges);
+		//VisualMappingFunction<Double,Double> borders = pvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
+		//vs.addVisualMappingFunction(borders);
+/*
 		VisualMappingFunction<Double,Double> edgeMap = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.0d,new  BoundaryRangeValues<Double>(0d,0d,1d));
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(1d,2d,3d));
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(3d,5d,10d));
-		((ContinuousMapping<Double,Double>)edgeMap).addPoint(1.0d,new  BoundaryRangeValues<Double>(10d,15d,20d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(1.96d,new  BoundaryRangeValues<Double>(4d,8d,12d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(3d,new  BoundaryRangeValues<Double>(12d,14d,16d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(6d,new  BoundaryRangeValues<Double>(16d,20d,25d));
+		((ContinuousMapping<Double,Double>)edgeMap).addPoint(10d,new  BoundaryRangeValues<Double>(25d,30d,40d));
 		vs.addVisualMappingFunction(edgeMap);
-		
+*/		
 		VisualMappingFunction<Double,Double> selfMap = cvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.0d,new  BoundaryRangeValues<Double>(0d,0d,1d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.01d,new  BoundaryRangeValues<Double>(1d,2d,3d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(0.1d,new  BoundaryRangeValues<Double>(3d,5d,10d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(1.0d,new  BoundaryRangeValues<Double>(10d,15d,20d));
+
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(1.96d,new  BoundaryRangeValues<Double>(0d,2d,4d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(3d,new  BoundaryRangeValues<Double>(4d,5d,6d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(6d,new  BoundaryRangeValues<Double>(6d,8d,10d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(10d,new  BoundaryRangeValues<Double>(10d,12d,14d));
 		vs.addVisualMappingFunction(selfMap);
 		
 		a.getVisualMappingManager().addVisualStyle(vs);

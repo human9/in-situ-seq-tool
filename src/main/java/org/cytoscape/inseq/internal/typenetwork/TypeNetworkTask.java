@@ -114,20 +114,7 @@ public class TypeNetworkTask extends AbstractTask {
 		}
 
 
-		/* THE HYPERGEOMETRIC DISTRIBUTION
-		 *
-		 *            (K)(N-K)
-		 *            (k)(n-k)
-		 * P(X = k) = --------
-		 *              (N)
-		 *              (n)
-		 *
-		 * N = total number of transcripts
-		 * K = number of transcripts involved in a co-occurence
-		 * n = total no. of this + other transcript
-		 * k = no. times these transcripts co-occur
-		 */
-
+	
 		CyNetwork network = net.getNetwork();
 
 		// Name the network
@@ -143,6 +130,7 @@ public class TypeNetworkTask extends AbstractTask {
 		// Get the node table and add columns
 		CyTable nodeTable = net.getNodeTable();
 		nodeTable.createColumn("num", Integer.class, false);
+		nodeTable.createColumn("proportion", Double.class, false);
 		nodeTable.createColumn("selfnorm", Double.class, false);
 		
 		// Get the edge table and add columns
@@ -157,6 +145,7 @@ public class TypeNetworkTask extends AbstractTask {
 			CyRow row = nodeTable.getRow(node.getSUID());
 			row.set(CyNetwork.NAME, n.name);
 			row.set("num", n.totalNum);
+			row.set("proportion", (double)n.totalNum/N);
 		}
 		a.getCyEventHelper().flushPayloadEvents();
 
@@ -173,17 +162,20 @@ public class TypeNetworkTask extends AbstractTask {
 				int n2 = nodes.get(s).totalNum;
 				int n;
 				int k;
+
+				int thisCoNum = NetworkUtil.getNonNullInt(node.baseCoNodes.get(s));
+				int thatCoNum = NetworkUtil.getNonNullInt(nodes.get(s).baseCoNodes.get(node.name));
 				if(thisNode == otherNode)
 				{
 					n = n1;
 					K = node.num;
-					k = node.baseCoNodes.get(s);
+					k = thisCoNum; 
 				}
 				else
 				{
 					n = n1 + n2;
 					K = node.num + nodes.get(s).num;
-					k = node.baseCoNodes.get(s) + nodes.get(s).baseCoNodes.get(node.name);
+					k = thisCoNum + thatCoNum; 
 				}
 
 				HypergeometricDistribution hgd = new HypergeometricDistribution(N,K,n);
@@ -195,10 +187,26 @@ public class TypeNetworkTask extends AbstractTask {
 
 				// The normalised score is the raw co-occurence count divided by
 				// the geometric mean of the total counts of both genes
-				double normal = (double)rawScore / Math.sqrt((double)n1 * (double)n2);
+				double normal = (double)rawScore / Math.sqrt((double)node.num * (double)nodes.get(s).num);
 
 				// Skip adding the edge if it doesn't qualify
 				//if(normal < net.getCutoff()) continue;
+				
+				/* THE HYPERGEOMETRIC DISTRIBUTION
+				 *
+				 *            (K)(N-K)
+				 *            (k)(n-k)
+				 * P(X = k) = --------
+				 *              (N)
+				 *              (n)
+				 *
+				 * N = total number of transcripts
+				 * K = number of co-occurences for these two transcripts
+				 * n = total no. of this + other transcript
+				 * k = no. times these transcripts co-occur with each other
+				 */
+
+				// if 95% of random occurence likelihood is below us, this edge is significant
 				if(cpf < 0.95) continue;
 
 				// If this would be a self-link, give the normal to selfnorm property instead

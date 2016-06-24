@@ -50,4 +50,11 @@ public class NetworkUtil {
 		}
 		return null;
 	}
+
+	public static int getNonNullInt(Integer i) {
+		if(i == null)
+			return 0;
+		else
+			return i.intValue();
+	}
 }
