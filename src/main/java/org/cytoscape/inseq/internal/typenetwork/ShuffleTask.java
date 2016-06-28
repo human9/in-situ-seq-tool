@@ -188,7 +188,7 @@ public class ShuffleTask extends AbstractTask {
 				StandardDeviation std = new StandardDeviation();
 				double[] values = new double[reps];
 				for(int z = 0; z < reps; z++) {
-					values[z] = (double)edgecount[index-1][z]; 
+					values[z] = (double)edgecount[index-1][z]/2d; 
 				}
 				double mean = (double)sum/2d/reps;
 				double stdev = std.evaluate(values);
