@@ -118,10 +118,7 @@ public class ZoomPane extends JScrollPane {
 					{
 						// Run point selection methods
 						Point pix = e.getPoint();
-						Point viewp = vp.getViewPosition();
-						Point actual = new Point((int)((pix.x + viewp.x - imagePane.offset.width) / imagePane.getScale()),
-												 (int)((pix.y + viewp.y - imagePane.offset.height) / imagePane.getScale()));
-						imagePane.clickAtPoint(actual);
+						imagePane.clickAtPoint(pix);
 
 					}
 					dragButton = false;

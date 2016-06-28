@@ -12,6 +12,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -70,6 +71,27 @@ public class ImagePane extends JPanel {
 		cacheStopped = true;
 	}
 
+	public void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
+		if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
+			g.setColor(session.getGeneColour(t.name));
+			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
+		}
+
+		else {
+			if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) return;
+			for(Transcript n : t.getNeighboursForNetwork(sel)) {
+				if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
+					g.setColor(session.getGeneColour(t.name));
+					g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
+				}
+				else if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) {
+					g.setColor(session.getGeneColour(t.name));
+					g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
+				}
+			}
+		}
+	}
+
 	public void cacheImage() {
 		if(getWidth() < 3000 || getHeight() < 3000) {
 			cacheStopped = false;
@@ -85,23 +107,7 @@ public class ImagePane extends JPanel {
 				for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
 				{
 					if(cacheStopped) return;
-					if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
-						imgG2.setColor(session.getGeneColour(t.name));
-						imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
-					}
-					else {
-						if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) continue;
-						for(Transcript n : t.getNeighboursForNetwork(sel)) {
-							if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
-								imgG2.setColor(session.getGeneColour(t.name));
-								imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
-							}
-							else if(session.nodeSelection.contains(t.name)) {
-								imgG2.setColor(session.getGeneColour(t.name));
-								imgG2.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
-							}
-						}
-					}
+					smartDraw(sel, t, imgG2, size, scaledOffset, new Dimension(0,0));						
 				}
 			}
 			catch (KeySizeException e) {
@@ -112,6 +118,7 @@ public class ImagePane extends JPanel {
 			cacheAvailable = true;
 		}
 	}
+
 	@Override
 	public void paintComponent(Graphics g) {
 
@@ -142,25 +149,7 @@ public class ImagePane extends JPanel {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
 					{
 						if(zoomAltered) break;
-						if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
-							gr.setColor(session.getGeneColour(t.name));
-							gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
-						}
-						else {
-							if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) continue;
-							for(Transcript n : t.getNeighboursForNetwork(sel)) {
-								if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
-									gr.setColor(session.getGeneColour(t.name));
-									gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
-								}
-								else if(session.nodeSelection.contains(t.name))
-								{
-									gr.setColor(session.getGeneColour(t.name));
-									gr.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + offset.height,size,size);
-
-								}
-							}
-						}
+						smartDraw(sel, t, gr, size, scaledOffset, offset);
 					}
 				}
 				catch (KeySizeException e) {
@@ -227,31 +216,6 @@ public class ImagePane extends JPanel {
 	}
 
 	public void scaleUp() {
-		
-		/*Graphics g = image.createGraphics();
-
-		if (ia.pointsToDraw != null)
-		{
-			g.clearRect(0, 0, image.getWidth(), image.getHeight());
-			int diameter = (int)(1/scale * 10);
-			int i = 0;
-			for (String key : ia.pointsToDraw.keySet())
-			{
-				ArrayList<Point2D.Double> arr = ia.pointsToDraw.get(key);
-				int hue = (int)(i*(360d/ia.pointsToDraw.size())+((i++%2)*90))%360;
-				//System.out.println(i + " hue: " + hue);
-				g.setColor(Color.getHSBColor(hue/360f,1,1));
-				
-				for(Point2D.Double p : arr)
-				{
-					g.drawOval((int)(p.x) - diameter/2,(int)(p.y) - diameter/2, diameter, diameter);
-				}
-				g.drawString(key, 6, i*14);
-			}
-		}
-
-		g.dispose();
-		repaint();*/
 		if (scale <= 100) {
 			cacheAvailable = false;
 			scale *= 1.1;
@@ -292,17 +256,57 @@ public class ImagePane extends JPanel {
 		}
 		setPreferredSize(resize);
 	}
+	
+	/** Translates a VIEWPORT PIXEL into an actual point in the tree.
+	 *  There's no need to have a method for scaled points to tree points
+	 *  as that should never be required.
+	 */
+	public Point2D.Double viewportPixelPointToActual(Point p) {
+		Point vp = zp.getViewport().getViewPosition();
+		int x = (int)((p.x + vp.x - offset.width) / getScale());
+		int y = (int)((p.y + vp.y - offset.height) / getScale());
+		return new Point2D.Double(x,y);
+	}
+
+	// Translates an actual tree point into a PIXEL WITHIN THE SCALED IMAGE
+	public Point actualPointToScaledPixel(Point2D.Double actual) {
+		int x = (int)(pointScale * actual.x*scale) + offset.width;
+		int y = (int)(pointScale * actual.y*scale) + offset.height;
+		return new Point(x,y);
+	}
+	
+	// Translates an actual tree point into a VIEWPORT PIXEL
+	public Point actualPointToViewportPixel(Point2D.Double actual) {
+		Point vp = zp.getViewport().getViewPosition();
+		int x = (int)(pointScale * actual.x*scale) + offset.width - vp.x;
+		int y = (int)(pointScale * actual.y*scale) + offset.height - vp.y;
+		return new Point(x,y);
+	}
+
+	public double euclideanDistance(Point a, Point b) {
+		System.out.println(a + "-->" + b);
+		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
+		return Math.sqrt(sqrdist);
+	}
 
 	public void clickAtPoint(Point p) {
+		Point2D.Double actual = viewportPixelPointToActual(p);
 		System.out.println(p);
 		Transcript x;
 		try {
-			x = session.tree.nearest(new double[]{p.x, p.y});
+			x = session.tree.nearest(new double[]{actual.x, actual.y});
 		}
 		catch (KeySizeException e) {
 			x = null;
 		}
-		pointClicked = x;
+		double dist = euclideanDistance(actualPointToViewportPixel(x.pos), p);
+		if(dist < 10) {
+			pointClicked = x;
+		}
+		else {
+			System.out.println(dist);
+			pointClicked = null;
+		}
 		repaint();
 	}
 
