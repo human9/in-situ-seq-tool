@@ -1,11 +1,12 @@
 package org.cytoscape.inseq.internal.tissueimage;
 
-import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.JLayeredPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
@@ -39,7 +40,7 @@ import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
  *  It will start embedded in the MainPanel, but can become a seperate window.
  *  @author John Salamon
  */
-public class SelectionPanel extends JPanel {
+public class SelectionPanel extends JLayeredPane {
 
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
@@ -54,20 +55,32 @@ public class SelectionPanel extends JPanel {
 
 	public SelectionPanel(final InseqActivator ia) {
 		this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
-		this.setLayout(new BorderLayout());
 		this.ia = ia;
 
-		GridBagLayout gbl = new GridBagLayout();
-		setLayout(gbl);
+		//GridBagLayout gbl = new GridBagLayout();
+		//setLayout(gbl);
 
 		consPanel = new GridBagConstraints(0, 1, 4, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
 		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia.getSession());
 		imagePane = ip;
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
-		add(zp, consPanel);
+		//add(zp, consPanel);
+		add(zp, JLayeredPane.DEFAULT_LAYER);
+		zp.setBounds(0, 0, getWidth(), getHeight());
 
-		GridBagConstraints consBrowse = new GridBagConstraints(0, 2, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
+		addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				revalidate();
+				zp.setBounds(0, 0, getWidth(), getHeight());
+				zp.revalidate();
+				zp.repaint();
+				zp.updateViewport();
+			}
+		});
+
+		GridBagConstraints consBrowse = new GridBagConstraints(0, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
 		JButton browse = new JButton("Change Image");
 		browse.addActionListener(new ActionListener() {
@@ -91,7 +104,9 @@ public class SelectionPanel extends JPanel {
 			}
 
 		});
-		add(browse, consBrowse);
+		//add(browse, consBrowse);
+		add(browse, JLayeredPane.PALETTE_LAYER);
+		browse.setBounds(0,0,100,50);
 
 		//node selection shows all points checkbox
 		JCheckBox nodeBox = new JCheckBox("Show all points from selected nodes");
@@ -104,12 +119,12 @@ public class SelectionPanel extends JPanel {
 				zp.restartTimer();
 			}
 		});
-		add(nodeBox, consCheckBox);
+		//add(nodeBox, consCheckBox);
 
 		GridBagConstraints consPointScale = new GridBagConstraints(3, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0, new Insets(4, 4, 4, 4), 1, 1);
 		JLabel label = new JLabel("Point scaling:");
 		GridBagConstraints consLabel = new GridBagConstraints(2,2,1,1,0.1,0,GridBagConstraints.CENTER,0,new Insets(4,4,4,4),1,1);
-		add(label, consLabel);
+		//add(label, consLabel);
 		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
 		pointScale.addChangeListener(new ChangeListener() {
 			@Override
@@ -133,7 +148,7 @@ public class SelectionPanel extends JPanel {
 
 		});
 */
-		add(pointScale, consPointScale);
+		//add(pointScale, consPointScale);
 
 		GridBagConstraints consShow = new GridBagConstraints(1, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0,
 				new Insets(4, 4, 4, 4), 1, 1);
@@ -181,7 +196,7 @@ public class SelectionPanel extends JPanel {
 				imagePane.forceRepaint();
 			}
 		});
-		add(showSelection, consShow);
+		//add(showSelection, consShow);
 		
 		setVisible(true);
 	}

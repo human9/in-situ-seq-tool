@@ -70,6 +70,12 @@ public class ZoomPane extends JScrollPane {
 		}
 	}
 
+	public void resizeEvent() {
+		imagePane.setMinimumSize(vp.getExtentSize());
+		imagePane.setSize();
+		imagePane.repaint();
+	}
+
 	public ZoomPane(final ImagePane ip) {
 		this.imagePane = ip;
 		ip.zp = this;
@@ -238,6 +244,12 @@ public class ZoomPane extends JScrollPane {
 		imagePane.zp = this;
 		view.setSize();
 	}
+	
+	public void updateViewport() {
+		imagePane.setMinimumSize(getViewport().getExtentSize());
+		imagePane.setSize();
+	}
+		
 		
 
 	/**

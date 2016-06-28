@@ -84,6 +84,7 @@ public class InseqActivator extends AbstractCyActivator {
 	@Override
 	public void shutDown() {
 		if(panel != null) panel.shutDown();
+		session = null;
 		super.shutDown();
 	}
 }
