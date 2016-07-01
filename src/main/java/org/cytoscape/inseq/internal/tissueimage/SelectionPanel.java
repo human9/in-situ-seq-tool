@@ -1,12 +1,9 @@
 package org.cytoscape.inseq.internal.tissueimage;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,15 +16,18 @@ import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.inseq.internal.util.NetworkUtil;
+import org.cytoscape.inseq.internal.util.WrapLayout;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -40,12 +40,12 @@ import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
  *  It will start embedded in the MainPanel, but can become a seperate window.
  *  @author John Salamon
  */
-public class SelectionPanel extends JLayeredPane {
+public class SelectionPanel extends JPanel {
 
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
-	private GridBagConstraints consPanel;
 	private JFrame parent;
+	public JPanel plotControls;
 	InseqActivator ia;
 	public ImagePane imagePane;
 
@@ -57,32 +57,19 @@ public class SelectionPanel extends JLayeredPane {
 		this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 		this.ia = ia;
 
-		//GridBagLayout gbl = new GridBagLayout();
-		//setLayout(gbl);
+		setLayout(new BorderLayout());
+		plotControls = new JPanel();
+		plotControls.setLayout(new WrapLayout(WrapLayout.LEADING));
+		add(plotControls, BorderLayout.PAGE_START);
 
-		consPanel = new GridBagConstraints(0, 1, 4, 1, 0.1, 1, GridBagConstraints.SOUTH, 1, new Insets(0, 0, 0, 0), 0, 0);
-		final ImagePane ip = new ImagePane(ImagePane.getImageFile("/home/jrs/Pictures/inseq.png"), ia.getSession());
+		final ImagePane ip = new ImagePane(ImagePane.getImageFile(null), ia.getSession(), new Dimension(300,300));
 		imagePane = ip;
 		zp = new ZoomPane(ip);
 		zp.setVisible(true);
-		//add(zp, consPanel);
-		add(zp, JLayeredPane.DEFAULT_LAYER);
-		zp.setBounds(0, 0, getWidth(), getHeight());
+		add(zp, BorderLayout.CENTER);
 
-		addComponentListener(new ComponentAdapter() {
-			@Override
-			public void componentResized(ComponentEvent e) {
-				revalidate();
-				zp.setBounds(0, 0, getWidth(), getHeight());
-				zp.revalidate();
-				zp.repaint();
-				zp.updateViewport();
-			}
-		});
-
-		GridBagConstraints consBrowse = new GridBagConstraints(0, 1, 1, 1, 0.1, 0, GridBagConstraints.SOUTH, 0,
-				new Insets(4, 4, 4, 4), 1, 1);
-		JButton browse = new JButton("Change Image");
+		JButton browse = new JButton(UIManager.getIcon("FileView.directoryIcon"));
+		plotControls.add(browse);
 		browse.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -104,14 +91,10 @@ public class SelectionPanel extends JLayeredPane {
 			}
 
 		});
-		//add(browse, consBrowse);
-		add(browse, JLayeredPane.PALETTE_LAYER);
-		browse.setBounds(0,0,100,50);
 
 		//node selection shows all points checkbox
-		JCheckBox nodeBox = new JCheckBox("Show all points from selected nodes");
-		GridBagConstraints consCheckBox = new GridBagConstraints(0, 3, 4, 1, 1, 0, GridBagConstraints.CENTER, 0,
-				new Insets(4, 4, 4, 4), 1, 1);
+		JCheckBox nodeBox = new JCheckBox(NetworkUtil.iconFromResource("/showall.png"));
+		plotControls.add(nodeBox);
 		nodeBox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -119,40 +102,18 @@ public class SelectionPanel extends JLayeredPane {
 				zp.restartTimer();
 			}
 		});
-		//add(nodeBox, consCheckBox);
-
-		GridBagConstraints consPointScale = new GridBagConstraints(3, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0, new Insets(4, 4, 4, 4), 1, 1);
-		JLabel label = new JLabel("Point scaling:");
-		GridBagConstraints consLabel = new GridBagConstraints(2,2,1,1,0.1,0,GridBagConstraints.CENTER,0,new Insets(4,4,4,4),1,1);
-		//add(label, consLabel);
+		
 		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
+		plotControls.add(pointScale);
 		pointScale.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				imagePane.setPointScale((Double)pointScale.getValue());	
 			}
 		});
-/*		info.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ia.selTranscripts = new HashMap<Point2D.Double, String>();
-				//System.out.println(ia.rect.x + "-" + ia.rect.y + "-" + (ia.rect.x+ia.rect.width) + "-" + (ia.rect.y+ia.rect.height));
-				for(Point2D.Double point : ia.transcripts.keySet())
-				{
-					if(point.x > ia.rect.x && point.x < (ia.rect.x+ia.rect.width) && point.y > ia.rect.y && point.y < (ia.rect.y+ia.rect.height))
-					{
-						//System.out.println(point);
-						ia.selTranscripts.put(point, ia.transcripts.get(point));
-					}
-				}
 
-		});
-*/
-		//add(pointScale, consPointScale);
-
-		GridBagConstraints consShow = new GridBagConstraints(1, 2, 1, 1, 1, 0, GridBagConstraints.CENTER, 0,
-				new Insets(4, 4, 4, 4), 1, 1);
-		JButton showSelection = new JButton("Show points");
+		JButton showSelection = new JButton(NetworkUtil.iconFromResource("/refresh.png"));
+		plotControls.add(showSelection);
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -196,13 +157,15 @@ public class SelectionPanel extends JLayeredPane {
 				imagePane.forceRepaint();
 			}
 		});
-		//add(showSelection, consShow);
 		
+		JLabel label = new JLabel("Point scaling:");
+		add(label, BorderLayout.PAGE_END);
+
 		setVisible(true);
 	}
 
 	private void changeImage(String path) {
-		final ImagePane ip = new ImagePane(ImagePane.getImageFile(path), ia.getSession());
+		final ImagePane ip = new ImagePane(ImagePane.getImageFile(path), ia.getSession(), zp.getViewport().getExtentSize());
 		imagePane = ip;
 		zp.updateViewport(ip);
 		repaint();

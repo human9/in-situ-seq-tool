@@ -17,6 +17,7 @@ import java.util.Vector;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -38,6 +39,7 @@ import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
+import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -155,7 +157,6 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				System.out.println("Beginning");
 				if(itr.hasNext()) return;
 				
 				// Create a new TypeNetwork
@@ -190,8 +191,6 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 						refreshNetworks(network);
 					}
 				});
-				
-				System.out.println("Iterator set");
 
 			}
 		});
@@ -233,9 +232,8 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		panel.add(small, smallCons);
 		
 		
-		GridBagConstraints consPop = new GridBagConstraints(0, 0, 4, 1, 0.5, 0, GridBagConstraints.SOUTH,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		pop = new JButton("Move image to separate window");
+		ImageIcon icon = NetworkUtil.iconFromResource("/pop.png");
+		pop = new JButton(icon);
 		pop.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -257,7 +255,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		this.setLayout(new BorderLayout());
 
 		selectionPanel = new SelectionPanel(ia);
-		selectionPanel.add(pop, consPop);
+		selectionPanel.plotControls.add(pop);
 		selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);
 		this.add(splitPane, BorderLayout.CENTER);

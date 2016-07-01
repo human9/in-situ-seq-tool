@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.function.Function2D;
 import org.jfree.data.function.NormalDistributionFunction2D;
 import org.jfree.data.general.DatasetUtilities;
+import org.jfree.data.statistics.HistogramDataset;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleAnchor;
 import org.jfree.ui.TextAnchor;
@@ -54,7 +56,7 @@ public class ShuffleTask extends AbstractTask {
 		this.a = a;
 	}
 
-	/** 
+	/** Shuffles gene names in order to generate a random distribution.
 	 *  
 	 */
 	public void run(TaskMonitor taskMonitor) {
@@ -108,7 +110,7 @@ public class ShuffleTask extends AbstractTask {
 		System.out.println(edges.size());
 		Transcript[][] uniqueCombos = edges.toArray(new Transcript[edges.size()][]);
 
-		int reps = 100;
+		int reps = 1000;
 		
 		int[][] edgecount = new int[nodes.size()*nodes.size()][reps+1];
 
@@ -175,6 +177,16 @@ public class ShuffleTask extends AbstractTask {
 		JFreeChart chart = ChartFactory.createXYLineChart("Normal distribution", "Z-Score", "Frequency", line,
 				PlotOrientation.VERTICAL, false, false, false);
 		XYPlot plot = (XYPlot) chart.getPlot();
+
+
+		HistogramDataset dataset = new HistogramDataset();
+		JFreeChart chart2 = ChartFactory.createHistogram("raw", "num co-occurences", "frequency", dataset, PlotOrientation.VERTICAL, false, false, false);
+		XYPlot plot2 = (XYPlot) chart2.getPlot();
+
+		//String daName = "Nrn1-Cck";
+		//String daName = "Npy-Reln";
+		String daName = "Ndnf-Lhx6";
+
 		int sigcount= 0;
 		for(int i = 0; i < uniqueCombos.length; i++) {
 			int index = (uniqueCombos[i][0].type + 1) * (uniqueCombos[i][1].type + 1);
@@ -187,17 +199,25 @@ public class ShuffleTask extends AbstractTask {
 				}
 				StandardDeviation std = new StandardDeviation();
 				double[] values = new double[reps];
+				HashSet<Double> dedupe = new HashSet<Double>();
 				for(int z = 0; z < reps; z++) {
 					values[z] = (double)edgecount[index-1][z]/2d; 
+					dedupe.add((double)edgecount[index-1][z]/2d); 
 				}
 				double mean = (double)sum/2d/reps;
 				double stdev = std.evaluate(values);
 				String edgeName = session.getTypeName(uniqueCombos[i][0].type) + "-" + session.getTypeName(uniqueCombos[i][1].type);
 				double actual = edgecount[index-1][reps]/2d;
 				double Z = (actual - mean) / stdev;
-
-				System.out.println(edgeName + " mean: " + mean + " stdev: " + stdev + " actual: " + actual);
 				
+				if(edgeName.equals(daName)) {
+					dataset.addSeries(edgeName, values, 100);
+					System.out.println(edgeName + " mean: " + mean + " stdev: " + stdev + " actual: " + actual);
+				}
+
+				
+				ValueMarker marker2 = new ValueMarker(actual);
+				marker2.setPaint(Color.black);
 				ValueMarker marker = new ValueMarker(Z);
 				if(Math.abs(Z) > 1.96)
 				{
@@ -224,6 +244,7 @@ public class ShuffleTask extends AbstractTask {
 				}
 				else
 					marker.setPaint(Color.black);
+				
 				XYTextAnnotation label = new XYTextAnnotation(edgeName, Z, 0.1);
 				label.setFont(new Font("Sans", Font.BOLD, 8));
 				label.setRotationAnchor(TextAnchor.BASELINE_CENTER);
@@ -232,6 +253,16 @@ public class ShuffleTask extends AbstractTask {
 				label.setPaint(Color.black);
 				plot.addAnnotation(label);
 				plot.addDomainMarker(marker);
+				if(edgeName.equals(daName)) {
+					XYTextAnnotation label2 = new XYTextAnnotation(edgeName, actual, 10);
+					label2.setFont(new Font("Sans", Font.BOLD, 8));
+					label2.setRotationAnchor(TextAnchor.BASELINE_CENTER);
+					label2.setTextAnchor(TextAnchor.BASELINE_CENTER);
+					label2.setRotationAngle(-3.14 / 2);
+					label2.setPaint(Color.black);
+					plot2.addAnnotation(label);
+					plot2.addDomainMarker(marker2);
+				}
 			}
 		}
 		System.out.println(sigcount + " significant interactions found.");
@@ -249,6 +280,11 @@ public class ShuffleTask extends AbstractTask {
 		frame.add(new ChartPanel(chart));
 		frame.setMinimumSize(new Dimension(600,300));
 		frame.setVisible(true);
+
+		JFrame frame2 = new JFrame();
+		frame2.add(new ChartPanel(chart2));
+		frame2.setMinimumSize(new Dimension(600,300));
+		frame2.setVisible(true);
 
 
 

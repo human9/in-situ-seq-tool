@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.swing.ImageIcon;
+
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -49,6 +51,18 @@ public class NetworkUtil {
 			if (nodeName.equals(name)) return node;
 		}
 		return null;
+	}
+
+
+	public static ImageIcon iconFromResource(String path) {
+		java.net.URL url = NetworkUtil.class.getResource(path);
+		if (url != null) {
+			return new ImageIcon(url);
+		}
+		else {
+			System.out.println("Icon " + path + " not found");
+			return null;
+		}
 	}
 
 	public static int getNonNullInt(Integer i) {

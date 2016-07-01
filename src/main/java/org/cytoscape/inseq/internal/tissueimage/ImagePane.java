@@ -50,11 +50,11 @@ public class ImagePane extends JPanel {
 	private double pointScale = 1;
 	private Transcript pointClicked;
 
-	public ImagePane(final BufferedImage image, InseqSession s) {
+	public ImagePane(final BufferedImage image, InseqSession s, Dimension parent) {
 		this.image = image;
 		this.session = s;
 		this.paintedImage = image;
-		this.scale = 400d/(double)(image.getHeight());
+		this.scale = Math.min((double)parent.width/image.getWidth(), (double)parent.height/image.getHeight());
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 		setSize();
 	}
@@ -74,7 +74,7 @@ public class ImagePane extends JPanel {
 	public void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
 		if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
 			g.setColor(session.getGeneColour(t.name));
-			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset,(int)(pointScale * t.pos.y*scale) - scaledOffset,size,size);
+			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
 		}
 
 		else {
@@ -311,6 +311,8 @@ public class ImagePane extends JPanel {
 	}
 
 	static public BufferedImage getImageFile(String path) {
+		if(path == null) return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
+
 		File input = new File(path);
 		BufferedImage bimg;
 		BufferedImage optImage;
