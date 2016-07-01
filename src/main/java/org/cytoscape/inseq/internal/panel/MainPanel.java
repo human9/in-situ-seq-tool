@@ -156,6 +156,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		types.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
 				
 				if(itr.hasNext()) return;
 				
@@ -169,28 +170,29 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 				// Create and execute a task to find distances.
 				Task neighboursTask = new FindNeighboursTask(session, network, distance, useSubset);
 				itr = new TaskIterator(neighboursTask);
-				ia.getCSAA().getDialogTaskManager().execute(itr);
 
 				
 				// Register the network
-				itr.append(new AbstractTask() {
+				Task registerTask = new AbstractTask() {
 					public void run (TaskMonitor monitor) {
 						session.addNetwork(network, distance, cutoff);
 					}
-				});
+				};
 
 				// Construct and display the new network.
 				Task networkTask = new ShuffleTask(network, session, ia.getCAA());
-				itr.append(networkTask);
 
 				
-				itr.append(new ViewStyler(network, session.getStyle(), ia.getCAA()));
+				Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
-				itr.append(new AbstractTask() {
+				Task refreshTask = new AbstractTask() {
 					public void run(TaskMonitor monitor) {
 						refreshNetworks(network);
 					}
-				});
+				};
+				
+				ia.getCSAA().getDialogTaskManager().execute(itr);
+				itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
 
 			}
 		});

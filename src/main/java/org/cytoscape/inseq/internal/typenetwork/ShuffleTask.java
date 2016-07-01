@@ -63,8 +63,6 @@ public class ShuffleTask extends AbstractTask {
 
 		taskMonitor.showMessage(TaskMonitor.Level.INFO, "Finding distribution by shuffling names");
 
-		System.out.println("ShuffleTask");
-
 		// Iterate through all our transcripts
 		List<Transcript> range;
 		List<Transcript> filtered = new ArrayList<Transcript>();
@@ -107,10 +105,9 @@ public class ShuffleTask extends AbstractTask {
 			}
 		}
 
-		System.out.println(edges.size());
 		Transcript[][] uniqueCombos = edges.toArray(new Transcript[edges.size()][]);
 
-		int reps = 1000;
+		int reps = 100;
 		
 		int[][] edgecount = new int[nodes.size()*nodes.size()][reps+1];
 
@@ -171,7 +168,6 @@ public class ShuffleTask extends AbstractTask {
 
 
 		List<Integer> ints = new ArrayList<Integer>();
-		System.out.println(uniqueCombos.length);
 		Function2D normal = new NormalDistributionFunction2D(0.0, 1.0);
 		XYDataset line = DatasetUtilities.sampleFunction2D(normal, -10, 10, 1000, "f(x)");
 		JFreeChart chart = ChartFactory.createXYLineChart("Normal distribution", "Z-Score", "Frequency", line,

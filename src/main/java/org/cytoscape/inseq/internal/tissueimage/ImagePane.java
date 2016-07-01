@@ -171,8 +171,8 @@ public class ImagePane extends JPanel {
 				scaledOffset = (int)(size/2);
 				gr.setStroke(new BasicStroke(2));
 				gr.setColor(session.getGeneColour(pointClicked.name));
-				Point drawLocation = new Point((int)(pointScale * pointClicked.pos.x*scale) - scaledOffset + offset.width,(int)(pointScale * pointClicked.pos.y*scale) - scaledOffset + offset.height);
-				gr.drawOval(drawLocation.x, drawLocation.y, size, size);
+				Point drawLocation = actualPointToScaledPixel(pointClicked.pos);
+				gr.drawOval(drawLocation.x - scaledOffset, drawLocation.y - scaledOffset, size, size);
 				gr.drawString(pointClicked.name, drawLocation.x + size + 2, drawLocation.y+6);
 			}
 			for(String name : names)

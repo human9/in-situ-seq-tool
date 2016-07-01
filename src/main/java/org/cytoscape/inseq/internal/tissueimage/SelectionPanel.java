@@ -48,6 +48,7 @@ public class SelectionPanel extends JPanel {
 	public JPanel plotControls;
 	InseqActivator ia;
 	public ImagePane imagePane;
+	boolean showAllSelected = false;
 
 	public void setParent(JFrame parent) {
 		this.parent = parent;
@@ -93,12 +94,20 @@ public class SelectionPanel extends JPanel {
 		});
 
 		//node selection shows all points checkbox
-		JCheckBox nodeBox = new JCheckBox(NetworkUtil.iconFromResource("/showall.png"));
-		plotControls.add(nodeBox);
-		nodeBox.addActionListener(new ActionListener() {
+		
+		JButton showAll = new JButton(NetworkUtil.iconFromResource("/notshowall.png"));
+		plotControls.add(showAll);
+		showAll.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				imagePane.setShowNodes(nodeBox.isSelected());
+				showAllSelected = !showAllSelected;
+				if(showAllSelected) {
+					showAll.setIcon(NetworkUtil.iconFromResource("/showall.png"));
+				}
+				else {
+					showAll.setIcon(NetworkUtil.iconFromResource("/notshowall.png"));
+				}
+				imagePane.setShowNodes(showAllSelected);
 				zp.restartTimer();
 			}
 		});
