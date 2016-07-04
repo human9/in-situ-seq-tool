@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -71,24 +72,32 @@ public class ImagePane extends JPanel {
 		cacheStopped = true;
 	}
 
-	public void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
-		if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) {
-			g.setColor(session.getGeneColour(t.name));
-			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
+	/** 
+	 * Finds whether the given transcript should be made visible, based on the given TypeNetwork.
+	 * Returns true if it should be visible, or false if it should be hidden. This method is called by SmartDraw.
+	 */
+	private boolean isActive(TypeNetwork sel, Transcript t) {
+
+		if(showNodes && session.nodeSelection != null && session.nodeSelection.contains(t.name)) return true;
+
+		if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1	|| t.getSelection(sel) != sel.getSelection() || 
+				(!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) return false;
+		
+		for(Transcript n : t.getNeighboursForNetwork(sel)) {
+			if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) return true;
+			if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) return true;
 		}
 
-		else {
-			if(t.getNeighboursForNetwork(sel) == null || t.getNeighboursForNetwork(sel).size() < 1 || t.getSelection(sel) != sel.getSelection() || (!session.edgeSelection.keySet().contains(t.name)) && (!session.nodeSelection.contains(t.name))) return;
-			for(Transcript n : t.getNeighboursForNetwork(sel)) {
-				if(session.edgeSelection.get(t.name) != null && session.edgeSelection.get(t.name).contains(n.name)) {
-					g.setColor(session.getGeneColour(t.name));
-					g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
-				}
-				else if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) {
-					g.setColor(session.getGeneColour(t.name));
-					g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
-				}
-			}
+		return false;
+	}
+
+	/** 
+	 * Given a list of transcripts, draws only those within the current selection, with correct colours.
+	 */
+	private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
+		if(isActive(sel, t)) {
+			g.setColor(session.getGeneColour(t.name));
+			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
 		}
 	}
 
@@ -170,9 +179,8 @@ public class ImagePane extends JPanel {
 				size = 12;
 				scaledOffset = (int)(size/2);
 				gr.setStroke(new BasicStroke(2));
-				gr.setColor(session.getGeneColour(pointClicked.name));
 				Point drawLocation = actualPointToScaledPixel(pointClicked.pos);
-				gr.drawOval(drawLocation.x - scaledOffset, drawLocation.y - scaledOffset, size, size);
+				smartDraw(sel, pointClicked, gr, size, scaledOffset, offset);
 				gr.drawString(pointClicked.name, drawLocation.x + size + 2, drawLocation.y+6);
 			}
 			for(String name : names)
@@ -287,23 +295,43 @@ public class ImagePane extends JPanel {
 		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
 		return Math.sqrt(sqrdist);
 	}
+	
+	public double euclideanDistance(Point2D.Double a, Point2D.Double b) {
+		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
+		return Math.sqrt(sqrdist);
+	}
 
 	public void clickAtPoint(Point p) {
+
+		int viewportDist = 10;
+		double trueDist = euclideanDistance(
+			viewportPixelPointToActual(new Point(0,0)),
+			viewportPixelPointToActual(new Point(viewportDist,0))
+		);
 		Point2D.Double actual = viewportPixelPointToActual(p);
-		Transcript x;
+		List<Transcript> list;
 		try {
-			x = session.tree.nearest(new double[]{actual.x, actual.y});
+			list = session.tree.nearestEuclidean(new double[]{actual.x, actual.y}, Math.pow(trueDist, 2));
+			Collections.reverse(list);
 		}
 		catch (KeySizeException e) {
-			x = null;
+			list = null;
 		}
-		double dist = euclideanDistance(actualPointToViewportPixel(x.pos), p);
-		if(dist < 10) {
-			pointClicked = x;
-		}
-		else {
+		
+		if(list == null || list.size() < 1) {
 			pointClicked = null;
+			repaint();
 		}
+
+		for (Transcript x : list) {
+			if(isActive(session.getNetwork(session.getSelectedNetwork()), x)) {
+				pointClicked = x;
+				repaint();
+				return;
+			}
+		}
+
+		pointClicked = null;
 		repaint();
 	}
 
