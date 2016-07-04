@@ -263,8 +263,8 @@ public class ImagePane extends JPanel {
 	 */
 	public Point2D.Double viewportPixelPointToActual(Point p) {
 		Point vp = zp.getViewport().getViewPosition();
-		int x = (int)((p.x + vp.x - offset.width) / getScale());
-		int y = (int)((p.y + vp.y - offset.height) / getScale());
+		double x = ((p.x + vp.x - offset.width) / getScale() / pointScale);
+		double y = ((p.y + vp.y - offset.height) / getScale() / pointScale);
 		return new Point2D.Double(x,y);
 	}
 
@@ -284,14 +284,12 @@ public class ImagePane extends JPanel {
 	}
 
 	public double euclideanDistance(Point a, Point b) {
-		System.out.println(a + "-->" + b);
 		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
 		return Math.sqrt(sqrdist);
 	}
 
 	public void clickAtPoint(Point p) {
 		Point2D.Double actual = viewportPixelPointToActual(p);
-		System.out.println(p);
 		Transcript x;
 		try {
 			x = session.tree.nearest(new double[]{actual.x, actual.y});
@@ -304,7 +302,6 @@ public class ImagePane extends JPanel {
 			pointClicked = x;
 		}
 		else {
-			System.out.println(dist);
 			pointClicked = null;
 		}
 		repaint();

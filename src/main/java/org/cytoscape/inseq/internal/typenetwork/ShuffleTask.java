@@ -272,7 +272,7 @@ public class ShuffleTask extends AbstractTask {
 		plot.addDomainMarker(lower);
 		plot.getRenderer().setSeriesPaint(0, Color.BLUE);
 		plot.getRenderer().setSeriesStroke(0, new BasicStroke(2));
-		JFrame frame = new JFrame();
+		/*JFrame frame = new JFrame();
 		frame.add(new ChartPanel(chart));
 		frame.setMinimumSize(new Dimension(600,300));
 		frame.setVisible(true);
@@ -281,7 +281,7 @@ public class ShuffleTask extends AbstractTask {
 		frame2.add(new ChartPanel(chart2));
 		frame2.setMinimumSize(new Dimension(600,300));
 		frame2.setVisible(true);
-
+		*/
 
 
 
