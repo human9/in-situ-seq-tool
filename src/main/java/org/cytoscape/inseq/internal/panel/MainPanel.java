@@ -256,7 +256,9 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		});
 		this.setLayout(new BorderLayout());
 
+		System.out.println("B4 selpan");
 		selectionPanel = new SelectionPanel(ia);
+		System.out.println("Afta selpan");
 		selectionPanel.plotControls.add(pop);
 		selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);

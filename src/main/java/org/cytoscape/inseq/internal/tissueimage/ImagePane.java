@@ -55,8 +55,12 @@ public class ImagePane extends JPanel {
 		this.image = image;
 		this.session = s;
 		this.paintedImage = image;
-		this.scale = Math.min((double)parent.width/image.getWidth(), (double)parent.height/image.getHeight());
+		if(image != null) {
+			session.min = new Dimension(image.getWidth(), image.getHeight());
+		}
+		this.scale = Math.min((double)parent.width/session.min.width, (double)parent.height/session.min.height);
 		this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+		
 		setSize();
 	}
 
@@ -70,6 +74,11 @@ public class ImagePane extends JPanel {
 	
 	public void stopCache() {
 		cacheStopped = true;
+	}
+
+	private void drawIfExists(Graphics2D gr, BufferedImage img, int sx, int sy, int width, int height) {
+		if(img == null) return;
+		gr.drawImage(img, sx, sy, width, height, null);
 	}
 
 	/** 
@@ -104,10 +113,10 @@ public class ImagePane extends JPanel {
 	public void cacheImage() {
 		if(getWidth() < 3000 || getHeight() < 3000) {
 			cacheStopped = false;
-			paintedImage = new BufferedImage(requested.width, requested.height, image.getType());
+			paintedImage = new BufferedImage(requested.width, requested.height, (image == null) ? BufferedImage.TYPE_BYTE_INDEXED : image.getType());
 			Graphics imgG = paintedImage.getGraphics();
 			Graphics2D imgG2 = (Graphics2D) imgG;
-			imgG.drawImage(image, 0, 0, requested.width, requested.height, null);
+			drawIfExists(imgG2, image, 0, 0, requested.width, requested.height);
 			cacheAvailable = false;
 			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
 			int size = 8;
@@ -149,11 +158,11 @@ public class ImagePane extends JPanel {
 			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
 			
 			if(cacheAvailable) {
-				gr.drawImage(paintedImage, offset.width, offset.height, requested.width, requested.height, null);
+				drawIfExists(gr, paintedImage, offset.width, offset.height, requested.width, requested.height);
 			}
 			else
 			{
-				gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
+				drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
 				try {
 					for(Transcript t : session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
 					{
@@ -192,7 +201,7 @@ public class ImagePane extends JPanel {
 		}
 		else
 		{
-			gr.drawImage(image, offset.width, offset.height, requested.width, requested.height, null);
+			drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
 		}
 
 		gr.setColor(Color.YELLOW);
@@ -247,8 +256,8 @@ public class ImagePane extends JPanel {
 	public void setSize() {
 		Dimension minimum = getMinimumSize();
 		offset = new Dimension();
-		requested = new Dimension((int) Math.round(image.getWidth() * scale),
-				(int) Math.round(image.getHeight() * scale));
+		requested = new Dimension((int) Math.round(session.min.width * scale),
+				(int) Math.round(session.min.height * scale));
 
 		Dimension resize = new Dimension(requested);
 
@@ -335,34 +344,5 @@ public class ImagePane extends JPanel {
 		repaint();
 	}
 
-	static public BufferedImage getImageFile(String path) {
-		if(path == null) return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
 
-		File input = new File(path);
-		BufferedImage bimg;
-		BufferedImage optImage;
-		try {
-			bimg = ImageIO.read(input);
-			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-				
-			// Create the buffered image
-			GraphicsDevice gs = ge.getDefaultScreenDevice();
-			GraphicsConfiguration gc = gs.getDefaultConfiguration();
-
-			optImage = gc.createCompatibleImage(bimg.getWidth(), bimg.getHeight());
-			
-			// Copy image to buffered image
-			Graphics g = optImage.createGraphics();
-			g.drawImage(bimg, 0, 0, null);
-			g.dispose();
-
-
-		} catch (IOException|NullPointerException e) {
-			//JOptionPane.showMessageDialog(null, "Couldn't open the selected file.", "IO Error!",
-			//		JOptionPane.WARNING_MESSAGE);
-			return new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED);
-		}
-		
-		return optImage;
-	}
 }

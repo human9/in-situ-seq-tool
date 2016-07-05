@@ -76,10 +76,10 @@ public class ZoomPane extends JScrollPane {
 		imagePane.repaint();
 	}
 
-	public ZoomPane(final ImagePane ip) {
+	public ZoomPane(final ImagePane ip, Dimension dim) {
 		this.imagePane = ip;
 		ip.zp = this;
-		this.imgDims = new Dimension(ip.image.getWidth(), ip.image.getHeight());
+		this.imgDims = dim;
 		setViewportView(imagePane);
 		setWheelScrollingEnabled(false);
 		this.vp = getViewport();

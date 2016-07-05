@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +17,6 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 import edu.wlu.cs.levy.CG.KDTree;
-import edu.wlu.cs.levy.CG.KeySizeException;
 
 /** Encapsulates the components generated during a session.
  *  It should be possible to serialize this class for restoring sessions.
@@ -27,6 +27,8 @@ public class InseqSession {
 	public KDTree<Transcript> tree;
 	public Map<String, List<String>> edgeSelection;
 	public List<String> nodeSelection;
+	public Dimension min;
+
 	private Shape selection;
 	private VisualStyle style;
 
@@ -48,7 +50,7 @@ public class InseqSession {
 		this.tree = t;
 		this.CAA = CAA;
 		this.raw = raw;
-
+		this.min = getMinimumPlotSize();
 
 		originalNames = new ArrayList<Integer>();
 		nodes = new ArrayList<String>();
@@ -160,6 +162,15 @@ public class InseqSession {
 
 	public Shape getSelection() {
 		return selection;
+	}
+
+	private Dimension getMinimumPlotSize() {
+		double maxX = 0, maxY = 0;
+		for(Transcript t : raw) {
+			if (t.pos.x > maxX) maxX = t.pos.x;
+			if (t.pos.y > maxY) maxY = t.pos.y;
+		}
+		return new Dimension((int)Math.ceil(maxX), (int)Math.ceil(maxY));
 	}
 
 }
