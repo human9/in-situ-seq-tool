@@ -126,44 +126,7 @@ public class SelectionPanel extends JPanel {
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				CyNetwork network = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork();
-				List<CyNode> nodes = CyTableUtil.getNodesInState(network, "selected", true);
-				List<CyEdge> edges = CyTableUtil.getEdgesInState(network, "selected",true);
-	
-				ia.getSession().nodeSelection = new ArrayList<String>();
-				for(CyNode node : nodes) {
-					String name = network.getDefaultNodeTable().getRow(node.getSUID()).get(CyNetwork.NAME, String.class);
-					ia.getSession().nodeSelection.add(name);
-				}
-				ia.getSession().edgeSelection = new HashMap<String, List<String>>();
-				Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
-				for(CyEdge edge : edges)
-				{
-
-					String source = network.getDefaultNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
-					String target = network.getDefaultNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
-					if(!(edgeSelection.keySet().contains(source)))
-					{
-						List<String> n = new ArrayList<String>();
-						n.add(target);
-						edgeSelection.put(source, n);
-					}
-					else {
-						edgeSelection.get(source).add(target);
-					}
-					if(!(edgeSelection.keySet().contains(target)))
-					{
-						List<String> n = new ArrayList<String>();
-						n.add(source);
-						ia.getSession().edgeSelection.put(target, n);
-					}
-					else {
-						edgeSelection.get(target).add(source);
-					}
-				}
-				zp.repaint();
-				zp.restartTimer();
-				imagePane.forceRepaint();
+				updateSelection();
 			}
 		});
 		
@@ -178,5 +141,48 @@ public class SelectionPanel extends JPanel {
 		imagePane = ip;
 		zp.updateViewport(ip);
 		repaint();
+	}
+
+	public void updateSelection() {
+
+		CyNetwork network = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork();
+		List<CyNode> nodes = CyTableUtil.getNodesInState(network, "selected", true);
+		List<CyEdge> edges = CyTableUtil.getEdgesInState(network, "selected",true);
+
+		ia.getSession().nodeSelection = new ArrayList<String>();
+		for(CyNode node : nodes) {
+			String name = network.getDefaultNodeTable().getRow(node.getSUID()).get(CyNetwork.NAME, String.class);
+			ia.getSession().nodeSelection.add(name);
+		}
+		ia.getSession().edgeSelection = new HashMap<String, List<String>>();
+		Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
+		for(CyEdge edge : edges)
+		{
+
+			String source = network.getDefaultNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
+			String target = network.getDefaultNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
+			if(!(edgeSelection.keySet().contains(source)))
+			{
+				List<String> n = new ArrayList<String>();
+				n.add(target);
+				edgeSelection.put(source, n);
+			}
+			else {
+				edgeSelection.get(source).add(target);
+			}
+			if(!(edgeSelection.keySet().contains(target)))
+			{
+				List<String> n = new ArrayList<String>();
+				n.add(source);
+				ia.getSession().edgeSelection.put(target, n);
+			}
+			else {
+				edgeSelection.get(target).add(source);
+			}
+		}
+
+		zp.repaint();
+		zp.restartTimer();
+		imagePane.forceRepaint();
 	}
 }

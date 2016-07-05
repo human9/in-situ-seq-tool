@@ -73,10 +73,16 @@ public class ViewStyler extends AbstractTask {
 		((ContinuousMapping<Double,Double>)sizeMap).addPoint(1d,new  BoundaryRangeValues<Double>(80d,100d,110d));
 		vs.addVisualMappingFunction(sizeMap);
 
-		VisualMappingFunction<Double,Double> edges = pvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
+		VisualMappingFunction<Double,Double> edges = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
 		vs.addVisualMappingFunction(edges);
 		//VisualMappingFunction<Double,Double> borders = pvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
 		//vs.addVisualMappingFunction(borders);
+		
+		((ContinuousMapping<Double,Double>)edges).addPoint(1.96d,new  BoundaryRangeValues<Double>(0d,2d,4d));
+		((ContinuousMapping<Double,Double>)edges).addPoint(3d,new  BoundaryRangeValues<Double>(4d,5d,6d));
+		((ContinuousMapping<Double,Double>)edges).addPoint(6d,new  BoundaryRangeValues<Double>(6d,8d,10d));
+		((ContinuousMapping<Double,Double>)edges).addPoint(10d,new  BoundaryRangeValues<Double>(10d,15d,20d));
+		vs.addVisualMappingFunction(edges);
 /*
 		VisualMappingFunction<Double,Double> edgeMap = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(1.96d,new  BoundaryRangeValues<Double>(4d,8d,12d));

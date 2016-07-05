@@ -11,6 +11,9 @@ import org.cytoscape.inseq.internal.dataimport.ConstructTreeTask;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.work.TaskIterator;
 import org.osgi.framework.BundleContext;
@@ -56,6 +59,16 @@ public class InseqActivator extends AbstractCyActivator {
 
 		panel = new MainPanel(this, session);
 		registerAllServices(context, panel, properties);
+
+		RowsSetListener rowsSetListener = new RowsSetListener() {
+			@Override
+			public void handleEvent(RowsSetEvent e) {
+				if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
+					panel.updateSelectionPanel();
+				}
+			}
+		};
+		registerService(context, rowsSetListener, RowsSetListener.class, properties);
 
 		// Switch to the Inseq control panel.
 		CytoPanel cyPanel = getCSAA().getCySwingApplication().getCytoPanel(CytoPanelName.WEST);

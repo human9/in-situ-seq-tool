@@ -271,6 +271,9 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		netBox.repaint();
 	}
 
+	public void updateSelectionPanel() {
+		selectionPanel.updateSelection();
+	}
 
 
 	@Override
