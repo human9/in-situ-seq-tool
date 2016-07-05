@@ -209,7 +209,7 @@ public class ImagePane extends JPanel {
 		int arx = selectedFinish.x;
 		int ary = selectedFinish.y;
 		
-		session.setSelection(new Rectangle(Math.min(alx, arx), Math.min(aly, ary), Math.abs(alx - arx), Math.abs(aly - ary)));
+		session.setSelection(new Rectangle((int)(Math.min(alx, arx)/pointScale), (int)(Math.min(aly, ary)/pointScale), (int)(Math.abs(alx - arx)/pointScale), (int)(Math.abs(aly - ary)/pointScale)));
 		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
 		
 		Color fill = new Color(255, 0, 0, 60);
