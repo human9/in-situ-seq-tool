@@ -9,6 +9,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,9 +77,10 @@ public class ZoomPane extends JScrollPane {
 		imagePane.repaint();
 	}
 
-	public ZoomPane(final ImagePane ip, Dimension dim) {
-		this.imagePane = ip;
-		ip.zp = this;
+	public ZoomPane(final SelectionPanel sp, Dimension dim) {
+		this.imagePane = sp.imagePane;
+		imagePane.sp = sp;
+		imagePane.zp = this;
 		this.imgDims = dim;
 		setViewportView(imagePane);
 		setWheelScrollingEnabled(false);
@@ -114,6 +116,8 @@ public class ZoomPane extends JScrollPane {
 					imagePane.selectedOrigin.move(
 							(int) ((view.x + e.getX() - imagePane.offset.width) / imagePane.getScale()),
 							(int) ((view.y + e.getY() - imagePane.offset.height) / imagePane.getScale()));
+					imagePane.selectedFinish = new Point(imagePane.selectedOrigin);
+					imagePane.repaint();
 				}
 			}
 
@@ -185,6 +189,7 @@ public class ZoomPane extends JScrollPane {
 			imagePane.scaleDown();
 		}
 		double newScale = imagePane.getScale();
+		imagePane.sp.updateZoom();
 
 		x = (int) (Math.round(ratioX * newScale * imgDims.width) - Math.round(ratioX * oldScale * imgDims.width));
 		y = (int) (Math.round(ratioY * newScale * imgDims.height) - Math.round(ratioY * oldScale * imgDims.height));

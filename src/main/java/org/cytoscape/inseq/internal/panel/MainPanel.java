@@ -203,7 +203,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		panel.add(Box.createHorizontalStrut(0), sep);
 		
 
-		GridBagConstraints smallCons = new GridBagConstraints(0, 6, 2, 1, 1, 0, GridBagConstraints.CENTER,
+		GridBagConstraints smallCons = new GridBagConstraints(0, 0, 2, 1, 1, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		JPanel small = new JPanel();
 		small.setLayout(new GridBagLayout());
@@ -256,9 +256,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		});
 		this.setLayout(new BorderLayout());
 
-		System.out.println("B4 selpan");
 		selectionPanel = new SelectionPanel(ia);
-		System.out.println("Afta selpan");
 		selectionPanel.plotControls.add(pop);
 		selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);

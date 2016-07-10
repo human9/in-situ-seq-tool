@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,9 +54,12 @@ public class SelectionPanel extends JPanel {
 	private ZoomPane zp;
 	private JFrame parent;
 	public JPanel plotControls;
+	public JPanel externalControls;
 	InseqActivator ia;
 	public ImagePane imagePane;
 	boolean showAllSelected = false;
+	public StatusBar statusBar;
+	private JLabel zoomLabel;
 
 	public void setParent(JFrame parent) {
 		this.parent = parent;
@@ -98,14 +102,16 @@ public class SelectionPanel extends JPanel {
 		setLayout(new BorderLayout());
 		plotControls = new JPanel();
 		plotControls.setLayout(new WrapLayout(WrapLayout.LEADING));
+		
 		add(plotControls, BorderLayout.PAGE_START);
 
 		final ImagePane ip = new ImagePane(null, ia.getSession(), new Dimension(300,300));
 		imagePane = ip;
-		zp = new ZoomPane(ip, ia.getSession().min);
+		zoomLabel = new JLabel();
+		updateZoom();
+		zp = new ZoomPane(this, ia.getSession().min);
 		zp.setVisible(true);
 		add(zp, BorderLayout.CENTER);
-		System.out.println("???");
 
 		JButton browse = new JButton(UIManager.getIcon("FileView.directoryIcon"));
 		plotControls.add(browse);
@@ -146,19 +152,12 @@ public class SelectionPanel extends JPanel {
 					showAll.setIcon(NetworkUtil.iconFromResource("/notshowall.png"));
 				}
 				imagePane.setShowNodes(showAllSelected);
+				imagePane.forceRepaint();
 				zp.restartTimer();
 			}
 		});
 		
-		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
-		plotControls.add(pointScale);
-		pointScale.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				imagePane.setPointScale((Double)pointScale.getValue());	
-			}
-		});
-
+		
 		JButton showSelection = new JButton(NetworkUtil.iconFromResource("/refresh.png"));
 		plotControls.add(showSelection);
 		showSelection.addActionListener(new ActionListener() {
@@ -167,15 +166,42 @@ public class SelectionPanel extends JPanel {
 				updateSelection();
 			}
 		});
+
 		
-		JLabel label = new JLabel("Point scaling:");
-		add(label, BorderLayout.PAGE_END);
+		JPanel statusPanel = new JPanel();
+		statusPanel.setLayout(new BorderLayout());
+		add(statusPanel, BorderLayout.PAGE_END);
+
+		statusBar = new StatusBar();
+		statusPanel.add(statusBar, BorderLayout.CENTER);
+	
+		statusPanel.add(zoomLabel);
+
+		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
+		JPanel scalePanel = new JPanel();
+		scalePanel.add(new JLabel("Scaling: "));
+		scalePanel.add(pointScale);
+		plotControls.add(scalePanel, BorderLayout.LINE_END);
+		pointScale.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				imagePane.setPointScale((Double)pointScale.getValue());	
+				imagePane.forceRepaint();
+			}
+		});
+
 
 		setVisible(true);
 	}
 
+	public void updateZoom() {
+		DecimalFormat df = new DecimalFormat("#.##");
+		zoomLabel.setText("Zoom: " + df.format(imagePane.getScale()*100)+"%");
+	}
+
 	private void changeImage(String path) {
 		final ImagePane ip = new ImagePane(getImageFile(path), ia.getSession(), zp.getViewport().getExtentSize());
+		ip.sp = this;
 		imagePane = ip;
 		zp.updateViewport(ip);
 		repaint();
@@ -223,4 +249,25 @@ public class SelectionPanel extends JPanel {
 		zp.restartTimer();
 		imagePane.forceRepaint();
 	}
+
+}
+
+class StatusBar extends JLabel {
+
+	private String transcript;
+
+	StatusBar() {
+		super();
+		updateText();
+	}
+
+	void setTranscript(String str) {
+		this.transcript = str;
+		updateText();
+	}
+
+	void updateText() {
+		this.setText("Transcript: " + transcript);
+	}
+
 }

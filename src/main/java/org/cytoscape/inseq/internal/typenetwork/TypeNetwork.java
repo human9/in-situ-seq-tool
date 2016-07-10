@@ -4,6 +4,7 @@ import java.awt.Shape;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.view.model.CyNetworkView;
 
 /** A wrapper class for CyNetworks to retain information about how they were constructed.
  *  @author John Salamon
@@ -15,6 +16,7 @@ public class TypeNetwork {
 	double distance;
 	double cutoff;
 	private Shape selection;
+	public CyNetworkView view;
 
 	public TypeNetwork(CyNetwork n, double d, double c)
 	{

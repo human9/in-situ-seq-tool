@@ -6,26 +6,23 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
+import org.cytoscape.inseq.internal.util.SymbolFactory;
+import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
 
@@ -38,6 +35,7 @@ public class ImagePane extends JPanel {
 	public Dimension offset = new Dimension();
 	private Dimension requested;
 	public ZoomPane zp;
+	public SelectionPanel sp;
 	public boolean ratioIsCurrent;
 	public boolean zoomAltered;
 	boolean timerDone = true;
@@ -106,13 +104,24 @@ public class ImagePane extends JPanel {
 	private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
 		if(isActive(sel, t)) {
 			g.setColor(session.getGeneColour(t.name));
-			g.drawOval((int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size);
+			g.draw(SymbolFactory.makeSymbol(Symbol.DIAMOND, (int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size));
 		}
 	}
 
+	// TODO: Fix the damn caching
 	public void cacheImage() {
-		if(getWidth() < 3000 || getHeight() < 3000) {
+		List<Transcript> viewList;
+		Rectangle view = zp.getView();
+		try {
+			viewList = session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale});
+		}
+		catch (KeySizeException e) {
+			e.printStackTrace();
+			return;
+		}
+		if(viewList.size() > 5e4) {
 			cacheStopped = false;
+
 			paintedImage = new BufferedImage(requested.width, requested.height, (image == null) ? BufferedImage.TYPE_BYTE_INDEXED : image.getType());
 			Graphics imgG = paintedImage.getGraphics();
 			Graphics2D imgG2 = (Graphics2D) imgG;
@@ -184,7 +193,6 @@ public class ImagePane extends JPanel {
 			}
 
 			if(pointClicked != null) {
-				System.out.println(pointClicked);
 				size = 12;
 				scaledOffset = (int)(size/2);
 				gr.setStroke(new BasicStroke(2));
@@ -219,7 +227,9 @@ public class ImagePane extends JPanel {
 		int ary = selectedFinish.y;
 		
 		session.setSelection(new Rectangle((int)(Math.min(alx, arx)/pointScale), (int)(Math.min(aly, ary)/pointScale), (int)(Math.abs(alx - arx)/pointScale), (int)(Math.abs(aly - ary)/pointScale)));
-		gr.drawRect(rect.x, rect.y, rect.width, rect.height);
+		if(rect.width > 1 && rect.height > 1) {
+			gr.drawRect(rect.x, rect.y, rect.width, rect.height);
+		}
 		
 		Color fill = new Color(255, 0, 0, 60);
 		gr.setColor(fill);
@@ -235,7 +245,7 @@ public class ImagePane extends JPanel {
 	public void scaleUp() {
 		if (scale <= 100) {
 			cacheAvailable = false;
-			scale *= 1.1;
+			scale *= 1.06;
 			if ((int) scale == 100)
 				scale = 100;
 		}
@@ -245,7 +255,7 @@ public class ImagePane extends JPanel {
 		if (scale > 0.01)
 		{
 			cacheAvailable = false;
-			scale *= 0.9;
+			scale *= 0.94;
 		}
 	}
 
@@ -335,12 +345,15 @@ public class ImagePane extends JPanel {
 		for (Transcript x : list) {
 			if(isActive(session.getNetwork(session.getSelectedNetwork()), x)) {
 				pointClicked = x;
+				DecimalFormat df = new DecimalFormat("#.##");
+				sp.statusBar.setTranscript(x.name + " ("+df.format(x.pos.x)+","+df.format(x.pos.y)+")");
 				repaint();
 				return;
 			}
 		}
 
 		pointClicked = null;
+		sp.statusBar.setTranscript(null);
 		repaint();
 	}
 
