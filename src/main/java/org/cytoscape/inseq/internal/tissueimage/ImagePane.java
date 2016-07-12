@@ -345,15 +345,14 @@ public class ImagePane extends JPanel {
 		for (Transcript x : list) {
 			if(isActive(session.getNetwork(session.getSelectedNetwork()), x)) {
 				pointClicked = x;
-				DecimalFormat df = new DecimalFormat("#.##");
-				sp.statusBar.setTranscript(x.name + " ("+df.format(x.pos.x)+","+df.format(x.pos.y)+")");
+				sp.setSelected(pointClicked);
 				repaint();
 				return;
 			}
 		}
 
 		pointClicked = null;
-		sp.statusBar.setTranscript(null);
+		sp.setSelected(pointClicked);
 		repaint();
 	}
 

@@ -125,6 +125,10 @@ public class InseqSession {
 		return nodes.get(i);
 	}
 
+	public List<String> getNodeList() {
+		return new ArrayList<String>(nodes);
+	}
+
 	public List<TypeNetwork> getNetworkList() {
 		return networks;
 	}

@@ -34,6 +34,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.inseq.internal.panel.VisualPicker;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.inseq.internal.util.WrapLayout;
 import org.cytoscape.model.CyEdge;
@@ -60,6 +62,9 @@ public class SelectionPanel extends JPanel {
 	boolean showAllSelected = false;
 	public StatusBar statusBar;
 	private JLabel zoomLabel;
+	private JButton colourPicker;
+		
+	VisualPicker visualPicker;
 
 	public void setParent(JFrame parent) {
 		this.parent = parent;
@@ -107,6 +112,7 @@ public class SelectionPanel extends JPanel {
 
 		final ImagePane ip = new ImagePane(null, ia.getSession(), new Dimension(300,300));
 		imagePane = ip;
+		visualPicker = new VisualPicker(imagePane, ia.getSession());
 		zoomLabel = new JLabel();
 		updateZoom();
 		zp = new ZoomPane(this, ia.getSession().min);
@@ -167,6 +173,17 @@ public class SelectionPanel extends JPanel {
 			}
 		});
 
+		colourPicker = new JButton("C/S");
+		plotControls.add(colourPicker);
+		colourPicker.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				visualPicker.setVisible(true);
+				visualPicker.toFront();
+				visualPicker.repaint();
+			}
+		});
+		colourPicker.setEnabled(false);
 		
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout(new BorderLayout());
@@ -206,6 +223,22 @@ public class SelectionPanel extends JPanel {
 		zp.updateViewport(ip);
 		repaint();
 	}
+
+	public void setSelected(Transcript t) {
+		if(t == null) {
+			statusBar.setTranscript(null); 
+			colourPicker.setEnabled(false);
+		}
+		else {
+			DecimalFormat df = new DecimalFormat("#.##");
+			statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+","+df.format(t.pos.y)+")");
+			colourPicker.setEnabled(true);
+			visualPicker.setSelected(t.name);
+			visualPicker.toFront();
+		}
+
+	}
+
 
 	public void updateSelection() {
 
