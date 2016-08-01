@@ -105,6 +105,19 @@ public class ViewStyler extends AbstractTask {
 
 	}
 
+    public static void updateColours(VisualStyle style, Map<String, Color> geneColours, CyAppAdapter a) {
+		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
+        VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
+		VisualMappingFunction<String,Paint> labelColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
+		for(String name : geneColours.keySet())
+		{
+			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(name, geneColours.get(name));
+			((DiscreteMapping<String,Paint>)labelColour).putMapValue(name, geneColours.get(name));
+		}
+        style.addVisualMappingFunction(nodeColour);
+        style.addVisualMappingFunction(labelColour);
+    }
+
 	public void run(TaskMonitor monitor) {
 		
 		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network.getNetwork());

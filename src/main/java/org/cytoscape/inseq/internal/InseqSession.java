@@ -14,6 +14,7 @@ import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.vizmap.VisualStyle;
 
@@ -75,10 +76,11 @@ public class InseqSession {
 			x++;
 		}
 
+		networks = new ArrayList<TypeNetwork>();
+
 		// Initialise network style
 		updateStyle();
 
-		networks = new ArrayList<TypeNetwork>();
 	}
 
 	public void addNetwork(TypeNetwork n, Double distance, Double cutoff) {
@@ -152,8 +154,25 @@ public class InseqSession {
 		return geneColours.get(name);
 	}
 
+
+	public void refreshStyle() {
+        ViewStyler.updateColours(style, geneColours, CAA);
+    }
+
 	public void updateStyle() {
 		style = ViewStyler.initStyle(geneColours, CAA);
+
+        CAA.getVisualMappingManager().setCurrentVisualStyle(style);
+
+        for(TypeNetwork net : networks) {
+            for(CyNetworkView view : CAA.getCyNetworkViewManager().getNetworkViews(net.getNetwork()))
+            {
+                style.apply(view);
+
+                CAA.getVisualMappingManager().setVisualStyle(style, view);
+                view.updateView();
+            }
+        }
 	}
 
 	public VisualStyle getStyle() {
