@@ -1,7 +1,7 @@
 package edu.wlu.cs.levy.CG;
 
 import java.io.Serializable;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -283,7 +283,7 @@ public class KDTree<T> implements Serializable{
     throws KeySizeException, IllegalArgumentException {
 	
 	if (n <= 0) {
-            return new LinkedList<T>();
+            return new ArrayList<T>();
 	}
 	
 	NearestNeighborList<KDNode<T>> nnl = getnbrs(key, n, checker);
@@ -323,10 +323,10 @@ public class KDTree<T> implements Serializable{
 	}
 	
 	else {
-	    List<KDNode<T>> found = new LinkedList<KDNode<T>>();
+	    List<KDNode<T>> found = new ArrayList<KDNode<T>>();
 	    KDNode.rsearch(new HPoint(lowk), new HPoint(uppk), 
 	    m_root, 0, m_K, found);
-            List<T> o = new LinkedList<T>();
+            List<T> o = new ArrayList<T>();
             for (KDNode<T> node : found) {
                 o.add(node.v);
 	    }

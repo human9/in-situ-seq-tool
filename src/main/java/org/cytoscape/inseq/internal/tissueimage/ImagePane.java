@@ -11,10 +11,14 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JPanel;
 
@@ -22,7 +26,6 @@ import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.SymbolFactory;
-import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
 
@@ -101,14 +104,15 @@ public class ImagePane extends JPanel {
 	/** 
 	 * Given a list of transcripts, draws only those within the current selection, with correct colours.
 	 */
+
 	private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g, int size, int scaledOffset, Dimension off) {
 		if(isActive(sel, t)) {
 			g.setColor(session.getGeneColour(t.name));
-			g.draw(SymbolFactory.makeSymbol(Symbol.DIAMOND, (int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size));
+			g.draw(SymbolFactory.makeSymbol(session.getGeneSymbol(t.name), (int)(pointScale * t.pos.x*scale) - scaledOffset + off.width,(int)(pointScale * t.pos.y*scale) - scaledOffset + off.height,size,size));
 		}
 	}
 
-	// TODO: Fix the damn caching
+	// TODO: if density too high randomly drop points but display them once caching kicks in
 	public void cacheImage() {
 		List<Transcript> viewList;
 		Rectangle view = zp.getView();
@@ -119,7 +123,8 @@ public class ImagePane extends JPanel {
 			e.printStackTrace();
 			return;
 		}
-		if(viewList.size() > 5e4) {
+		if(requested.width * requested.height < 1e8) {
+            System.out.println("Caching, " + requested.width*requested.height);
 			cacheStopped = false;
 
 			paintedImage = new BufferedImage(requested.width, requested.height, (image == null) ? BufferedImage.TYPE_BYTE_INDEXED : image.getType());
@@ -143,9 +148,17 @@ public class ImagePane extends JPanel {
 			imgG2.dispose();
 			imgG.dispose();
 			cacheAvailable = true;
+            repaint();
 		}
+        else {
+
+
+        }
 	}
 
+    boolean timeout = false;
+    int delay = 12; // entire method must complete within ~16ms to meet 60Hz refresh rates
+    
 	@Override
 	public void paintComponent(Graphics g) {
 
@@ -173,11 +186,74 @@ public class ImagePane extends JPanel {
 			{
 				drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
 				try {
-					for(Transcript t : session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
-					{
-						if(zoomAltered) break;
-						smartDraw(sel, t, gr, size, scaledOffset, offset);
-					}
+                    timeout = false;
+                    TimerTask timeoutTask = new TimerTask() {
+                        public void run() {
+                            timeout = true;
+                        }
+                    };
+
+                    List<Transcript> range =  session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale});
+                        
+                    // This timer is to prevent lag during zooming/scrolling
+                    // Once time is up, drawing will be stopped.
+                    Timer timeoutTimer = new Timer();
+                    timeoutTimer.schedule(timeoutTask, delay);
+
+                    // For huge ranges, shuffling the entire list takes too long
+                    // So instead we just draw transcripts at random until timeout
+                    if(range.size() > 4e5) {
+                        
+                        Random r = new Random();
+
+                        for(int i = 0; i < range.size(); i++)
+                        {
+                            if(timeout) {
+                                Thread p = new Thread(new Runnable() {
+                                    public void run()
+                                    {
+                                        stopCache();
+                                        cacheImage();
+                                    }
+                                });
+                                p.start();
+                                break;
+                            }
+                            
+                            int index = r.nextInt(range.size());
+                            Transcript t = range.get(index);
+                            smartDraw(sel, t, gr, size, scaledOffset, offset);
+                        }
+                    }
+                    // But for average sized lists, we may as well shuffle the whole thing 
+                    else if (range.size() > 2e4) {
+                        Collections.shuffle(range);
+                        for(Transcript t : range) {
+                            if(timeout) {
+                                Thread p = new Thread(new Runnable() {
+                                    public void run()
+                                    {
+                                        stopCache();
+                                        cacheImage();
+                                    }
+                                });
+                                p.start();
+                                break;
+                            }
+
+						    
+                            smartDraw(sel, t, gr, size, scaledOffset, offset);
+                        }
+                    }
+                    // If it's really small there's no point randomising anything
+                    // as we'll be able to draw it all in time.
+                    else {
+                        for(Transcript t : range) {
+						    
+                            smartDraw(sel, t, gr, size, scaledOffset, offset);
+                        }
+                    }
+                    timeoutTimer.cancel();
 				}
 				catch (KeySizeException e) {
 					e.printStackTrace();
@@ -193,9 +269,7 @@ public class ImagePane extends JPanel {
 			}
 
 			if(pointClicked != null) {
-				size = 12;
-				scaledOffset = (int)(size/2);
-				gr.setStroke(new BasicStroke(2));
+				gr.setStroke(new BasicStroke(3));
 				Point drawLocation = actualPointToScaledPixel(pointClicked.pos);
 				smartDraw(sel, pointClicked, gr, size, scaledOffset, offset);
 				gr.drawString(pointClicked.name, drawLocation.x + size + 2, drawLocation.y+6);
@@ -238,12 +312,14 @@ public class ImagePane extends JPanel {
 	}
 
 	public void forceRepaint() {
+        System.out.println("Repaint forced");
 		cacheAvailable = false;
 		repaint();
 	}
 
 	public void scaleUp() {
 		if (scale <= 100) {
+            stopCache();
 			cacheAvailable = false;
 			scale *= 1.06;
 			if ((int) scale == 100)
@@ -254,6 +330,7 @@ public class ImagePane extends JPanel {
 	public void scaleDown() {
 		if (scale > 0.01)
 		{
+            stopCache();
 			cacheAvailable = false;
 			scale *= 0.94;
 		}

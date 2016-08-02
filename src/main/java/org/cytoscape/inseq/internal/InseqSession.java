@@ -13,6 +13,7 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
+import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -42,6 +43,7 @@ public class InseqSession {
 
 	private Map<String, Integer> geneCounts;
 	private Map<String, Color> geneColours;
+	private Map<String, Symbol> geneSymbols;
 	private List<String> nodes;
 	private List<Integer> shuffledNames; 
 
@@ -69,10 +71,12 @@ public class InseqSession {
 
 		// Give each gene a unique colour as well spaced as possible.
 		geneColours = new HashMap<String, Color>();
+        geneSymbols = new HashMap<String, Symbol>();
 		int x = 1;
 		for(String name : geneCounts.keySet()) {
 			int i = (int)(x*(360d/geneCounts.keySet().size()));
 			geneColours.put(name, Color.getHSBColor(((i)%360)/360f, 1, 1));
+            geneSymbols.put(name, Symbol.DIAMOND);
 			x++;
 		}
 
@@ -153,6 +157,15 @@ public class InseqSession {
 	public Color getGeneColour(String name) {
 		return geneColours.get(name);
 	}
+
+    public void setGeneSymbol(String name, Symbol symbol) {
+        geneSymbols.put(name, symbol);
+    }
+
+    public Symbol getGeneSymbol(String name) {
+        return geneSymbols.get(name);
+    }
+
 
 
 	public void refreshStyle() {

@@ -159,7 +159,6 @@ public class SelectionPanel extends JPanel {
 				}
 				imagePane.setShowNodes(showAllSelected);
 				imagePane.forceRepaint();
-				zp.restartTimer();
 			}
 		});
 		
@@ -279,7 +278,6 @@ public class SelectionPanel extends JPanel {
 		}
 
 		zp.repaint();
-		zp.restartTimer();
 		imagePane.forceRepaint();
 	}
 

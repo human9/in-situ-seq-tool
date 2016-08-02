@@ -30,47 +30,6 @@ public class ZoomPane extends JScrollPane {
 	private JViewport vp;
 	private Point start;
 
-	private Timer imageTimer = new Timer();
-	boolean taskdone = true;
-	TimerTask task;
-	
-		/*
-	@Override
-	public void setLayout(LayoutManager layout) {
-		if (layout instanceof ScrollPaneLayout) {
-			super.setLayout(layout);
-			((ScrollPaneLayout)layout).syncWithScrollPane
-	}*/
-	public void restartTimer() {
-
-		imageTimer.purge();
-		if(!taskdone) {
-			task.cancel();
-		}
-		taskdone = false;
-		task = new TimerTask() {
-			public void run() {
-				imagePane.cacheImage();
-				taskdone = true;
-			}
-
-			@Override
-			public boolean cancel() {
-				super.cancel();
-				imagePane.stopCache();
-				return true;
-			}
-		};
-
-		try { 
-			imageTimer.schedule(task, 500);
-		}
-		catch(IllegalStateException x) {
-			imageTimer = new Timer();
-			imageTimer.schedule(task, 500);
-		}
-	}
-
 	public void resizeEvent() {
 		imagePane.setMinimumSize(vp.getExtentSize());
 		imagePane.setSize();
@@ -99,7 +58,6 @@ public class ZoomPane extends JScrollPane {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				zoomImage(e.getPoint(), e.getWheelRotation());
-				restartTimer();
 			}
 		});
 		addMouseListener(new MouseAdapter() {
