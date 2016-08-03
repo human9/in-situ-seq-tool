@@ -183,20 +183,18 @@ public class ImagePane extends JPanel {
                 imgG2.fillRect(0, 0, requested.width, requested.height);
             }
             else {
-			    drawIfExists(imgG2, image, 0, 0, requested.width, requested.height);
+			    drawIfExists(imgG2, image, 0, 0, requested.width,
+                        requested.height);
             }
 			cacheAvailable = false;
 
-			try {
-				for(Transcript t : session.tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
-				{
-					if(cacheStopped) return;
-					smartDraw(sel, t, imgG2, size, scaledOffset, new Dimension(0,0));						
-				}
-			}
-			catch (KeySizeException e) {
-				e.printStackTrace();
-			}
+				for(Transcript t : ParseUtil.getRange(session.tree, 0, 0,
+                            Double.MAX_VALUE, Double.MAX_VALUE))
+            {
+                if(cacheStopped) return;
+                smartDraw(sel, t, imgG2, size, scaledOffset,
+                        new Dimension(0,0));						
+            }
 			cacheAvailable = true;
 		}
         else {
@@ -207,20 +205,19 @@ public class ImagePane extends JPanel {
 			Graphics imgG = partialImage.getGraphics();
 			Graphics2D imgG2 = (Graphics2D) imgG;
 
-            try {
-                 int alpha = 1;      
-                 int rule = AlphaComposite.SRC_OVER;
-                 Composite comp = AlphaComposite.getInstance(rule , alpha );
-                 imgG2.setComposite(comp );
-                for(Transcript t :  session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale}))
-                {
-					if(cacheStopped) return;
-		            Point vp = zp.getViewport().getViewPosition();
-                    smartDraw(sel, t, imgG2, size, scaledOffset, new Dimension(-vp.x, -vp.y));
-                }
-            }
-            catch (KeySizeException e) {
-                e.printStackTrace();
+            int alpha = 1;      
+            int rule = AlphaComposite.SRC_OVER;
+            Composite comp = AlphaComposite.getInstance(rule , alpha );
+            imgG2.setComposite(comp );
+            double s = scale / pointScale;
+            for(Transcript t :  ParseUtil.getRange(session.tree, view.x/s,
+                        view.y/s, view.x/s + view.width/s,
+                        view.y/s + view.height/s))
+            {
+                if(cacheStopped) return;
+                Point vp = zp.getViewport().getViewPosition();
+                smartDraw(sel, t, imgG2, size, scaledOffset,
+                        new Dimension(-vp.x, -vp.y));
             }
     
             partialCacheAvailable = true;
@@ -229,16 +226,18 @@ public class ImagePane extends JPanel {
 	}
 
     boolean timeout = false;
-    int delay = 12; // entire method must complete within ~16ms to meet 60Hz refresh rates
+    int delay = 30; // The lower the snappier - but fewer points get drawn
 
 	@Override
 	public void paintComponent(Graphics g) {
 
 		zoomAltered = false;
 		Graphics2D gr = (Graphics2D) g;
-		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		//Although this looks nice it cuts the framerate a bit
-		//gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		//gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+        //RenderingHints.VALUE_ANTIALIAS_ON);
 
 		gr.setColor(Color.BLACK);
 		gr.fillRect(0, 0, getWidth(), getHeight());
