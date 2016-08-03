@@ -9,14 +9,13 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class ZoomPane extends JScrollPane {
 	static final long serialVersionUID = 355635l;
@@ -46,12 +45,18 @@ public class ZoomPane extends JScrollPane {
 		this.vp = getViewport();
 		vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
 		vp.setBackground(Color.BLACK);
+        vp.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                imagePane.invalidateCache();
+            }
+        });
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
 				imagePane.setMinimumSize(vp.getExtentSize());
 				imagePane.setSize();
 				imagePane.repaint();
+                imagePane.invalidateCache();
 			}
 		});
 		addMouseWheelListener(new MouseAdapter() {

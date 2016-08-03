@@ -81,4 +81,17 @@ public class ParseUtil {
 		return genes;
 	}
 
+    /**
+     * Get a range without dealing with keysize exception.
+     */
+    public static List<Transcript> getRange(KDTree<Transcript> tree, double x1, double y1, double x2, double y2) {
+        try {
+		    List<Transcript> range = tree.range(new double[]{x1,y1}, new double[]{x2, y2});
+            return range;
+        } catch (KeySizeException e) {
+				e.printStackTrace();
+		}
+        return null;
+    }
+
 }
