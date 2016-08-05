@@ -47,14 +47,13 @@ import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
 
 /** 
  *  A panel containing the zoomable imageplot as well as controls.
- *  It will start embedded in the MainPanel, but can become a seperate window.
+ *  It will start embedded in MainPanel, but can become a seperate window.
  *  @author John Salamon
  */
 public class SelectionPanel extends JPanel {
 
 	private static final long serialVersionUID = -3656880368971065116L;
 	private ZoomPane zp;
-	private JFrame parent;
 	public JPanel plotControls;
 	public JPanel externalControls;
 	InseqActivator ia;
@@ -67,7 +66,6 @@ public class SelectionPanel extends JPanel {
 	VisualPicker visualPicker;
 
 	public void setParent(JFrame parent) {
-		this.parent = parent;
 	}
 
 	public BufferedImage getImageFile(String path) {
@@ -77,13 +75,15 @@ public class SelectionPanel extends JPanel {
 		BufferedImage optImage;
 		try {
 			bimg = ImageIO.read(input);
-			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			GraphicsEnvironment ge 
+                = GraphicsEnvironment.getLocalGraphicsEnvironment();
 				
 			// Create the buffered image
 			GraphicsDevice gs = ge.getDefaultScreenDevice();
 			GraphicsConfiguration gc = gs.getDefaultConfiguration();
 
-			optImage = gc.createCompatibleImage(bimg.getWidth(), bimg.getHeight());
+			optImage = gc.createCompatibleImage(bimg.getWidth(),
+                    bimg.getHeight());
 			
 			// Copy image to buffered image
 			Graphics g = optImage.createGraphics();
@@ -92,7 +92,8 @@ public class SelectionPanel extends JPanel {
 
 
 		} catch (IOException|NullPointerException e) {
-			JOptionPane.showMessageDialog(null, "The selected file could not be opened.", "Warning!",
+			JOptionPane.showMessageDialog(null, 
+                    "The selected file could not be opened.", "Warning!",
 			JOptionPane.WARNING_MESSAGE);
 			return null;
 		}
@@ -101,7 +102,6 @@ public class SelectionPanel extends JPanel {
 	}
 	
 	public SelectionPanel(final InseqActivator ia) {
-		this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 		this.ia = ia;
 
 		setLayout(new BorderLayout());
@@ -110,7 +110,8 @@ public class SelectionPanel extends JPanel {
 		
 		add(plotControls, BorderLayout.PAGE_START);
 
-		final ImagePane ip = new ImagePane(null, ia.getSession(), new Dimension(300,300));
+		final ImagePane ip = new ImagePane(null, ia.getSession(), 
+                new Dimension(300,300));
 		imagePane = ip;
 		visualPicker = new VisualPicker(imagePane, ia.getSession());
 		zoomLabel = new JLabel();
@@ -119,7 +120,8 @@ public class SelectionPanel extends JPanel {
 		zp.setVisible(true);
 		add(zp, BorderLayout.CENTER);
 
-		JButton browse = new JButton(UIManager.getIcon("FileView.directoryIcon"));
+		JButton browse 
+            = new JButton(UIManager.getIcon("FileView.directoryIcon"));
 		plotControls.add(browse);
 		browse.addActionListener(new ActionListener() {
 			@Override
@@ -131,11 +133,15 @@ public class SelectionPanel extends JPanel {
 				IIORegistry reg = IIORegistry.getDefaultInstance();
 				reg.registerServiceProvider(new TIFFImageReaderSpi());
 
-				FileFilter filter = new FileNameExtensionFilter("Supported image formats", ImageIO.getReaderFileSuffixes());
+				FileFilter filter 
+                    = new FileNameExtensionFilter("Supported image formats", 
+                            ImageIO.getReaderFileSuffixes());
 				fc.addChoosableFileFilter(filter);
 				fc.setFileFilter(filter);
 				
-				int returnVal = fc.showOpenDialog(ia.getCSAA().getCySwingApplication().getJFrame());
+				int returnVal 
+                    = fc.showOpenDialog(ia.getCSAA().getCySwingApplication()
+                            .getJFrame());
 				if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
 				changeImage(fc.getSelectedFile().getAbsolutePath());
@@ -145,17 +151,20 @@ public class SelectionPanel extends JPanel {
 
 		//node selection shows all points checkbox
 		
-		JButton showAll = new JButton(NetworkUtil.iconFromResource("/notshowall.png"));
+		JButton showAll 
+            = new JButton(NetworkUtil.iconFromResource("/notshowall.png"));
 		plotControls.add(showAll);
 		showAll.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				showAllSelected = !showAllSelected;
 				if(showAllSelected) {
-					showAll.setIcon(NetworkUtil.iconFromResource("/showall.png"));
+					showAll.setIcon(NetworkUtil
+                            .iconFromResource("/showall.png"));
 				}
 				else {
-					showAll.setIcon(NetworkUtil.iconFromResource("/notshowall.png"));
+					showAll.setIcon(NetworkUtil
+                            .iconFromResource("/notshowall.png"));
 				}
 				imagePane.setShowNodes(showAllSelected);
 				imagePane.forceRepaint();
@@ -163,7 +172,8 @@ public class SelectionPanel extends JPanel {
 		});
 		
 		
-		JButton showSelection = new JButton(NetworkUtil.iconFromResource("/refresh.png"));
+		JButton showSelection 
+            = new JButton(NetworkUtil.iconFromResource("/refresh.png"));
 		plotControls.add(showSelection);
 		showSelection.addActionListener(new ActionListener() {
 			@Override
@@ -193,7 +203,8 @@ public class SelectionPanel extends JPanel {
 	
 		statusPanel.add(zoomLabel);
 
-		JSpinner pointScale = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
+		JSpinner pointScale 
+            = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
 		JPanel scalePanel = new JPanel();
 		scalePanel.add(new JLabel("Scaling: "));
 		scalePanel.add(pointScale);
@@ -216,7 +227,8 @@ public class SelectionPanel extends JPanel {
 	}
 
 	private void changeImage(String path) {
-		final ImagePane ip = new ImagePane(getImageFile(path), ia.getSession(), zp.getViewport().getExtentSize());
+		final ImagePane ip = new ImagePane(getImageFile(path), 
+                ia.getSession(), zp.getViewport().getExtentSize());
 		ip.sp = this;
 		imagePane = ip;
 		zp.updateViewport(ip);
@@ -230,7 +242,8 @@ public class SelectionPanel extends JPanel {
 		}
 		else {
 			DecimalFormat df = new DecimalFormat("#.##");
-			statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+","+df.format(t.pos.y)+")");
+			statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+","
+                    + df.format(t.pos.y) + ")");
 			colourPicker.setEnabled(true);
 			visualPicker.setSelected(t.name);
 			visualPicker.toFront();
@@ -241,22 +254,33 @@ public class SelectionPanel extends JPanel {
 
 	public void updateSelection() {
 
-		CyNetwork network = ia.getSession().getNetwork(ia.getSession().getSelectedNetwork()).getNetwork();
-		List<CyNode> nodes = CyTableUtil.getNodesInState(network, "selected", true);
-		List<CyEdge> edges = CyTableUtil.getEdgesInState(network, "selected",true);
+		CyNetwork network 
+            = ia.getSession().getNetwork(ia.getSession()
+                    .getSelectedNetwork()).getNetwork();
+		List<CyNode> nodes 
+            = CyTableUtil.getNodesInState(network, "selected", true);
+		List<CyEdge> edges 
+            = CyTableUtil.getEdgesInState(network, "selected",true);
 
 		ia.getSession().nodeSelection = new ArrayList<String>();
 		for(CyNode node : nodes) {
-			String name = network.getDefaultNodeTable().getRow(node.getSUID()).get(CyNetwork.NAME, String.class);
+			String name 
+                = network.getDefaultNodeTable().getRow(node.getSUID())
+                .get(CyNetwork.NAME, String.class);
 			ia.getSession().nodeSelection.add(name);
 		}
 		ia.getSession().edgeSelection = new HashMap<String, List<String>>();
-		Map<String, List<String>> edgeSelection = ia.getSession().edgeSelection;
+		Map<String, List<String>> edgeSelection 
+            = ia.getSession().edgeSelection;
 		for(CyEdge edge : edges)
 		{
 
-			String source = network.getDefaultNodeTable().getRow(edge.getSource().getSUID()).get(CyNetwork.NAME, String.class);
-			String target = network.getDefaultNodeTable().getRow(edge.getTarget().getSUID()).get(CyNetwork.NAME, String.class);
+			String source 
+                = network.getDefaultNodeTable().getRow(edge.getSource()
+                        .getSUID()).get(CyNetwork.NAME, String.class);
+			String target 
+                = network.getDefaultNodeTable().getRow(edge.getTarget()
+                        .getSUID()).get(CyNetwork.NAME, String.class);
 			if(!(edgeSelection.keySet().contains(source)))
 			{
 				List<String> n = new ArrayList<String>();
@@ -285,6 +309,7 @@ public class SelectionPanel extends JPanel {
 
 class StatusBar extends JLabel {
 
+    private static final long serialVersionUID = 43852L;
 	private String transcript;
 
 	StatusBar() {

@@ -258,62 +258,63 @@ public class ImagePane extends JPanel {
 			}
             else if(partialCacheAvailable) {
                 Point x = zp.getViewport().getViewPosition();
-				drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
-				drawIfExists(gr, partialImage, x.x+offset.width, x.y+offset.height, view.width, view.height);
+				drawIfExists(gr, image, offset.width, offset.height,
+                        requested.width, requested.height);
+				drawIfExists(gr, partialImage, x.x+offset.width,
+                        x.y+offset.height, view.width, view.height);
             }
 			else
 			{
-				drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
-				try {
-                    timeout = false;
-                    TimerTask timeoutTask = new TimerTask() {
-                        public void run() {
-                            timeout = true;
-                        }
-                    };
-
-                    List<Transcript> range =  session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale});
-                        
-                    // This timer is to prevent lag during zooming/scrolling
-                    // Once time is up, drawing will be stopped.
-                    Timer timeoutTimer = new Timer();
-                    timeoutTimer.schedule(timeoutTask, delay);
-
-                    // For huge ranges, shuffling the entire list takes too long
-                    // So instead we just draw transcripts at random until timeout
-                    if (range.size() > 2e4) {
-                        doubleloop:
-                        for(int r : rnd) {
-                            for(int i = 0 + r; i < range.size(); i = i + jump) {
-                                if(timeout) {
-                                    Thread p = new Thread(new Runnable() {
-                                        public void run()
-                                        {
-                                            stopCache();
-                                            cacheImage();
-                                        }
-                                    });
-                                    p.start();
-                                    break doubleloop;
-                                }
-                                Transcript t = range.get(i);
-                                smartDraw(sel, t, gr, size, scaledOffset, offset);
-                            }
-                        }
+				drawIfExists(gr, image, offset.width, offset.height,
+                        requested.width, requested.height);
+                timeout = false;
+                TimerTask timeoutTask = new TimerTask() {
+                    public void run() {
+                        timeout = true;
                     }
-                    // If it's really small there's no point randomising anything
-                    // as we'll be able to draw it all in time.
-                    else {
-                        for(Transcript t : range) {
-						    
+                };
+
+                double s = scale / pointScale;
+                List<Transcript> range =  ParseUtil.getRange(session.tree,
+                        view.x/s, view.y/s, view.x/s + view.width/s,
+                        view.y/s + view.height/s);
+                    
+                // This timer is to prevent lag during zooming/scrolling
+                // Once time is up, drawing will be stopped.
+                Timer timeoutTimer = new Timer();
+                timeoutTimer.schedule(timeoutTask, delay);
+
+                // We draw as many as possible within delay if range size
+                // is very large.
+                if (range.size() > 2e4) {
+                    doubleloop:
+                    for(int r : rnd) {
+                        for(int i = 0 + r; i < range.size(); i = i + jump) {
+                            if(timeout) {
+                                Thread p = new Thread(new Runnable() {
+                                    public void run()
+                                    {
+                                        stopCache();
+                                        cacheImage();
+                                    }
+                                });
+                                p.start();
+                                break doubleloop;
+                            }
+                            Transcript t = range.get(i);
                             smartDraw(sel, t, gr, size, scaledOffset, offset);
                         }
                     }
-                    timeoutTimer.cancel();
-				}
-				catch (KeySizeException e) {
-					e.printStackTrace();
-				}
+                }
+                // If it's really small there's no point skipping bits 
+                // as we'll be able to draw it all in time.
+                else {
+                    for(Transcript t : range) {
+                        
+                        smartDraw(sel, t, gr, size, scaledOffset, offset);
+                    }
+                }
+                timeoutTimer.cancel();
 			}
 			List<String> names = new ArrayList<String>();
 			names.addAll(session.edgeSelection.keySet());
@@ -326,20 +327,24 @@ public class ImagePane extends JPanel {
 
 			if(pointClicked != null) {
 				gr.setStroke(new BasicStroke(3));
-				Point drawLocation = actualPointToScaledPixel(pointClicked.pos);
+				Point drawLocation 
+                    = actualPointToScaledPixel(pointClicked.pos);
 				smartDraw(sel, pointClicked, gr, size, scaledOffset, offset);
-				gr.drawString(pointClicked.name, drawLocation.x + size + 2, drawLocation.y+6);
+				gr.drawString(pointClicked.name, 
+                        drawLocation.x + size + 2, drawLocation.y+6);
 			}
 			for(String name : names)
 			{
 				gr.setColor(session.getGeneColour(name));
-				gr.drawString(name, view.x+6, view.y+(names.indexOf(name)+1)*14);
+				gr.drawString(name, view.x+6,
+                        view.y+(names.indexOf(name)+1)*14);
 			}
 			
 		}
 		else
 		{
-			drawIfExists(gr, image, offset.width, offset.height, requested.width, requested.height);
+			drawIfExists(gr, image, offset.width, offset.height,
+                    requested.width, requested.height);
 		}
 
 		gr.setColor(Color.YELLOW);
@@ -348,7 +353,8 @@ public class ImagePane extends JPanel {
 		int ly = (int) Math.round((selectedOrigin.y) * scale);
 		int rx = (int) Math.round((selectedFinish.x) * scale);
 		int ry = (int) Math.round((selectedFinish.y) * scale);
-		rect = new Rectangle(Math.min(lx, rx) + offset.width, Math.min(ly, ry) + offset.height, Math.abs(lx - rx),
+		rect = new Rectangle(Math.min(lx, rx) + offset.width, 
+                Math.min(ly, ry) + offset.height, Math.abs(lx - rx),
 				Math.abs(ly - ry));
 		
 		int alx = selectedOrigin.x;
@@ -356,7 +362,11 @@ public class ImagePane extends JPanel {
 		int arx = selectedFinish.x;
 		int ary = selectedFinish.y;
 		
-		session.setSelection(new Rectangle((int)(Math.min(alx, arx)/pointScale), (int)(Math.min(aly, ary)/pointScale), (int)(Math.abs(alx - arx)/pointScale), (int)(Math.abs(aly - ary)/pointScale)));
+		session.setSelection(new Rectangle(
+                    (int)(Math.min(alx, arx)/pointScale), 
+                    (int)(Math.min(aly, ary)/pointScale), 
+                    (int)(Math.abs(alx - arx)/pointScale), 
+                    (int)(Math.abs(aly - ary)/pointScale)));
 		if(rect.width > 1 && rect.height > 1) {
 			gr.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
@@ -465,7 +475,8 @@ public class ImagePane extends JPanel {
 		Point2D.Double actual = viewportPixelPointToActual(p);
 		List<Transcript> list;
 		try {
-			list = session.tree.nearestEuclidean(new double[]{actual.x, actual.y}, Math.pow(trueDist, 2));
+			list = session.tree.nearestEuclidean(
+                    new double[]{actual.x, actual.y}, Math.pow(trueDist, 2));
 			Collections.reverse(list);
 		}
 		catch (KeySizeException e) {

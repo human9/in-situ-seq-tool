@@ -50,7 +50,10 @@ public class InseqSession {
 	/** Components of a session are initialised as required.
 	 *  A session is created when the user imports data.
 	 */
-	public InseqSession(KDTree<Transcript> t, List<Transcript>raw, CyAppAdapter CAA) {
+	public InseqSession(KDTree<Transcript> t,
+                        List<Transcript>   raw,
+                        CyAppAdapter       CAA)
+    {
 		this.tree = t;
 		this.CAA = CAA;
 		this.raw = raw;
@@ -92,12 +95,14 @@ public class InseqSession {
 			networks.add(n);
 		}
 		else {
-			String name = n.getNetwork().getRow(n.getNetwork()).get(CyNetwork.NAME, String.class);
+			String name = n.getNetwork().getRow(n.getNetwork())
+                .get(CyNetwork.NAME, String.class);
 			CAA.getCyNetworkManager().destroyNetwork(n.getNetwork());
 			n.setNetwork(CAA.getCyNetworkFactory().createNetwork());
 			if(name != null)
 			{
-				n.getNetwork().getRow(n.getNetwork()).set(CyNetwork.NAME, name);
+				n.getNetwork().getRow(n.getNetwork())
+                    .set(CyNetwork.NAME, name);
 			}
 			n.setDistance(distance);
 			n.setCutoff(cutoff);
@@ -178,7 +183,8 @@ public class InseqSession {
         CAA.getVisualMappingManager().setCurrentVisualStyle(style);
 
         for(TypeNetwork net : networks) {
-            for(CyNetworkView view : CAA.getCyNetworkViewManager().getNetworkViews(net.getNetwork()))
+            for(CyNetworkView view : CAA.getCyNetworkViewManager()
+                    .getNetworkViews(net.getNetwork()))
             {
                 style.apply(view);
 
