@@ -94,4 +94,29 @@ public class ParseUtil {
         return null;
     }
 
+    /**
+     *  Generate a name with consistent ordering.
+     *  Useful for map key generation
+     */
+    public static String generateName(Transcript t1, Transcript t2) {
+        Transcript[] ordered = orderTranscripts(t1, t2);
+        return ordered[0].name + "-" + ordered[1].name;
+    }
+
+
+    /**
+     * Get consistant order for two transcripts.
+     */
+    public static Transcript[] orderTranscripts(Transcript t1, Transcript t2) {
+
+        String n1 = t1.name;
+        String n2 = t2.name;
+
+        if(n1.compareTo(n2) < 0) {
+            return new Transcript[] {t1, t2};
+        } else {
+            return new Transcript[] {t2, t1};
+        }
+    }
+
 }
