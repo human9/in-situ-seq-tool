@@ -312,14 +312,14 @@ public class KDTree<T> implements Serializable{
     * @throws KeySizeException on mismatch among lowk.length, uppk.length, or K
     */
     public List<T> range(double [] lowk, double [] uppk) 
-    throws KeySizeException {
+    {
 	
 	if (lowk.length != uppk.length) {
-	    throw new KeySizeException();
+	    return null;
 	}
 	
 	else if (lowk.length != m_K) {
-	    throw new KeySizeException();
+	    return null;
 	}
 	
 	else {

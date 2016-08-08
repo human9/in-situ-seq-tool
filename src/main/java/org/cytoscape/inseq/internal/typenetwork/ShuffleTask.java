@@ -61,8 +61,9 @@ public class ShuffleTask extends AbstractTask {
                 "Finding distribution by shuffling names");
 
         // A list of every single transcript
-        List <Transcript> allTranscripts = ParseUtil.getRange(session.tree, 0, 0, 
-                Double.MAX_VALUE, Double.MAX_VALUE);
+        List <Transcript> allTranscripts = session.tree.range(new double[]{
+            0, 0,},
+            new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
         
         // A map of all colocations within the selection
         Map<String, Colocation> colocations = new HashMap<String, Colocation>();
@@ -160,8 +161,8 @@ public class ShuffleTask extends AbstractTask {
 
             double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
 
-            System.out.println(key + " expected: " + colocation.expectedCount
-                    + " actual: " + colocation.actualCount + " Z: " + Z);
+            //System.out.println(key + " expected: " + colocation.expectedCount
+             //       + " actual: " + colocation.actualCount + " Z: " + Z);
 
             if(Math.abs(Z) > 1.96)
             {

@@ -188,8 +188,8 @@ public class ImagePane extends JPanel {
             }
 			cacheAvailable = false;
 
-				for(Transcript t : ParseUtil.getRange(session.tree, 0, 0,
-                            Double.MAX_VALUE, Double.MAX_VALUE))
+				for(Transcript t : session.tree.range(new double[]{
+            0, 0,}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
             {
                 if(cacheStopped) return;
                 smartDraw(sel, t, imgG2, size, scaledOffset,
@@ -209,10 +209,10 @@ public class ImagePane extends JPanel {
             int rule = AlphaComposite.SRC_OVER;
             Composite comp = AlphaComposite.getInstance(rule , alpha );
             imgG2.setComposite(comp );
-            double s = scale / pointScale;
-            for(Transcript t :  ParseUtil.getRange(session.tree, view.x/s,
-                        view.y/s, view.x/s + view.width/s,
-                        view.y/s + view.height/s))
+
+            List<Transcript> range =  session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale});
+
+            for(Transcript t :  range)
             {
                 if(cacheStopped) return;
                 Point vp = zp.getViewport().getViewPosition();
@@ -274,11 +274,7 @@ public class ImagePane extends JPanel {
                     }
                 };
 
-                double s = scale / pointScale;
-                List<Transcript> range =  ParseUtil.getRange(session.tree,
-                        view.x/s, view.y/s, view.x/s + view.width/s,
-                        view.y/s + view.height/s);
-                    
+                List<Transcript> range =  session.tree.range(new double[]{view.x/scale/pointScale,view.y/scale/pointScale}, new double[]{view.x/scale/pointScale + view.width/scale/pointScale, view.y/scale/pointScale + view.height/scale/pointScale});
                 // This timer is to prevent lag during zooming/scrolling
                 // Once time is up, drawing will be stopped.
                 Timer timeoutTimer = new Timer();

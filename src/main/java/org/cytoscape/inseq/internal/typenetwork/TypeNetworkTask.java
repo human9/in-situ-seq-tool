@@ -60,58 +60,51 @@ public class TypeNetworkTask extends AbstractTask {
 		int N = 0;
 		int K = 0;
 		// Iterate through all our transcripts
-		try {
-		
-			for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
-			{
+        for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+        {
 
-				N++;
-				// If we haven't made a node for this transcript name, make one
-				if(!nodes.containsKey(t.name)) {
-					nodes.put(t.name, new Node(t.name));
-				}
+            N++;
+            // If we haven't made a node for this transcript name, make one
+            if(!nodes.containsKey(t.name)) {
+                nodes.put(t.name, new Node(t.name));
+            }
 
-				Node node = nodes.get(t.name);
+            Node node = nodes.get(t.name);
 
-				node.totalNum++;
+            node.totalNum++;
 
-				// If no neighbours were found for this transcript, go to next.
-				if(t.getNeighboursForNetwork(net) == null) continue;
-				if(t.getNeighboursForNetwork(net).size() < 1) continue;
+            // If no neighbours were found for this transcript, go to next.
+            if(t.getNeighboursForNetwork(net) == null) continue;
+            if(t.getNeighboursForNetwork(net).size() < 1) continue;
 
-				// If the neighbours aren't within the selection, go to next.
-				if(t.getSelection(net) != net.getSelection()) continue;
+            // If the neighbours aren't within the selection, go to next.
+            if(t.getSelection(net) != net.getSelection()) continue;
 
-				node.num++;
-				//K++;
+            node.num++;
+            //K++;
 
-				Map<String, Boolean> hasAdded = new HashMap<String, Boolean>();
+            Map<String, Boolean> hasAdded = new HashMap<String, Boolean>();
 
-				// Iterate through neighbours of this transcript
-				for(Transcript n : t.getNeighboursForNetwork(net)) {
+            // Iterate through neighbours of this transcript
+            for(Transcript n : t.getNeighboursForNetwork(net)) {
 
-					// Register this transcript as a neighbour of this node if we haven't already
-					if(!node.coNodes.containsKey(n.name)) {
-						node.coNodes.put(n.name, 0);
-					}
+                // Register this transcript as a neighbour of this node if we haven't already
+                if(!node.coNodes.containsKey(n.name)) {
+                    node.coNodes.put(n.name, 0);
+                }
 
-					// Increment the count for this relationship
-					node.coNodes.put(n.name, node.coNodes.get(n.name) + 1);
-					
-					if(hasAdded.get(n.name) == null) {
-						if(!node.baseCoNodes.containsKey(n.name)) {
-							node.baseCoNodes.put(n.name, 0);
-						}
-						node.baseCoNodes.put(n.name, node.baseCoNodes.get(n.name) + 1);
-						hasAdded.put(n.name, true);
-					}
-				}
-			}
-		}
-		catch (KeySizeException e) {
-			e.printStackTrace();
-			return;
-		}
+                // Increment the count for this relationship
+                node.coNodes.put(n.name, node.coNodes.get(n.name) + 1);
+                
+                if(hasAdded.get(n.name) == null) {
+                    if(!node.baseCoNodes.containsKey(n.name)) {
+                        node.baseCoNodes.put(n.name, 0);
+                    }
+                    node.baseCoNodes.put(n.name, node.baseCoNodes.get(n.name) + 1);
+                    hasAdded.put(n.name, true);
+                }
+            }
+        }
 
 
 	
