@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Shape;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,6 @@ public class InseqSession {
 	private Map<String, Color> geneColours;
 	private Map<String, Symbol> geneSymbols;
 	private List<String> nodes;
-	private List<Integer> shuffledNames; 
 
 	/** Components of a session are initialised as required.
 	 *  A session is created when the user imports data.
@@ -67,7 +65,6 @@ public class InseqSession {
 			}
 			originalNames.add(nodes.indexOf(tr.name));
 		}
-		shuffledNames = new ArrayList<Integer>(originalNames);
 
 		// List and count the genes present.
 		this.geneCounts = ParseUtil.getGenes(tree);
@@ -117,23 +114,6 @@ public class InseqSession {
 		catch(IndexOutOfBoundsException e) {
 			return null;
 		}
-	}
-
-	public void shuffleNames() {
-		Collections.shuffle(shuffledNames);
-		for(int i = 0; i < raw.size(); i++) {
-			raw.get(i).type = shuffledNames.get(i);
-		}
-	}
-	
-	public void restoreNames() {
-		for(int i = 0; i < raw.size(); i++) {
-			raw.get(i).type = originalNames.get(i);
-		}
-	}
-
-	public String getTypeName(int i) {
-		return nodes.get(i);
 	}
 
 	public List<String> getNodeList() {

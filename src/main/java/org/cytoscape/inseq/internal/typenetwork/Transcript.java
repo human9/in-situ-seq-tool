@@ -14,9 +14,8 @@ public class Transcript {
 
 	public Point2D.Double pos;
 	public String name;
-    public short index;
-	public int type;
-	// The shape of the selection area, null if entire dataset
+	
+    // The shape of the selection area, null if entire dataset
 	private Map<TypeNetwork, Shape> selection;
 
 	private Map<TypeNetwork, List<Transcript>> neighbours;
