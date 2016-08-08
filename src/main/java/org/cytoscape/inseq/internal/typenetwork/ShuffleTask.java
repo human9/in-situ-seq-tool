@@ -88,10 +88,8 @@ public class ShuffleTask extends AbstractTask {
             if(!numTranscriptsForGene.keySet().contains(t.name)) {
                 numTranscriptsForGene.put(t.name, 0);
             }
-            else {
-                numTranscriptsForGene.put(t.name,
+            numTranscriptsForGene.put(t.name,
                         numTranscriptsForGene.get(t.name) + 1);
-            }
 
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
@@ -109,7 +107,9 @@ public class ShuffleTask extends AbstractTask {
             }
         }
 
+
         // Because we count every colocation twice
+        k /= 2;
         for(Colocation c : colocations.values()) {
             c.actualCount /= 2;
             int na = numTranscriptsForGene.get(c.getFirst().name);
