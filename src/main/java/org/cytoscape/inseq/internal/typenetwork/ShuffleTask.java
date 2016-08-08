@@ -114,7 +114,7 @@ public class ShuffleTask extends AbstractTask {
             c.actualCount /= 2;
             int na = numTranscriptsForGene.get(c.getFirst().name);
             int nb = numTranscriptsForGene.get(c.getSecond().name);
-            c.expectedCount = (2d*k*na*nb / ((double)N*N));
+            c.expectedCount = (2d*k*na*nb / ((double)N*N - N));
             System.out.println(N + ", " + k + ", " + na + ", " + nb);
         }
         
