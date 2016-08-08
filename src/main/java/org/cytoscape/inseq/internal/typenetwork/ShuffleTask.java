@@ -77,7 +77,7 @@ public class ShuffleTask extends AbstractTask {
         // Number of colocations
         int k = 0;
 
-        System.out.println("interaction, expected, actual, Z");
+        System.out.println("\ninteraction, expected, actual, Z");
         for (Transcript t : allTranscripts)
         {
 
@@ -86,6 +86,7 @@ public class ShuffleTask extends AbstractTask {
             
             N++;
             
+
             // Increment n for this gene
             if(!numTranscriptsForGene.keySet().contains(t.name)) {
                 numTranscriptsForGene.put(t.name, 0);
@@ -116,10 +117,12 @@ public class ShuffleTask extends AbstractTask {
             c.actualCount /= 2;
             int na = numTranscriptsForGene.get(c.getFirst().name);
             int nb = numTranscriptsForGene.get(c.getSecond().name);
-            double m = 2;
-            if(c.getFirst().name.equals(c.getSecond().name)) m = 1;
-            c.expectedCount = (m*k*na*nb / ((double)N*N - N));
-            //System.out.println(N + ", " + k + ", " + na + ", " + nb);
+            if(c.getFirst().name.equals(c.getSecond().name)) {
+                c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
+                System.out.println("\n\n" + c.getFirst().name + k + "," + na);
+            } else {
+                c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
+            }
         }
         
 
