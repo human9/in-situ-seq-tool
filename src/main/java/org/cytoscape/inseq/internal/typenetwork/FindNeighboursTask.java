@@ -45,7 +45,7 @@ public class FindNeighboursTask extends AbstractTask {
 			Shape selection = null;
 			if(subset) {
 				selection = session.getSelection();
-				Rectangle rect = (Rectangle) selection;
+				Rectangle rect = selection.getBounds();
 				searchArea = tree.range(new double[]{rect.x, rect.y}, new double[]{rect.x+rect.width, rect.y+rect.height});
 			}
 			else {
@@ -61,6 +61,10 @@ public class FindNeighboursTask extends AbstractTask {
 				if (z % 1000 == 0) {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
+
+                if(selection != null) {
+                    if(!selection.contains(t.pos.x, t.pos.y)) continue;
+                }
 
 				t.setSelection(network, selection);
 				
