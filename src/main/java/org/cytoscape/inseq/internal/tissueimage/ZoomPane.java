@@ -9,13 +9,16 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.ArrayList;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
 
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.cytoscape.inseq.internal.InseqSession;
 
 public class ZoomPane extends JScrollPane {
 	static final long serialVersionUID = 355635l;
@@ -28,6 +31,15 @@ public class ZoomPane extends JScrollPane {
 	private Dimension imgDims;
 	private JViewport vp;
 	private Point start;
+    private GeneralPath polygon;
+    private Rectangle rectangle;
+    private Point origin;
+    private InseqSession session;
+
+    private boolean usePolygons;
+    private boolean initPolygon;
+
+    private Point2D.Double clickOrigin;
 
 	public void resizeEvent() {
 		imagePane.setMinimumSize(vp.getExtentSize());
@@ -35,16 +47,32 @@ public class ZoomPane extends JScrollPane {
 		imagePane.repaint();
 	}
 
-	public ZoomPane(final SelectionPanel sp, Dimension dim) {
+    private Point translatePoint(MouseEvent e) {
+        Point view = new Point(getViewport().getViewPosition());
+        return new Point(
+            (int) ((view.x + e.getX() - imagePane.offset.width)
+                / imagePane.getScale()),
+            (int) ((view.y + e.getY() - imagePane.offset.height)
+                / imagePane.getScale())
+        );
+    }
+
+
+	public ZoomPane(final SelectionPanel sp, InseqSession s) {
 		this.imagePane = sp.imagePane;
+        this.session = s;
 		imagePane.sp = sp;
+        origin = new Point();
 		imagePane.zp = this;
-		this.imgDims = dim;
+		this.imgDims = session.min;
 		setViewportView(imagePane);
 		setWheelScrollingEnabled(false);
 		this.vp = getViewport();
 		vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
 		vp.setBackground(Color.BLACK);
+
+        imagePane.makeDist(); 
+
         vp.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 imagePane.invalidateCache();
@@ -74,13 +102,38 @@ public class ZoomPane extends JScrollPane {
 					start = e.getPoint();
 				}
 				if (e.getButton() == MouseEvent.BUTTON3) {
-					selectButton = true;
-					Point view = new Point(getViewport().getViewPosition());
-					imagePane.selectedOrigin.move(
-							(int) ((view.x + e.getX() - imagePane.offset.width) / imagePane.getScale()),
-							(int) ((view.y + e.getY() - imagePane.offset.height) / imagePane.getScale()));
-					imagePane.selectedFinish = new Point(imagePane.selectedOrigin);
-					imagePane.repaint();
+                    Point p = translatePoint(e);
+                    if(!usePolygons) {
+                        selectButton = true;
+                        rectangle = new Rectangle();
+                        session.setSelection(null);
+                        origin.move(p.x, p.y);
+                        imagePane.repaint();
+                    }
+                    else {
+                        if(!initPolygon) {
+                            polygon = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 8);
+                            clickOrigin = imagePane.viewportPixelPointToActual(e.getPoint());
+                            polygon.moveTo(p.x, p.y);
+                            initPolygon = true;
+                            session.setSelection(null);
+                        }
+                        else {
+                            if(imagePane.euclideanDistance(
+                                        imagePane.actualPointToViewportPixel(clickOrigin), 
+                                        e.getPoint()) < 20) 
+                            {
+                                polygon.closePath();
+                                session.setSelection(polygon);
+                                initPolygon = false;
+                            } else {
+                                polygon.lineTo(p.x, p.y);
+                                GeneralPath current = (GeneralPath) polygon.clone();
+                                session.setSelection(current);
+                            }
+                        }
+                        imagePane.repaint();
+                    }
 				}
 			}
 
@@ -105,11 +158,25 @@ public class ZoomPane extends JScrollPane {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				imagePane.ratioIsCurrent = false;
+                Point p = translatePoint(e);
+                if (initPolygon && usePolygons) {
+                    GeneralPath current = (GeneralPath) polygon.clone();
+                    if(imagePane.euclideanDistance(
+                                imagePane.actualPointToViewportPixel(clickOrigin), 
+                                e.getPoint()) < 20) {
+                        current.closePath();
+                    } else {
+                        current.lineTo(p.x, p.y);
+                    }
+                    session.setSelection(current);
+                    imagePane.repaint();
+                }
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
 				imagePane.ratioIsCurrent = false;
+                Point p = translatePoint(e);
 				if (dragButton) {
 					Point move = new Point(mouseClick.x - e.getX(), mouseClick.y - e.getY());
 					Rectangle r = new Rectangle(move, vp.getExtentSize());
@@ -117,13 +184,25 @@ public class ZoomPane extends JScrollPane {
 					mouseClick.setLocation(e.getPoint());
 					//repaint();
 				}
-				if (selectButton) {
-					Point view = new Point(getViewport().getViewPosition());
-					imagePane.selectedFinish.move(
-							(int) ((view.x + e.getX() - imagePane.offset.width) / imagePane.getScale()),
-							(int) ((view.y + e.getY() - imagePane.offset.height) / imagePane.getScale()));
-					repaint();
+				if (selectButton && !usePolygons) {
+                    rectangle.setFrameFromDiagonal(
+                            origin,
+                            new Point(p.x, p.y));
+                    session.setSelection(rectangle);
+                    imagePane.repaint();
 				}
+                if (initPolygon && usePolygons) {
+                    GeneralPath current = (GeneralPath) polygon.clone();
+                    if(imagePane.euclideanDistance(
+                                imagePane.actualPointToViewportPixel(clickOrigin), 
+                                e.getPoint()) < 20) {
+                        current.closePath();
+                    } else {
+                        current.lineTo(p.x, p.y);
+                    }
+                    session.setSelection(current);
+                    imagePane.repaint();
+                }
 			}
 		});
 	}
@@ -132,6 +211,17 @@ public class ZoomPane extends JScrollPane {
 	{
 		return getViewport().getViewRect();
 	}
+
+    public void enablePoly() {
+        usePolygons = true;
+        initPolygon = false;
+        session.setSelection(null);
+    }
+    
+    public void enableRect() {
+        usePolygons = false;
+        session.setSelection(null);
+    }
 
 	void zoomImage(Point mouse, int direction) {
 		JViewport vp = getViewport();
@@ -178,7 +268,6 @@ public class ZoomPane extends JScrollPane {
 
 		return points; 
 	}
-	*/
 
 	public ArrayList<Integer> getSelectedGridNumbers(Dimension gridSize) {
 		int stepX = (int) Math.round(imagePane.image.getWidth() / gridSize.width);
@@ -203,7 +292,7 @@ public class ZoomPane extends JScrollPane {
 		}
 		return points;
 	}
-
+*/
 	public void updateViewport(ImagePane view) {
 		this.imagePane = view;
 		view.setMinimumSize(getViewport().getExtentSize());
@@ -211,6 +300,7 @@ public class ZoomPane extends JScrollPane {
 		this.vp = getViewport();
 		imagePane.zp = this;
 		view.setSize();
+        imagePane.makeDist();
 	}
 	
 	public void updateViewport() {

@@ -117,7 +117,7 @@ public class SelectionPanel extends JPanel {
 		visualPicker = new VisualPicker(imagePane, ia.getSession());
 		zoomLabel = new JLabel();
 		updateZoom();
-		zp = new ZoomPane(this, ia.getSession().min);
+		zp = new ZoomPane(this, ia.getSession());
 		add(zp, BorderLayout.CENTER);
 
 		JButton browse 
@@ -178,7 +178,7 @@ public class SelectionPanel extends JPanel {
 		showSelection.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				updateSelection();
+				zp.enableRect();
 			}
 		});
 		
@@ -188,7 +188,7 @@ public class SelectionPanel extends JPanel {
 		polygonSelect.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				updateSelection();
+				zp.enablePoly();
 			}
 		});
 

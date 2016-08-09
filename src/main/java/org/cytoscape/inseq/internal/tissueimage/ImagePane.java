@@ -11,6 +11,8 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -24,7 +26,6 @@ import javax.swing.JPanel;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
-import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.inseq.internal.util.SymbolFactory;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
@@ -43,8 +44,6 @@ public class ImagePane extends JPanel {
 	public boolean ratioIsCurrent;
 	public boolean zoomAltered;
 	boolean timerDone = true;
-	public Point selectedOrigin = new Point();
-	public Point selectedFinish = new Point();
 	public Rectangle rect;
 	private InseqSession session;
 	private boolean cacheStopped;
@@ -53,6 +52,7 @@ public class ImagePane extends JPanel {
 	private boolean showNodes = false;
 	private double pointScale = 1;
 	private Transcript pointClicked;
+    public double trueDist; // a reasonable distance for click registering
 
     int MAX_IMG_SIZE = (int) 1e8;
     int jump = 1000;
@@ -74,6 +74,7 @@ public class ImagePane extends JPanel {
         int x = (int) Math.ceil(session.min.width * factor);
         int y = (int) Math.ceil(session.min.height * factor);
 		
+		
         // Make the largest buffer we could possibly need
         // Then just reuse this rather than making new ones
         paintedImage = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
@@ -89,7 +90,16 @@ public class ImagePane extends JPanel {
         Collections.shuffle(rnd);
 		
 		setSize();
+        
 	}
+
+    public void makeDist() {
+        int viewportDist = 10;
+		trueDist = euclideanDistance(
+			viewportPixelPointToActual(new Point(0,0)),
+			viewportPixelPointToActual(new Point(viewportDist,0))
+		);
+    }
 
 	public void setPointScale(double d) {
 		pointScale = d;
@@ -345,31 +355,20 @@ public class ImagePane extends JPanel {
 
 		gr.setColor(Color.YELLOW);
 		gr.setStroke(new BasicStroke(2));
-		int lx = (int) Math.round((selectedOrigin.x) * scale);
-		int ly = (int) Math.round((selectedOrigin.y) * scale);
-		int rx = (int) Math.round((selectedFinish.x) * scale);
-		int ry = (int) Math.round((selectedFinish.y) * scale);
-		rect = new Rectangle(Math.min(lx, rx) + offset.width, 
-                Math.min(ly, ry) + offset.height, Math.abs(lx - rx),
-				Math.abs(ly - ry));
 		
-		int alx = selectedOrigin.x;
-		int aly = selectedOrigin.y;
-		int arx = selectedFinish.x;
-		int ary = selectedFinish.y;
+        if(session.getSelection() != null) {
+            AffineTransform transform = new AffineTransform();
+            transform.setToTranslation(offset.width, offset.height);
+            transform.scale(scale, scale);
+            Path2D.Double path = new Path2D.Double(session.getSelection(),
+                                                 transform);
+            gr.draw(path);
+		    Color fill = new Color(255, 0, 0, 60);
+		    gr.setColor(fill);
+		    gr.fill(path);
+        }
+        
 		
-		session.setSelection(new Rectangle(
-                    (int)(Math.min(alx, arx)/pointScale), 
-                    (int)(Math.min(aly, ary)/pointScale), 
-                    (int)(Math.abs(alx - arx)/pointScale), 
-                    (int)(Math.abs(aly - ary)/pointScale)));
-		if(rect.width > 1 && rect.height > 1) {
-			gr.drawRect(rect.x, rect.y, rect.width, rect.height);
-		}
-		
-		Color fill = new Color(255, 0, 0, 60);
-		gr.setColor(fill);
-		gr.fillRect(rect.x, rect.y, rect.width, rect.height);
 
 	}
 
@@ -463,11 +462,6 @@ public class ImagePane extends JPanel {
 
 	public void clickAtPoint(Point p) {
 
-		int viewportDist = 10;
-		double trueDist = euclideanDistance(
-			viewportPixelPointToActual(new Point(0,0)),
-			viewportPixelPointToActual(new Point(viewportDist,0))
-		);
 		Point2D.Double actual = viewportPixelPointToActual(p);
 		List<Transcript> list;
 		try {
