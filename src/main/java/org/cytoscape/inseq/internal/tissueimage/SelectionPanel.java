@@ -28,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
@@ -117,7 +118,6 @@ public class SelectionPanel extends JPanel {
 		zoomLabel = new JLabel();
 		updateZoom();
 		zp = new ZoomPane(this, ia.getSession().min);
-		zp.setVisible(true);
 		add(zp, BorderLayout.CENTER);
 
 		JButton browse 
@@ -173,9 +173,19 @@ public class SelectionPanel extends JPanel {
 		
 		
 		JButton showSelection 
-            = new JButton(NetworkUtil.iconFromResource("/refresh.png"));
+            = new JButton("RECT");
 		plotControls.add(showSelection);
 		showSelection.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				updateSelection();
+			}
+		});
+		
+        JButton polygonSelect 
+            = new JButton("POLY");
+		plotControls.add(polygonSelect);
+		polygonSelect.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				updateSelection();
@@ -195,7 +205,9 @@ public class SelectionPanel extends JPanel {
 		colourPicker.setEnabled(false);
 		
 		JPanel statusPanel = new JPanel();
-		statusPanel.setLayout(new BorderLayout());
+        BorderLayout layout = new BorderLayout();
+        layout.setVgap(0);
+		statusPanel.setLayout(layout);
 		add(statusPanel, BorderLayout.PAGE_END);
 
 		statusBar = new StatusBar();
@@ -206,9 +218,12 @@ public class SelectionPanel extends JPanel {
 		JSpinner pointScale 
             = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
 		JPanel scalePanel = new JPanel();
-		scalePanel.add(new JLabel("Scaling: "));
+        BorderLayout scaleLayout = new BorderLayout();
+        scaleLayout.setVgap(0);
+        scalePanel.setLayout(scaleLayout);
+		scalePanel.add(new JLabel("Scaling: "), BorderLayout.LINE_START);
 		scalePanel.add(pointScale);
-		plotControls.add(scalePanel, BorderLayout.LINE_END);
+		statusPanel.add(scalePanel, BorderLayout.LINE_END);
 		pointScale.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -216,9 +231,6 @@ public class SelectionPanel extends JPanel {
 				imagePane.forceRepaint();
 			}
 		});
-
-
-		setVisible(true);
 	}
 
 	public void updateZoom() {
