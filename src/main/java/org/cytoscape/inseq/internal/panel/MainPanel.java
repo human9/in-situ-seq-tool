@@ -19,6 +19,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -60,6 +61,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 	private boolean useSubset;
 	private Vector<TypeNetwork> networkVector;
 	private JComboBox<TypeNetwork> netBox; 
+    private InseqSession session;
 
 	private TaskIterator itr; 
 
@@ -89,6 +91,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 
 	public MainPanel(final InseqActivator ia, InseqSession session) {
 		this.ia = ia;
+        this.session = session;
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridBagLayout());
 
@@ -101,12 +104,29 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		group.add(entire);
 		group.add(subset);
 		
-		GridBagConstraints entireCons = new GridBagConstraints(0, 3, 1, 1, 0, 0, GridBagConstraints.CENTER,
+		GridBagConstraints entireCons = new GridBagConstraints(0, 4, 1, 1, 0, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		GridBagConstraints subsetCons = new GridBagConstraints(1, 3, 1, 1, 0, 0, GridBagConstraints.CENTER,
+		GridBagConstraints subsetCons = new GridBagConstraints(1, 4, 1, 1, 0, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		panel.add(entire, entireCons);
 		panel.add(subset, subsetCons);
+
+        JCheckBox autoSlider = new JCheckBox("Use automatic slider");
+		GridBagConstraints autoCons = new GridBagConstraints(0, 3, 2, 1, 1, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        panel.add(autoSlider, autoCons);
+        autoSlider.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                    entire.setEnabled(false);
+                    subset.setEnabled(false);
+                }
+                else {
+                    entire.setEnabled(true);
+                    subset.setEnabled(true);
+                }
+            }
+        });
 
 		entire.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -148,7 +168,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			}
 		});
 */
-		GridBagConstraints consTypes = new GridBagConstraints(0, 4, 2, 1, 1, 0, GridBagConstraints.CENTER,
+		GridBagConstraints consTypes = new GridBagConstraints(0, 5, 2, 1, 1, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
 		JButton types = new JButton("Generate co-occurence network");
 		panel.add(types, consTypes);
@@ -157,42 +177,14 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
+                if(autoSlider.isSelected()) {
+                   //Do things 
+                }
+                else {
 				
-				if(itr.hasNext()) return;
-				
-				// Create a new TypeNetwork
-				TypeNetwork network;
-				if((TypeNetwork)(netBox.getSelectedItem()) == null)
-					network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
-				else
-					network = (TypeNetwork)(netBox.getSelectedItem());
-				
-				// Create and execute a task to find distances.
-				Task neighboursTask = new FindNeighboursTask(session, network, distance, useSubset);
-				itr = new TaskIterator(neighboursTask);
-
-				
-				// Register the network
-				Task registerTask = new AbstractTask() {
-					public void run (TaskMonitor monitor) {
-						session.addNetwork(network, distance, cutoff);
-					}
-				};
-
-				// Construct and display the new network.
-				Task networkTask = new ShuffleTask(network, session, ia.getCAA());
-
-				
-				Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
-
-				Task refreshTask = new AbstractTask() {
-					public void run(TaskMonitor monitor) {
-						refreshNetworks(network);
-					}
-				};
-				
-				ia.getCSAA().getDialogTaskManager().execute(itr);
-				itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
+                    if(itr.hasNext()) return;
+                    makeNetwork();
+                }
 
 			}
 		});
@@ -215,7 +207,14 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		netBox.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				session.setSelectedNetwork((TypeNetwork)(netBox.getSelectedItem()));
+                TypeNetwork selected = (TypeNetwork) netBox.getSelectedItem();
+				session.setSelectedNetwork(selected);
+                if(selected == null) {
+                    session.setSelection(null);
+                }
+                else { 
+                    session.setSelection(selected.getSelection());
+                }
 			}
 		});
 		small.add(netBox, netBoxCons);
@@ -263,6 +262,43 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		this.add(splitPane, BorderLayout.CENTER);
 		this.repaint();
 	}	
+
+    public void makeNetwork() {
+
+        // Create a new TypeNetwork
+        TypeNetwork network;
+        if((TypeNetwork)(netBox.getSelectedItem()) == null)
+            network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
+        else
+            network = (TypeNetwork)(netBox.getSelectedItem());
+        
+        // Create and execute a task to find distances.
+        Task neighboursTask = new FindNeighboursTask(session, network, distance, useSubset);
+        itr = new TaskIterator(neighboursTask);
+
+        
+        // Register the network
+        Task registerTask = new AbstractTask() {
+            public void run (TaskMonitor monitor) {
+                session.addNetwork(network, distance, cutoff);
+            }
+        };
+
+        // Construct and display the new network.
+        Task networkTask = new ShuffleTask(network, session, ia.getCAA());
+
+        
+        Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
+
+        Task refreshTask = new AbstractTask() {
+            public void run(TaskMonitor monitor) {
+                refreshNetworks(network);
+            }
+        };
+        
+        ia.getCSAA().getDialogTaskManager().execute(itr);
+        itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
+    }
 	
 	public void refreshNetworks(TypeNetwork selected) {
 		networkVector.clear();
