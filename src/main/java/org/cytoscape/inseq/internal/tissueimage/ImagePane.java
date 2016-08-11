@@ -77,7 +77,7 @@ public class ImagePane extends JPanel {
 		
         // Make the largest buffer we could possibly need
         // Then just reuse this rather than making new ones
-        paintedImage = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
+        paintedImage = new BufferedImage(session.min.width, session.min.height, BufferedImage.TYPE_INT_ARGB);
 
         scale = Math.min((double)parent.width/session.min.width,
                 (double)parent.height/session.min.height);
@@ -241,6 +241,7 @@ public class ImagePane extends JPanel {
 	@Override
 	public void paintComponent(Graphics g) {
 
+        System.out.println("Repaint");
 		zoomAltered = false;
 		Graphics2D gr = (Graphics2D) g;
 		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
@@ -261,12 +262,14 @@ public class ImagePane extends JPanel {
 			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
 			
 			if(cacheAvailable) {
+                System.out.println("Available");
 		        gr.drawImage(paintedImage, offset.width, offset.height,
                         requested.width + offset.width, 
                         requested.height + offset.height, 0, 0,
                         requested.width, requested.height, null);
 			}
             else if(partialCacheAvailable) {
+                System.out.println("Partially available");
                 Point x = zp.getViewport().getViewPosition();
 				drawIfExists(gr, image, offset.width, offset.height,
                         requested.width, requested.height);
@@ -275,6 +278,7 @@ public class ImagePane extends JPanel {
             }
 			else
 			{
+                System.out.println("Unavailable");
 				drawIfExists(gr, image, offset.width, offset.height,
                         requested.width, requested.height);
                 timeout = false;
@@ -368,14 +372,14 @@ public class ImagePane extends JPanel {
 		    gr.fill(path);
         }
         
-		
-
 	}
 
 	public void forceRepaint() {
+        System.out.println("Attempting Force");
 		cacheAvailable = false;
         partialCacheAvailable = false;
-		repaint();
+        revalidate();
+        zp.repaint();
 	}
 
 	public void scaleUp() {

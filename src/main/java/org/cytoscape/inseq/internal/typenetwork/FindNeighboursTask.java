@@ -16,13 +16,13 @@ public class FindNeighboursTask extends AbstractTask {
 	KDTree<Transcript> tree;
 	Double distance;
 	boolean subset;
-	InseqSession session;
 	TypeNetwork network;
+    Shape selection;
 	
-	public FindNeighboursTask(InseqSession session, TypeNetwork net, double d, boolean s) {
+	public FindNeighboursTask(Shape selection, KDTree<Transcript> tree, TypeNetwork net, double d, boolean s) {
 
-		tree = session.tree;
-		this.session = session;
+		this.tree = tree;
+		this.selection = selection;
 		distance = d; 
 		network = net;
 		subset = s;
@@ -42,9 +42,7 @@ public class FindNeighboursTask extends AbstractTask {
 
 		List<Transcript> searchArea;
 		try {
-			Shape selection = null;
-			if(subset) {
-				selection = session.getSelection();
+			if(subset && selection != null) {
 				Rectangle rect = selection.getBounds();
 				searchArea = tree.range(new double[]{rect.x, rect.y}, new double[]{rect.x+rect.width, rect.y+rect.height});
 			}

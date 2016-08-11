@@ -99,6 +99,7 @@ public class VisualPicker extends JDialog implements ChangeListener
         add(responses, BorderLayout.PAGE_END);
 
         pack();
+        setLocationRelativeTo(SwingUtilities.getWindowAncestor(p));
     }
 
     @Override

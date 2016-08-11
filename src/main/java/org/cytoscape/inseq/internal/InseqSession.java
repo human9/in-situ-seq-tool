@@ -125,10 +125,12 @@ public class InseqSession {
 	}
 
 	public void setSelectedNetwork(TypeNetwork n) {
-		selectedNetwork = networks.indexOf(n);
-		CyNetworkViewManager CNVM = CAA.getCyNetworkViewManager();
-		CNVM.addNetworkView(n.view);
-		n.view.updateView();
+        if(n != null) {
+            selectedNetwork = networks.indexOf(n);
+            CyNetworkViewManager CNVM = CAA.getCyNetworkViewManager();
+            CNVM.addNetworkView(n.view);
+            n.view.updateView();
+        }
 	}
 	
 	public Integer getSelectedNetwork() {

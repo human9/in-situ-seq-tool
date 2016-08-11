@@ -3,15 +3,20 @@ package org.cytoscape.inseq.internal.panel;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Vector;
 
 import javax.swing.Box;
@@ -21,8 +26,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
@@ -118,6 +125,8 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         autoSlider.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
+                    useSubset = true;
+                    subset.setSelected(true);
                     entire.setEnabled(false);
                     subset.setEnabled(false);
                 }
@@ -177,14 +186,38 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
+                //
+                itr = new TaskIterator();
                 if(autoSlider.isSelected()) {
-                   //Do things 
+                   
+                    // Get user input
+                    AutoselectorSetupDialog dialog = new AutoselectorSetupDialog(ia.getCSAA().getCySwingApplication().getJFrame());
+                    Dimension d = dialog.getInput();
+                    Dimension total = session.min;
+
+                    int numHorizontal = (int) Math.ceil(total.width / d.width);
+                    int numVertical = (int) Math.ceil(total.height / d.height);
+
+                    int width = (int) Math.ceil(total.width / numHorizontal);
+                    int height = (int) Math.ceil(total.height / numVertical);
+
+                    for(int h = 0; h < numVertical; h++) {
+                        for(int w = 0; w < numHorizontal; w++) {
+                            Rectangle r = new Rectangle(w*width, h*height, width, height);
+                            session.setSelection(r);
+                            // Makes new network be created
+				            netBox.setSelectedItem(null);
+                            makeNetwork(getTN());
+                        }
+                    }
                 }
                 else {
 				
                     if(itr.hasNext()) return;
-                    makeNetwork();
+                    makeNetwork(getTN());
                 }
+        
+                ia.getCSAA().getDialogTaskManager().execute(itr);
 
 			}
 		});
@@ -263,7 +296,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 		this.repaint();
 	}	
 
-    public void makeNetwork() {
+    public TypeNetwork getTN() {
 
         // Create a new TypeNetwork
         TypeNetwork network;
@@ -271,10 +304,15 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
             network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
         else
             network = (TypeNetwork)(netBox.getSelectedItem());
+        return network;
+    }
+
+    public void makeNetwork(TypeNetwork network) {
         
         // Create and execute a task to find distances.
-        Task neighboursTask = new FindNeighboursTask(session, network, distance, useSubset);
-        itr = new TaskIterator(neighboursTask);
+        Task neighboursTask = new FindNeighboursTask(session.getSelection(), session.tree, network, distance, useSubset);
+        
+        itr.append(neighboursTask);
 
         
         // Register the network
@@ -287,7 +325,6 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         // Construct and display the new network.
         Task networkTask = new ShuffleTask(network, session, ia.getCAA());
 
-        
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
         Task refreshTask = new AbstractTask() {
@@ -296,7 +333,6 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
             }
         };
         
-        ia.getCSAA().getDialogTaskManager().execute(itr);
         itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
     }
 	
@@ -337,4 +373,53 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 			frame.dispose();
 		}
 	}
+
+    class AutoselectorSetupDialog extends JDialog
+                                  implements PropertyChangeListener {
+
+        JOptionPane op;
+        JSpinner x, y;
+        Dimension d;
+
+        public AutoselectorSetupDialog(Frame parent) {
+            super(parent, "Autoselector Setup", true);
+
+            JPanel spinnerPanel = new JPanel();
+            spinnerPanel.setLayout(new FlowLayout());
+            x = new JSpinner(new SpinnerNumberModel(session.min.width/4, 0, session.min.width, 1));
+            y = new JSpinner(new SpinnerNumberModel(session.min.height/4, 0, session.min.height, 1));
+            spinnerPanel.add(x);
+            spinnerPanel.add(new JLabel("x"));
+            spinnerPanel.add(y);
+            Object[] array = {"Select sliding region dimensions:", spinnerPanel};
+            Object[] options = {"OK", "Cancel"};
+            op = new JOptionPane(array, JOptionPane.QUESTION_MESSAGE,
+                    JOptionPane.OK_CANCEL_OPTION, null, options,
+                    options[0]);
+            setContentPane(op);
+            op.addPropertyChangeListener(this);
+            pack();
+            setLocationRelativeTo(parent);
+        }
+
+        public Dimension getInput() {
+            setVisible(true);
+            return d;
+        }
+
+        public void propertyChange(PropertyChangeEvent e) {
+            Object value = op.getValue();
+            if(value.equals("OK")) {
+                d = new Dimension((int)x.getValue(), (int)y.getValue());
+                setVisible(false);
+            }
+            else {
+                d = null;
+                setVisible(false);
+            }
+
+        }
+
+
+    }
 }
