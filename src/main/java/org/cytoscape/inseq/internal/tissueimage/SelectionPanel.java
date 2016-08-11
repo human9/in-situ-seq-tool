@@ -61,7 +61,6 @@ public class SelectionPanel extends JPanel {
 	public ImagePane imagePane;
 	boolean showAllSelected = false;
 	public StatusBar statusBar;
-	private JLabel zoomLabel;
 	private JButton colourPicker;
 		
 	VisualPicker visualPicker;
@@ -115,7 +114,7 @@ public class SelectionPanel extends JPanel {
                 new Dimension(300,300));
 		imagePane = ip;
 		visualPicker = new VisualPicker(imagePane, ia.getSession());
-		zoomLabel = new JLabel();
+		statusBar = new StatusBar();
 		updateZoom();
 		zp = new ZoomPane(this, ia.getSession());
 		add(zp, BorderLayout.CENTER);
@@ -210,11 +209,8 @@ public class SelectionPanel extends JPanel {
 		statusPanel.setLayout(layout);
 		add(statusPanel, BorderLayout.PAGE_END);
 
-		statusBar = new StatusBar();
 		statusPanel.add(statusBar, BorderLayout.CENTER);
 	
-		statusPanel.add(zoomLabel);
-
 		JSpinner pointScale 
             = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
 		JPanel scalePanel = new JPanel();
@@ -235,7 +231,7 @@ public class SelectionPanel extends JPanel {
 
 	public void updateZoom() {
 		DecimalFormat df = new DecimalFormat("#.##");
-		zoomLabel.setText("Zoom: " + df.format(imagePane.getScale()*100)+"%");
+		statusBar.setZoom(df.format(imagePane.getScale()*100)+"%");
 	}
 
 	private void changeImage(String path) {
@@ -249,12 +245,12 @@ public class SelectionPanel extends JPanel {
 
 	public void setSelected(Transcript t) {
 		if(t == null) {
-			statusBar.setTranscript(null); 
+			statusBar.setTranscript(""); 
 			colourPicker.setEnabled(false);
 		}
 		else {
 			DecimalFormat df = new DecimalFormat("#.##");
-			statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+","
+			statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+", "
                     + df.format(t.pos.y) + ")");
 			colourPicker.setEnabled(true);
 			visualPicker.setSelected(t.name);
@@ -322,7 +318,8 @@ public class SelectionPanel extends JPanel {
 class StatusBar extends JLabel {
 
     private static final long serialVersionUID = 43852L;
-	private String transcript;
+	private String transcript = "";
+	private String zoom;
 
 	StatusBar() {
 		super();
@@ -333,9 +330,14 @@ class StatusBar extends JLabel {
 		this.transcript = str;
 		updateText();
 	}
+	
+    void setZoom(String str) {
+		this.zoom = str;
+		updateText();
+	}
 
 	void updateText() {
-		this.setText("Transcript: " + transcript);
+		this.setText("Z: " + zoom + " " + transcript);
 	}
 
 }
