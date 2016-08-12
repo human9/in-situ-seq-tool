@@ -191,25 +191,25 @@ public class ShuffleTask extends AbstractTask {
     }
     private void addEdge(Colocation colocation, double Z, String key) {
 
-                    CyNode thisNode = NetworkUtil.getNodeWithName(network,
-                            nodeTable, colocation.getFirst().name);
-                    CyNode otherNode = NetworkUtil.getNodeWithName(network,
-                            nodeTable, colocation.getSecond().name);
-                    
-                    if(thisNode == otherNode) {
-                        nodeTable.getRow(thisNode.getSUID())
-                            .set("selfnorm", Math.abs(Z));
-                        return;
-                    }
+            CyNode thisNode = NetworkUtil.getNodeWithName(network,
+                    nodeTable, colocation.getFirst().name);
+            CyNode otherNode = NetworkUtil.getNodeWithName(network,
+                    nodeTable, colocation.getSecond().name);
+            
+            if(thisNode == otherNode) {
+                nodeTable.getRow(thisNode.getSUID())
+                    .set("selfnorm", Math.abs(Z));
+                return;
+            }
 
-                    CyEdge edge
-                        = network.addEdge(thisNode, otherNode, false);
+            CyEdge edge
+                = network.addEdge(thisNode, otherNode, false);
 
-                    CyRow row = edgeTable.getRow(edge.getSUID());
+            CyRow row = edgeTable.getRow(edge.getSUID());
 
-                    row.set(CyNetwork.NAME, key);
-                    row.set(CyEdge.INTERACTION, "Co-occurence");
-                    row.set("num", (int) colocation.actualCount); 
-                    row.set("normal", Math.abs(Z)); 
+            row.set(CyNetwork.NAME, key);
+            row.set(CyEdge.INTERACTION, "Co-occurence");
+            row.set("num", (int) colocation.actualCount); 
+            row.set("normal", Math.abs(Z)); 
     }
 }

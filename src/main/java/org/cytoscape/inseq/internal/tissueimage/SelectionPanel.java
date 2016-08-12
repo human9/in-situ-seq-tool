@@ -62,10 +62,12 @@ public class SelectionPanel extends JPanel {
 	boolean showAllSelected = false;
 	public StatusBar statusBar;
 	private JButton colourPicker;
+    private JFrame parent;
 		
 	VisualPicker visualPicker;
 
-	public void setParent(JFrame parent) {
+	public void setWindow(JFrame parent) {
+        this.parent = parent;
 	}
 
 	public BufferedImage getImageFile(String path) {
@@ -103,6 +105,7 @@ public class SelectionPanel extends JPanel {
 	
 	public SelectionPanel(final InseqActivator ia) {
 		this.ia = ia;
+        this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 
 		setLayout(new BorderLayout());
 		plotControls = new JPanel();
@@ -113,7 +116,7 @@ public class SelectionPanel extends JPanel {
 		final ImagePane ip = new ImagePane(null, ia.getSession(), 
                 new Dimension(300,300));
 		imagePane = ip;
-		visualPicker = new VisualPicker(imagePane, ia.getSession());
+		visualPicker = new VisualPicker(imagePane, parent, ia.getSession());
 		statusBar = new StatusBar();
 		updateZoom();
 		zp = new ZoomPane(this, ia.getSession());

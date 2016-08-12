@@ -32,188 +32,188 @@ import edu.wlu.cs.levy.CG.KeySizeException;
 
 public class ImagePane extends JPanel {
 
-	private static final long serialVersionUID = 178665L;
-	final public BufferedImage image;
-	public BufferedImage paintedImage;
-	public BufferedImage partialImage;
-	private double scale = 1;
-	public Dimension offset = new Dimension();
-	private Dimension requested;
-	public ZoomPane zp;
-	public SelectionPanel sp;
-	public boolean ratioIsCurrent;
-	public boolean zoomAltered;
-	boolean timerDone = true;
-	public Rectangle rect;
-	private InseqSession session;
-	private boolean cacheStopped;
-	private boolean cacheAvailable;
+    private static final long serialVersionUID = 178665L;
+    final public BufferedImage image;
+    public BufferedImage paintedImage;
+    public BufferedImage partialImage;
+    private double scale = 1;
+    public Dimension offset = new Dimension();
+    private Dimension requested;
+    public ZoomPane zp;
+    public SelectionPanel sp;
+    public boolean ratioIsCurrent;
+    public boolean zoomAltered;
+    boolean timerDone = true;
+    public Rectangle rect;
+    private InseqSession session;
+    private boolean cacheStopped;
+    static volatile boolean cacheIsReady = false;
     private boolean partialCacheAvailable;
-	private boolean showNodes = false;
-	private double pointScale = 1;
-	private Transcript pointClicked;
+    private boolean showNodes = false;
+    private double pointScale = 1;
+    private Transcript pointClicked;
     public double trueDist; // a reasonable distance for click registering
 
     int MAX_IMG_SIZE = (int) 1e8;
     int jump = 1000;
     private ArrayList<Integer> rnd = new ArrayList<Integer>();
 
-	public ImagePane(final BufferedImage image,
+    public ImagePane(final BufferedImage image,
                      InseqSession s, Dimension parent)
     {
-		this.image = image;
-		session = s;
+        this.image = image;
+        session = s;
         
-		if(image != null) {
-			session.min = new Dimension(image.getWidth(), image.getHeight());
-		}
+        if(image != null) {
+            session.min = new Dimension(image.getWidth(), image.getHeight());
+        }
         
         double factor = Math.sqrt((double) MAX_IMG_SIZE
                 / (session.min.width * session.min.height));
 
         int x = (int) Math.ceil(session.min.width * factor);
         int y = (int) Math.ceil(session.min.height * factor);
-		
-		
+        
+        
         // Make the largest buffer we could possibly need
         // Then just reuse this rather than making new ones
-        paintedImage = new BufferedImage(session.min.width, session.min.height, BufferedImage.TYPE_INT_ARGB);
+        paintedImage = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
 
         scale = Math.min((double)parent.width/session.min.width,
                 (double)parent.height/session.min.height);
 
-		setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+        setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
 
         for(int i = 0; i < jump; i++) {
             rnd.add(i);
         }
         Collections.shuffle(rnd);
-		
-		setSize();
         
-	}
+        setSize();
+        
+    }
 
     public void makeDist() {
         int viewportDist = 10;
-		trueDist = euclideanDistance(
-			viewportPixelPointToActual(new Point(0,0)),
-			viewportPixelPointToActual(new Point(viewportDist,0))
-		);
+        trueDist = euclideanDistance(
+            viewportPixelPointToActual(new Point(0,0)),
+            viewportPixelPointToActual(new Point(viewportDist,0))
+        );
     }
 
-	public void setPointScale(double d) {
-		pointScale = d;
-	}
+    public void setPointScale(double d) {
+        pointScale = d;
+    }
 
-	public void setShowNodes(boolean b) {
-		showNodes = b;
-	}
-	
-	public void stopCache() {
-		cacheStopped = true;
-	}
+    public void setShowNodes(boolean b) {
+        showNodes = b;
+    }
+    
+    public void stopCache() {
+        cacheStopped = true;
+    }
 
-	public void invalidateCache()
+    public void invalidateCache()
     {
         partialCacheAvailable = false;
         if(zp != null) {
             Rectangle view = zp.getView();
         }
-	}
+    }
 
-	private void drawIfExists(Graphics2D gr, BufferedImage img, int sx,
+    private void drawIfExists(Graphics2D gr, BufferedImage img, int sx,
                               int sy, int width, int height)
     {
-		if(img == null) return;
-		gr.drawImage(img, sx, sy, width, height, null);
-	}
+        if(img == null) return;
+        gr.drawImage(img, sx, sy, width, height, null);
+    }
 
-	/** 
-	 * Finds whether the given transcript should be made visible.
-	 * Returns true if it should be visible, or false if it should be hidden.
+    /** 
+     * Finds whether the given transcript should be made visible.
+     * Returns true if it should be visible, or false if it should be hidden.
      * This method is called by SmartDraw.
-	 */
-	private boolean isActive(TypeNetwork sel, Transcript t) {
+     */
+    private boolean isActive(TypeNetwork sel, Transcript t) {
 
-		if(showNodes && session.nodeSelection != null 
+        if(showNodes && session.nodeSelection != null 
                 && session.nodeSelection.contains(t.name)) return true;
 
-		if(t.getNeighboursForNetwork(sel) == null 
+        if(t.getNeighboursForNetwork(sel) == null 
                 || t.getNeighboursForNetwork(sel).size() < 1
                 || t.getSelection(sel) != sel.getSelection() 
                 || (!session.edgeSelection.keySet().contains(t.name)) 
                 && (!session.nodeSelection.contains(t.name))) return false;
-		
-		for(Transcript n : t.getNeighboursForNetwork(sel)) {
-			if(session.edgeSelection.get(t.name) != null 
+        
+        for(Transcript n : t.getNeighboursForNetwork(sel)) {
+            if(session.edgeSelection.get(t.name) != null 
                     && session.edgeSelection.get(t.name).contains(n.name)) 
                     return true;
-			if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) 
+            if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) 
                     return true;
-		}
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	/** 
-	 * Draws only transcripts within the current selection.
-	 */
+    /** 
+     * Draws only transcripts within the current selection.
+     */
 
-	private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g,
+    private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g,
                            int size, int scaledOffset, Dimension off)
     {
-		if(isActive(sel, t)) {
-			g.setColor(session.getGeneColour(t.name));
+        if(isActive(sel, t)) {
+            g.setColor(session.getGeneColour(t.name));
             double s = pointScale * scale;
-			g.draw(SymbolFactory.makeSymbol(session.getGeneSymbol(t.name),
+            g.draw(SymbolFactory.makeSymbol(session.getGeneSymbol(t.name),
                         (int)(s * t.pos.x) - scaledOffset + off.width,
                         (int)(s * t.pos.y) - scaledOffset + off.height,
                                 size,size));
-		}
-	}
+        }
+    }
 
     /**
      * Draws onto an image for display later.
      * This should be run on a separate background thread.
      */
-	public void cacheImage() 
+    public void cacheImage() 
     {
-		Rectangle view = zp.getView();
+        Rectangle view = zp.getView();
 
         TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
         int size = 8;
-		int scaledOffset = (int)(size/2);
-		if(requested.width * requested.height <= MAX_IMG_SIZE) {
-			cacheStopped = false;
+        int scaledOffset = (int)(size/2);
+        if(requested.width * requested.height <= MAX_IMG_SIZE) {
+            cacheStopped = false;
 
-			Graphics imgG = paintedImage.getGraphics();
-			Graphics2D imgG2 = (Graphics2D) imgG;
+            Graphics imgG = paintedImage.getGraphics();
+            Graphics2D imgG2 = (Graphics2D) imgG;
             if(image == null ) {
                 imgG2.setColor(Color.BLACK);
                 imgG2.fillRect(0, 0, requested.width, requested.height);
             }
             else {
-			    drawIfExists(imgG2, image, 0, 0, requested.width,
+                drawIfExists(imgG2, image, 0, 0, requested.width,
                         requested.height);
             }
-			cacheAvailable = false;
+            cacheIsReady = false;
 
-				for(Transcript t : session.tree.range(new double[]{
-            0, 0,}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
+            for(Transcript t : session.tree.range(new double[]{
+                0, 0,}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
             {
                 if(cacheStopped) return;
                 smartDraw(sel, t, imgG2, size, scaledOffset,
-                        new Dimension(0,0));						
+                        new Dimension(0,0));                        
             }
-			cacheAvailable = true;
-		}
+            cacheIsReady = true;
+        }
         else {
-			cacheStopped = false;
+            cacheStopped = false;
             partialCacheAvailable = false;
             partialImage = new BufferedImage(view.width, view.height,
                     BufferedImage.TYPE_INT_ARGB);
-			Graphics imgG = partialImage.getGraphics();
-			Graphics2D imgG2 = (Graphics2D) imgG;
+            Graphics imgG = partialImage.getGraphics();
+            Graphics2D imgG2 = (Graphics2D) imgG;
 
             int alpha = 1;      
             int rule = AlphaComposite.SRC_OVER;
@@ -233,53 +233,49 @@ public class ImagePane extends JPanel {
             partialCacheAvailable = true;
         }
         repaint();
-	}
+    }
 
     boolean timeout = false;
     int delay = 30; // The lower the snappier - but fewer points get drawn
 
-	@Override
-	public void paintComponent(Graphics g) {
+    @Override
+    public void paintComponent(Graphics g) {
 
-        System.out.println("Repaint");
-		zoomAltered = false;
-		Graphics2D gr = (Graphics2D) g;
-		gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+        zoomAltered = false;
+        Graphics2D gr = (Graphics2D) g;
+        gr.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		//Although this looks nice it cuts the framerate a bit
-		//gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+        //Although this looks nice it cuts the framerate a bit
+        //gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
         //RenderingHints.VALUE_ANTIALIAS_ON);
 
-		gr.setColor(Color.BLACK);
-		gr.fillRect(0, 0, getWidth(), getHeight());
+        gr.setColor(Color.BLACK);
+        gr.fillRect(0, 0, getWidth(), getHeight());
 
-		int size = 8;
-		int scaledOffset = (int)(size/2);
-		Rectangle view = zp.getView();
+        int size = 8;
+        int scaledOffset = (int)(size/2);
+        Rectangle view = zp.getView();
 
-		if(session.edgeSelection != null)
-		{
-			TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
-			
-			if(cacheAvailable) {
-                System.out.println("Available");
-		        gr.drawImage(paintedImage, offset.width, offset.height,
+        if(session.edgeSelection != null)
+        {
+            TypeNetwork sel = session.getNetwork(session.getSelectedNetwork());
+            
+            if(cacheIsReady) {
+                gr.drawImage(paintedImage, offset.width, offset.height,
                         requested.width + offset.width, 
                         requested.height + offset.height, 0, 0,
                         requested.width, requested.height, null);
-			}
+            }
             else if(partialCacheAvailable) {
-                System.out.println("Partially available");
                 Point x = zp.getViewport().getViewPosition();
-				drawIfExists(gr, image, offset.width, offset.height,
+                drawIfExists(gr, image, offset.width, offset.height,
                         requested.width, requested.height);
-				drawIfExists(gr, partialImage, x.x+offset.width,
+                drawIfExists(gr, partialImage, x.x+offset.width,
                         x.y+offset.height, view.width, view.height);
             }
-			else
-			{
-                System.out.println("Unavailable");
-				drawIfExists(gr, image, offset.width, offset.height,
+            else
+            {
+                drawIfExists(gr, image, offset.width, offset.height,
                         requested.width, requested.height);
                 timeout = false;
                 TimerTask timeoutTask = new TimerTask() {
@@ -325,41 +321,41 @@ public class ImagePane extends JPanel {
                     }
                 }
                 timeoutTimer.cancel();
-			}
-			List<String> names = new ArrayList<String>();
-			names.addAll(session.edgeSelection.keySet());
-			for(String name : session.nodeSelection) {
-				if(names.contains(name))
-					continue;
-				else
-					names.add(name);
-			}
+            }
+            List<String> names = new ArrayList<String>();
+            names.addAll(session.edgeSelection.keySet());
+            for(String name : session.nodeSelection) {
+                if(names.contains(name))
+                    continue;
+                else
+                    names.add(name);
+            }
 
-			if(pointClicked != null) {
-				gr.setStroke(new BasicStroke(3));
-				Point drawLocation 
+            if(pointClicked != null) {
+                gr.setStroke(new BasicStroke(3));
+                Point drawLocation 
                     = actualPointToScaledPixel(pointClicked.pos);
-				smartDraw(sel, pointClicked, gr, size, scaledOffset, offset);
-				gr.drawString(pointClicked.name, 
+                smartDraw(sel, pointClicked, gr, size, scaledOffset, offset);
+                gr.drawString(pointClicked.name, 
                         drawLocation.x + size + 2, drawLocation.y+6);
-			}
-			for(String name : names)
-			{
-				gr.setColor(session.getGeneColour(name));
-				gr.drawString(name, view.x+6,
+            }
+            for(String name : names)
+            {
+                gr.setColor(session.getGeneColour(name));
+                gr.drawString(name, view.x+6,
                         view.y+(names.indexOf(name)+1)*14);
-			}
-			
-		}
-		else
-		{
-			drawIfExists(gr, image, offset.width, offset.height,
+            }
+            
+        }
+        else
+        {
+            drawIfExists(gr, image, offset.width, offset.height,
                     requested.width, requested.height);
-		}
+        }
 
-		gr.setColor(Color.YELLOW);
-		gr.setStroke(new BasicStroke(2));
-		
+        gr.setColor(Color.YELLOW);
+        gr.setStroke(new BasicStroke(2));
+        
         if(session.getSelection() != null) {
             AffineTransform transform = new AffineTransform();
             transform.setToTranslation(offset.width, offset.height);
@@ -367,134 +363,133 @@ public class ImagePane extends JPanel {
             Path2D.Double path = new Path2D.Double(session.getSelection(),
                                                  transform);
             gr.draw(path);
-		    Color fill = new Color(255, 0, 0, 60);
-		    gr.setColor(fill);
-		    gr.fill(path);
+            Color fill = new Color(255, 0, 0, 60);
+            gr.setColor(fill);
+            gr.fill(path);
         }
         
-	}
+    }
 
-	public void forceRepaint() {
-        System.out.println("Attempting Force");
-		cacheAvailable = false;
+    public void forceRepaint() {
+        stopCache();
+        cacheIsReady = false;
         partialCacheAvailable = false;
-        revalidate();
-        zp.repaint();
-	}
+        zp.getViewport().repaint();
+    }
 
-	public void scaleUp() {
-		if (scale <= 100) {
+    public void scaleUp() {
+        if (scale <= 100) {
             stopCache();
-			cacheAvailable = false;
+            cacheIsReady = false;
             partialCacheAvailable = false;
-			scale *= 1.06;
-			if ((int) scale == 100)
-				scale = 100;
-		}
-	}
+            scale *= 1.06;
+            if ((int) scale == 100)
+                scale = 100;
+        }
+    }
 
-	public void scaleDown() {
-		if (scale > 0.01)
-		{
+    public void scaleDown() {
+        if (scale > 0.01)
+        {
             stopCache();
-			cacheAvailable = false;
+            cacheIsReady = false;
             partialCacheAvailable = false;
-			scale *= 0.94;
-		}
-	}
+            scale *= 0.94;
+        }
+    }
 
-	public double getScale() {
-		return scale;
-	}
+    public double getScale() {
+        return scale;
+    }
 
-	public void setSize() {
-		Dimension minimum = getMinimumSize();
-		offset = new Dimension();
-		requested = new Dimension((int) Math.round(session.min.width * scale),
-				(int) Math.round(session.min.height * scale));
+    public void setSize() {
+        Dimension minimum = getMinimumSize();
+        offset = new Dimension();
+        requested = new Dimension((int) Math.round(session.min.width * scale),
+                (int) Math.round(session.min.height * scale));
 
-		Dimension resize = new Dimension(requested);
+        Dimension resize = new Dimension(requested);
 
-		if (requested.width <= minimum.width) {
-			ratioIsCurrent = false;
-			resize.width = minimum.width;
-			offset.width = (minimum.width - requested.width) / 2;
-		}
-		if (requested.height <= minimum.height) {
-			ratioIsCurrent = false;
-			resize.height = minimum.height;
-			offset.height = (minimum.height - requested.height) / 2;
-		}
-		setPreferredSize(resize);
-	}
-	
-	/** Translates a VIEWPORT PIXEL into an actual point in the tree.
-	 *  There's no need to have a method for scaled points to tree points
-	 *  as that should never be required.
-	 */
-	public Point2D.Double viewportPixelPointToActual(Point p) {
-		Point vp = zp.getViewport().getViewPosition();
-		double x = ((p.x + vp.x - offset.width) / getScale() / pointScale);
-		double y = ((p.y + vp.y - offset.height) / getScale() / pointScale);
-		return new Point2D.Double(x,y);
-	}
+        if (requested.width <= minimum.width) {
+            ratioIsCurrent = false;
+            resize.width = minimum.width;
+            offset.width = (minimum.width - requested.width) / 2;
+        }
+        if (requested.height <= minimum.height) {
+            ratioIsCurrent = false;
+            resize.height = minimum.height;
+            offset.height = (minimum.height - requested.height) / 2;
+        }
+        setPreferredSize(resize);
+    }
+    
+    /** Translates a VIEWPORT PIXEL into an actual point in the tree.
+     *  There's no need to have a method for scaled points to tree points
+     *  as that should never be required.
+     */
+    public Point2D.Double viewportPixelPointToActual(Point p) {
+        Point vp = zp.getViewport().getViewPosition();
+        double x = ((p.x + vp.x - offset.width) / getScale() / pointScale);
+        double y = ((p.y + vp.y - offset.height) / getScale() / pointScale);
+        return new Point2D.Double(x,y);
+    }
 
-	// Translates an actual tree point into a PIXEL WITHIN THE SCALED IMAGE
-	public Point actualPointToScaledPixel(Point2D.Double actual) {
-		int x = (int)(pointScale * actual.x*scale) + offset.width;
-		int y = (int)(pointScale * actual.y*scale) + offset.height;
-		return new Point(x,y);
-	}
-	
-	// Translates an actual tree point into a VIEWPORT PIXEL
-	public Point actualPointToViewportPixel(Point2D.Double actual) {
-		Point vp = zp.getViewport().getViewPosition();
-		int x = (int)(pointScale * actual.x*scale) + offset.width - vp.x;
-		int y = (int)(pointScale * actual.y*scale) + offset.height - vp.y;
-		return new Point(x,y);
-	}
+    // Translates an actual tree point into a PIXEL WITHIN THE SCALED IMAGE
+    public Point actualPointToScaledPixel(Point2D.Double actual) {
+        int x = (int)(pointScale * actual.x*scale) + offset.width;
+        int y = (int)(pointScale * actual.y*scale) + offset.height;
+        return new Point(x,y);
+    }
+    
+    // Translates an actual tree point into a VIEWPORT PIXEL
+    public Point actualPointToViewportPixel(Point2D.Double actual) {
+        Point vp = zp.getViewport().getViewPosition();
+        int x = (int)(pointScale * actual.x*scale) + offset.width - vp.x;
+        int y = (int)(pointScale * actual.y*scale) + offset.height - vp.y;
+        return new Point(x,y);
+    }
 
-	public double euclideanDistance(Point a, Point b) {
-		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
-		return Math.sqrt(sqrdist);
-	}
-	
-	public double euclideanDistance(Point2D.Double a, Point2D.Double b) {
-		double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
-		return Math.sqrt(sqrdist);
-	}
+    public double euclideanDistance(Point a, Point b) {
+        double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
+        return Math.sqrt(sqrdist);
+    }
+    
+    public double euclideanDistance(Point2D.Double a, Point2D.Double b) {
+        double sqrdist = Math.pow((a.x - b.x) , 2) + Math.pow((a.y - b.y), 2);
+        return Math.sqrt(sqrdist);
+    }
 
-	public void clickAtPoint(Point p) {
+    public void clickAtPoint(Point p) {
 
-		Point2D.Double actual = viewportPixelPointToActual(p);
-		List<Transcript> list;
-		try {
-			list = session.tree.nearestEuclidean(
+        Point2D.Double actual = viewportPixelPointToActual(p);
+        List<Transcript> list;
+        try {
+            list = session.tree.nearestEuclidean(
                     new double[]{actual.x, actual.y}, Math.pow(trueDist, 2));
-			Collections.reverse(list);
-		}
-		catch (KeySizeException e) {
-			list = null;
-		}
-		
-		if(list == null || list.size() < 1) {
-			pointClicked = null;
-			repaint();
-		}
+            Collections.reverse(list);
+        }
+        catch (KeySizeException e) {
+            list = null;
+        }
+        
+        if(list == null || list.size() < 1) {
+            pointClicked = null;
+            repaint();
+        }
 
-		for (Transcript x : list) {
-			if(isActive(session.getNetwork(session.getSelectedNetwork()), x)) {
-				pointClicked = x;
-				sp.setSelected(pointClicked);
-				repaint();
-				return;
-			}
-		}
+        for (Transcript x : list) {
+            if(isActive(session.getNetwork(session.getSelectedNetwork()), x)) {
+                pointClicked = x;
+                sp.setSelected(pointClicked);
+                repaint();
+                return;
+            }
+        }
 
-		pointClicked = null;
-		sp.setSelected(pointClicked);
-		repaint();
-	}
+        pointClicked = null;
+        sp.setSelected(pointClicked);
+        repaint();
+    }
 
 
 }

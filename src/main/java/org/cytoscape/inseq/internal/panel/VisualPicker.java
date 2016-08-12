@@ -18,8 +18,8 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.LineBorder;
@@ -46,9 +46,9 @@ public class VisualPicker extends JDialog implements ChangeListener
     private Symbol symbol;
     private Symbol oldSymbol;
 
-    public VisualPicker(ImagePane p, InseqSession s) {
+    public VisualPicker(ImagePane p, JFrame parent, InseqSession s) {
 
-        super(SwingUtilities.getWindowAncestor(p), ModalityType.APPLICATION_MODAL);
+        super(parent, ModalityType.APPLICATION_MODAL);
         this.session = s;
         this.p = p;
 
@@ -99,7 +99,7 @@ public class VisualPicker extends JDialog implements ChangeListener
         add(responses, BorderLayout.PAGE_END);
 
         pack();
-        setLocationRelativeTo(SwingUtilities.getWindowAncestor(p));
+        setLocationRelativeTo(parent);
     }
 
     @Override

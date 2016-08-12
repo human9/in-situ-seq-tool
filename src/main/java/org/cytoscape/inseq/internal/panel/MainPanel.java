@@ -96,7 +96,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
     private void closeWindow() {
         splitPane.setRightComponent(selectionPanel);
         pop.setVisible(true);
-        selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
+        selectionPanel.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
         revalidate();
         repaint();
     }
@@ -322,11 +322,12 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
             public void actionPerformed(ActionEvent e) {
                 pop.setVisible(false);
                 frame = new SeparateFrame("Imageplot", selectionPanel.getSize());
-                selectionPanel.setParent(frame);
+                selectionPanel.setWindow(frame);
                 frame.addWindowListener(new WindowAdapter() {
 
                     @Override
                     public void windowClosing(WindowEvent e) {
+                        selectionPanel.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
                         closeWindow();
                     }
                 });
@@ -339,7 +340,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 
         selectionPanel = new SelectionPanel(ia);
         selectionPanel.plotControls.add(pop);
-        selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
+        selectionPanel.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);
         this.add(splitPane, BorderLayout.CENTER);
         this.repaint();
