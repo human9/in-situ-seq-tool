@@ -19,7 +19,9 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -35,6 +37,9 @@ import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -55,137 +60,181 @@ import org.cytoscape.work.TaskMonitor;
 
 public class MainPanel extends JPanel implements CytoPanelComponent {
 
-	static final long serialVersionUID = 692;
+    static final long serialVersionUID = 692;
 
-	InseqActivator ia;
+    InseqActivator ia;
 
-	private double distance = 8;
-	private double cutoff = 0;
-	private SeparateFrame frame;
-	private SelectionPanel selectionPanel;
-	private JSplitPane splitPane;
-	private JButton pop;
-	private boolean useSubset;
-	private Vector<TypeNetwork> networkVector;
-	private JComboBox<TypeNetwork> netBox; 
+    private double distance = 8;
+    private double cutoff = 0;
+    private SeparateFrame frame;
+    private SelectionPanel selectionPanel;
+    private JSplitPane splitPane;
+    private JButton pop;
+    private boolean useSubset;
+    private boolean interaction = true;
+    private Vector<TypeNetwork> networkVector;
+    private JComboBox<TypeNetwork> netBox; 
     private InseqSession session;
 
-	private TaskIterator itr; 
+    private TaskIterator itr; 
 
-	class SeparateFrame extends JFrame {
-		static final long serialVersionUID = 4324324l;
-		SeparateFrame(String title, Dimension size) {
-			super(title);
-			this.setMinimumSize(new Dimension(100,100));
-			setPreferredSize(new Dimension((int)Math.max(size.getWidth(), 400), (int)Math.max(size.getHeight(), 400)));
-			setVisible(true);
-			setLayout(new BorderLayout());
-			add(selectionPanel);
-			pack();
-			
-		}
+    class SeparateFrame extends JFrame {
+        static final long serialVersionUID = 4324324l;
+        SeparateFrame(String title, Dimension size) {
+            super(title);
+            this.setMinimumSize(new Dimension(100,100));
+            setPreferredSize(new Dimension((int)Math.max(size.getWidth(), 400), (int)Math.max(size.getHeight(), 400)));
+            setVisible(true);
+            setLayout(new BorderLayout());
+            add(selectionPanel);
+            pack();
+            
+        }
 
-	}
-	
-	private void closeWindow() {
-		splitPane.setRightComponent(selectionPanel);
-		pop.setVisible(true);
-		selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
-		revalidate();
-		repaint();
-	}
+    }
+    
+    private void closeWindow() {
+        splitPane.setRightComponent(selectionPanel);
+        pop.setVisible(true);
+        selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
+        revalidate();
+        repaint();
+    }
 
 
-	public MainPanel(final InseqActivator ia, InseqSession session) {
-		this.ia = ia;
+    public MainPanel(final InseqActivator ia, InseqSession session) {
+        this.ia = ia;
         this.session = session;
-		JPanel panel = new JPanel();
-		panel.setLayout(new GridBagLayout());
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
 
-		JRadioButton entire = new JRadioButton("Entire dataset");
-		entire.setSelected(true);
+        JRadioButton entire = new JRadioButton("Entire dataset");
+        entire.setSelected(true);
 
-		JRadioButton subset = new JRadioButton("Current selection");
+        JRadioButton subset = new JRadioButton("Current selection");
 
-		ButtonGroup group = new ButtonGroup();
-		group.add(entire);
-		group.add(subset);
-		
-		GridBagConstraints entireCons = new GridBagConstraints(0, 4, 1, 1, 0, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		GridBagConstraints subsetCons = new GridBagConstraints(1, 4, 1, 1, 0, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		panel.add(entire, entireCons);
-		panel.add(subset, subsetCons);
+        ButtonGroup selectionGroup = new ButtonGroup();
+        selectionGroup.add(entire);
+        selectionGroup.add(subset);
+        
+        GridBagConstraints regionCons = new GridBagConstraints(0, 4, 2, 1, 0, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+
+        JPanel regionPanel = new JPanel();
+        regionPanel.setLayout(new BoxLayout(regionPanel, BoxLayout.LINE_AXIS));
+        regionPanel.add(entire);
+        regionPanel.add(subset);
+        panel.add(regionPanel, regionCons);
+
+        JRadioButton negative = new JRadioButton("Negative");
+        JRadioButton positive = new JRadioButton("Positive");
+        positive.setSelected(true);
+
+        ButtonGroup significanceGroup = new ButtonGroup();
+        significanceGroup.add(negative);
+        significanceGroup.add(positive);
+
+        GridBagConstraints sigCons = new GridBagConstraints(0, 5, 2, 1, 0 ,0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4,4,4,4), 1, 1);
+        JPanel sigPanel = new JPanel();
+        sigPanel.setLayout(new BoxLayout(sigPanel, BoxLayout.LINE_AXIS));
+        sigPanel.add(positive);
+        sigPanel.add(negative);
+        panel.add(sigPanel, sigCons);
+
+        Border etch = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+        TitledBorder significanceBorder = BorderFactory.createTitledBorder(etch,
+                "Interaction type");
+        significanceBorder.setTitleJustification(TitledBorder.LEFT);
+        sigPanel.setBorder(significanceBorder);
+        
+        TitledBorder regionBorder = BorderFactory.createTitledBorder(etch,
+                "Region selection");
+        regionBorder.setTitleJustification(TitledBorder.LEFT);
+        regionPanel.setBorder(regionBorder);
 
         JCheckBox autoSlider = new JCheckBox("Use automatic slider");
-		GridBagConstraints autoCons = new GridBagConstraints(0, 3, 2, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        GridBagConstraints autoCons = new GridBagConstraints(0, 3, 2, 1, 1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
         panel.add(autoSlider, autoCons);
         autoSlider.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
                     useSubset = true;
+                    regionPanel.setEnabled(false);
                     subset.setSelected(true);
                     entire.setEnabled(false);
                     subset.setEnabled(false);
                 }
                 else {
+                    regionPanel.setEnabled(true);
                     entire.setEnabled(true);
                     subset.setEnabled(true);
                 }
             }
         });
 
-		entire.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				useSubset = false;	
-			}
-		});
-		
-		subset.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				useSubset = true;	
-			}
-		});
-				
-		GridBagConstraints dlabelCons = new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JLabel dlabel = new JLabel("Distance cutoff:");
-		panel.add(dlabel, dlabelCons);
+        entire.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                useSubset = false;  
+            }
+        });
+        
+        subset.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                useSubset = true;   
+            }
+        });
 
-		GridBagConstraints distanceCons = new GridBagConstraints(1, 1, 1, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
-		panel.add(distanceCutoff, distanceCons);
-		distanceCutoff.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				distance = (Double)(distanceCutoff.getValue());
-			}
-		});
-	/*	
-		GridBagConstraints nlabelCons = new GridBagConstraints(0, 2, 2, 1, 0, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JButton distButton = new JButton("Find distribution");
-		panel.add(distButton, nlabelCons);
-		distButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				TaskIterator ti = new TaskIterator(new ShuffleTask(session.getNetwork(session.getSelectedNetwork()), session, ia.getCAA()));
-				ia.getCSAA().getDialogTaskManager().execute(ti);
-			}
-		});
+        positive.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                interaction = true;  
+            }
+        });
+        
+        negative.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                interaction = false;
+            }
+        });
+                
+        GridBagConstraints dlabelCons = new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JLabel dlabel = new JLabel("Distance cutoff:");
+        panel.add(dlabel, dlabelCons);
+
+        GridBagConstraints distanceCons = new GridBagConstraints(1, 1, 1, 1, 1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
+        panel.add(distanceCutoff, distanceCons);
+        distanceCutoff.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                distance = (Double)(distanceCutoff.getValue());
+            }
+        });
+    /*  
+        GridBagConstraints nlabelCons = new GridBagConstraints(0, 2, 2, 1, 0, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JButton distButton = new JButton("Find distribution");
+        panel.add(distButton, nlabelCons);
+        distButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TaskIterator ti = new TaskIterator(new ShuffleTask(session.getNetwork(session.getSelectedNetwork()), session, ia.getCAA()));
+                ia.getCSAA().getDialogTaskManager().execute(ti);
+            }
+        });
 */
-		GridBagConstraints consTypes = new GridBagConstraints(0, 5, 2, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JButton types = new JButton("Generate co-occurence network");
-		panel.add(types, consTypes);
-		itr = new TaskIterator();
-		types.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
+        GridBagConstraints consTypes = new GridBagConstraints(0, 6, 2, 1, 1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JButton types = new JButton("Generate co-occurence network");
+        panel.add(types, consTypes);
+        itr = new TaskIterator();
+        types.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
                 //
                 itr = new TaskIterator();
                 if(autoSlider.isSelected()) {
@@ -206,95 +255,95 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
                             Rectangle r = new Rectangle(w*width, h*height, width, height);
                             session.setSelection(r);
                             // Makes new network be created
-				            netBox.setSelectedItem(null);
+                            netBox.setSelectedItem(null);
                             makeNetwork(getTN());
                         }
                     }
                 }
                 else {
-				
+                
                     if(itr.hasNext()) return;
                     makeNetwork(getTN());
                 }
         
                 ia.getCSAA().getDialogTaskManager().execute(itr);
 
-			}
-		});
+            }
+        });
 
 
-		GridBagConstraints sep = new GridBagConstraints(0, 5, 2, 1, 1, 1, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		panel.add(Box.createHorizontalStrut(0), sep);
-		
+        GridBagConstraints sep = new GridBagConstraints(0, 5, 2, 1, 1, 1, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        panel.add(Box.createHorizontalStrut(0), sep);
+        
 
-		GridBagConstraints smallCons = new GridBagConstraints(0, 0, 2, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JPanel small = new JPanel();
-		small.setLayout(new GridBagLayout());
-		GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
-		netBox = new JComboBox<TypeNetwork>(networkVector);
+        GridBagConstraints smallCons = new GridBagConstraints(0, 0, 2, 1, 1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JPanel small = new JPanel();
+        small.setLayout(new GridBagLayout());
+        GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
+        netBox = new JComboBox<TypeNetwork>(networkVector);
 
-		netBox.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
+        netBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
                 TypeNetwork selected = (TypeNetwork) netBox.getSelectedItem();
-				session.setSelectedNetwork(selected);
+                session.setSelectedNetwork(selected);
                 if(selected == null) {
                     session.setSelection(null);
                 }
                 else { 
                     session.setSelection(selected.getSelection());
                 }
-			}
-		});
-		small.add(netBox, netBoxCons);
+            }
+        });
+        small.add(netBox, netBoxCons);
 
-		GridBagConstraints newNetCons = new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-		JButton newNet = new JButton("New");
-		newNet.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				netBox.setSelectedItem(null);
-			}
-		});
-		small.add(newNet, newNetCons);
+        GridBagConstraints newNetCons = new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+        JButton newNet = new JButton("New");
+        newNet.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                netBox.setSelectedItem(null);
+            }
+        });
+        small.add(newNet, newNetCons);
 
-		panel.add(small, smallCons);
-		
-		
-		ImageIcon icon = NetworkUtil.iconFromResource("/pop.png");
-		pop = new JButton(icon);
-		pop.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pop.setVisible(false);
-				frame = new SeparateFrame("Imageplot", selectionPanel.getSize());
-				selectionPanel.setParent(frame);
-				frame.addWindowListener(new WindowAdapter() {
+        panel.add(small, smallCons);
+        
+        
+        ImageIcon icon = NetworkUtil.iconFromResource("/pop.png");
+        pop = new JButton(icon);
+        pop.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pop.setVisible(false);
+                frame = new SeparateFrame("Imageplot", selectionPanel.getSize());
+                selectionPanel.setParent(frame);
+                frame.addWindowListener(new WindowAdapter() {
 
-					@Override
-					public void windowClosing(WindowEvent e) {
-						closeWindow();
-					}
-				});
-				revalidate();
-				repaint();
-				
-			}
-		});
-		this.setLayout(new BorderLayout());
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        closeWindow();
+                    }
+                });
+                revalidate();
+                repaint();
+                
+            }
+        });
+        this.setLayout(new BorderLayout());
 
-		selectionPanel = new SelectionPanel(ia);
-		selectionPanel.plotControls.add(pop);
-		selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
-		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);
-		this.add(splitPane, BorderLayout.CENTER);
-		this.repaint();
-	}	
+        selectionPanel = new SelectionPanel(ia);
+        selectionPanel.plotControls.add(pop);
+        selectionPanel.setParent(ia.getCSAA().getCySwingApplication().getJFrame());
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, selectionPanel);
+        this.add(splitPane, BorderLayout.CENTER);
+        this.repaint();
+    }   
 
     public TypeNetwork getTN() {
 
@@ -323,7 +372,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         };
 
         // Construct and display the new network.
-        Task networkTask = new ShuffleTask(network, session, ia.getCAA());
+        Task networkTask = new ShuffleTask(network, interaction, session, ia.getCAA());
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
@@ -335,44 +384,44 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         
         itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
     }
-	
-	public void refreshNetworks(TypeNetwork selected) {
-		networkVector.clear();
-		networkVector.addAll(ia.getSession().getNetworkList());
-		netBox.setSelectedItem(selected);
-		netBox.repaint();
-	}
+    
+    public void refreshNetworks(TypeNetwork selected) {
+        networkVector.clear();
+        networkVector.addAll(ia.getSession().getNetworkList());
+        netBox.setSelectedItem(selected);
+        netBox.repaint();
+    }
 
-	public void updateSelectionPanel() {
-		selectionPanel.updateSelection();
-	}
+    public void updateSelectionPanel() {
+        selectionPanel.updateSelection();
+    }
 
 
-	@Override
-	public Component getComponent() {
-		return this;
-	}
+    @Override
+    public Component getComponent() {
+        return this;
+    }
 
-	@Override
-	public CytoPanelName getCytoPanelName() {
-		return CytoPanelName.WEST;
-	}
+    @Override
+    public CytoPanelName getCytoPanelName() {
+        return CytoPanelName.WEST;
+    }
 
-	@Override
-	public Icon getIcon() {
-		return null;
-	}
+    @Override
+    public Icon getIcon() {
+        return null;
+    }
 
-	@Override
-	public String getTitle() {
-		return "Inseq";
-	}
+    @Override
+    public String getTitle() {
+        return "Inseq";
+    }
 
-	public void shutDown() {
-		if(frame != null) {
-			frame.dispose();
-		}
-	}
+    public void shutDown() {
+        if(frame != null) {
+            frame.dispose();
+        }
+    }
 
     class AutoselectorSetupDialog extends JDialog
                                   implements PropertyChangeListener {

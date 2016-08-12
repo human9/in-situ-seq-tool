@@ -46,10 +46,15 @@ public class ShuffleTask extends AbstractTask {
 
     private TypeNetwork net;
     private InseqSession session;
+    private boolean interaction;
+    private CyNetwork network;
+    private CyTable nodeTable;
+    private CyTable edgeTable;
 
-    public ShuffleTask(TypeNetwork n, InseqSession s, CyAppAdapter a) {
+    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, CyAppAdapter a) {
         this.net = n;
         this.session = s;
+        this.interaction = interaction;
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -126,7 +131,7 @@ public class ShuffleTask extends AbstractTask {
         }
         
 
-        CyNetwork network = net.getNetwork();
+        network = net.getNetwork();
 
         // Name the network
         String name
@@ -141,13 +146,13 @@ public class ShuffleTask extends AbstractTask {
         }
 
         // Get the node table and add columns
-        CyTable nodeTable = net.getNodeTable();
+        nodeTable = net.getNodeTable();
         nodeTable.createColumn("num", Integer.class, false);
         nodeTable.createColumn("proportion", Double.class, false);
         nodeTable.createColumn("selfnorm", Double.class, false);
         
         // Get the edge table and add columns
-        CyTable edgeTable = network.getDefaultEdgeTable();  
+        edgeTable = network.getDefaultEdgeTable();  
         edgeTable.createColumn("num", Integer.class, false);
         edgeTable.createColumn("normal", Double.class, false);
 
@@ -170,9 +175,22 @@ public class ShuffleTask extends AbstractTask {
             System.out.println(key + ", " + colocation.expectedCount
                     + ", " + colocation.actualCount + ", " + Z);
 
-            if(Math.abs(Z) > 1.96)
-            {
+            if(interaction) {
                 if(Z > 1.96) {
+                    addEdge(colocation, Z, key);
+                }
+            }
+            else {
+                if(Z < -1.96) {
+                    addEdge(colocation, Z, key);
+                }
+
+            }
+
+        }
+    }
+    private void addEdge(Colocation colocation, double Z, String key) {
+
                     CyNode thisNode = NetworkUtil.getNodeWithName(network,
                             nodeTable, colocation.getFirst().name);
                     CyNode otherNode = NetworkUtil.getNodeWithName(network,
@@ -180,8 +198,8 @@ public class ShuffleTask extends AbstractTask {
                     
                     if(thisNode == otherNode) {
                         nodeTable.getRow(thisNode.getSUID())
-                            .set("selfnorm", Z);
-                        continue;
+                            .set("selfnorm", Math.abs(Z));
+                        return;
                     }
 
                     CyEdge edge
@@ -192,9 +210,6 @@ public class ShuffleTask extends AbstractTask {
                     row.set(CyNetwork.NAME, key);
                     row.set(CyEdge.INTERACTION, "Co-occurence");
                     row.set("num", (int) colocation.actualCount); 
-                    row.set("normal", Z); 
-                }
-            }
-        }
+                    row.set("normal", Math.abs(Z)); 
     }
 }
