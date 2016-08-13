@@ -171,7 +171,11 @@ public class JqadvGL {
 
     }
 
-    public void scale(int direction, float x, float y) {
+    /**
+     * Adjust the master scale.
+     * Returns false if unchaged, true otherwise.
+     */
+    public boolean scale(int direction, float x, float y) {
         
         if(mouse_x != x || mouse_y != -y) {
 
@@ -186,11 +190,17 @@ public class JqadvGL {
         }
 
         if(direction < 0) {
-            scale_master *= 1.1f;
+            if(scale_master < 100f) {
+                scale_master *= 1.1f;
+                return true;
+            }
         } else {
-            scale_master /= 1.1f;
+            if(scale_master > 0.01f) {
+                scale_master /= 1.1f;
+                return true;
+            }
         }
-        
+        return false; 
     }
 
     public void move(float x, float y) {

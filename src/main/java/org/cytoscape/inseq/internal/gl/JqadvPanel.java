@@ -69,10 +69,11 @@ public class JqadvPanel extends JPanel {
         canvas.addMouseWheelListener(new MouseAdapter() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                jqadvgl.scale(e.getWheelRotation(), 
+                if(jqadvgl.scale(e.getWheelRotation(), 
                               2f*e.getX() - canvas.getWidth(),
-                              2f*e.getY() - canvas.getHeight());
-                canvas.display();
+                              2f*e.getY() - canvas.getHeight())) {
+                    canvas.display();
+                }
             }
         });
         canvas.addMouseListener(new MouseAdapter() {
