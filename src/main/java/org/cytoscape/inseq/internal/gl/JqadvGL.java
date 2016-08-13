@@ -173,13 +173,13 @@ public class JqadvGL {
 
     public void scale(int direction, float x, float y) {
         
-        if(mouse_x != x-1 || mouse_y != 1-y) {
+        if(mouse_x != x || mouse_y != -y) {
 
             offset_x += mouse_x / scale_master;
             offset_y += mouse_y / scale_master;
 
-            mouse_x = (x-1) * w;
-            mouse_y = (1-y) * h;
+            mouse_x = x;
+            mouse_y = -y;
             
             offset_x -= mouse_x / scale_master;
             offset_y -= mouse_y / scale_master;
@@ -194,7 +194,7 @@ public class JqadvGL {
     }
 
     public void move(float x, float y) {
-        offset_x -= (x / scale_master) * w;
-        offset_y += (y / scale_master) * h;
+        offset_x -= (x / scale_master);
+        offset_y += (y / scale_master);
     }
 }

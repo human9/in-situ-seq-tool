@@ -70,8 +70,8 @@ public class JqadvPanel extends JPanel {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
                 jqadvgl.scale(e.getWheelRotation(), 
-                              2f*(e.getX() / (float) canvas.getWidth()),
-                              2f*(e.getY() / (float) canvas.getHeight()));
+                              2f*e.getX() - canvas.getWidth(),
+                              2f*e.getY() - canvas.getHeight());
                 canvas.display();
             }
         });
@@ -84,8 +84,8 @@ public class JqadvPanel extends JPanel {
         canvas.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                jqadvgl.move(2f*((origin.x - e.getX()) / (float) canvas.getWidth()),
-                             2f*((origin.y - e.getY()) / (float) canvas.getHeight()));
+                jqadvgl.move(2f*((origin.x - e.getX())),
+                             2f*((origin.y - e.getY())));
                 origin.setLocation(e.getPoint());
                 canvas.display();
             }
