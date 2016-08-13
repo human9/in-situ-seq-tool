@@ -39,6 +39,7 @@ public class InseqActivator extends AbstractCyActivator {
 
 		properties = new Properties();
 		context = c;
+        JoglInitializer.unpackNativeLibrariesForJOGL(c);
 
 		ImportAction menuAction = new ImportAction(this);
 		registerAllServices(context, menuAction, properties);

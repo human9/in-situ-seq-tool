@@ -120,6 +120,10 @@ public class InseqSession {
 		return new ArrayList<String>(nodes);
 	}
 
+    public List<Transcript> getRaw() {
+        return raw;
+    }
+
 	public List<TypeNetwork> getNetworkList() {
 		return networks;
 	}
