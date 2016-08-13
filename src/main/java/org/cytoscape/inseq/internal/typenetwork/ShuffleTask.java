@@ -7,7 +7,6 @@ import java.util.Map;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
-import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -19,28 +18,6 @@ import org.cytoscape.work.TaskMonitor;
 /**
  * 
  */
-class Colocation {
-
-    private Transcript first;
-    private Transcript second;
-
-    public int actualCount = 0;
-    public double expectedCount = 0;
-
-    public Colocation(Transcript t1, Transcript t2) {
-        Transcript[] ordered = ParseUtil.orderTranscripts(t1, t2);
-        first = ordered[0];
-        second = ordered[1];
-    }
-
-    public Transcript getFirst() {
-        return first;
-    }
-    
-    public Transcript getSecond() {
-        return second;
-    }
-}
 
 public class ShuffleTask extends AbstractTask {
 
@@ -74,7 +51,7 @@ public class ShuffleTask extends AbstractTask {
         Map<String, Colocation> colocations = new HashMap<String, Colocation>();
 
         // Stores the number of each transcript name that are found
-        Map<String, Integer> numTranscriptsForGene = new HashMap<String, Integer>();
+        int[] numTranscriptsForGene = new int[session.getGenes().size()];
         
         // Number of transcripts in the selection
         int N = 0;
@@ -90,14 +67,9 @@ public class ShuffleTask extends AbstractTask {
             if(t.getSelection(net) != net.getSelection()) continue;
             
             N++;
-            
 
             // Increment n for this gene
-            if(!numTranscriptsForGene.keySet().contains(t.name)) {
-                numTranscriptsForGene.put(t.name, 0);
-            }
-            numTranscriptsForGene.put(t.name,
-                        numTranscriptsForGene.get(t.name) + 1);
+            numTranscriptsForGene[t.type]++;
 
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
@@ -106,7 +78,7 @@ public class ShuffleTask extends AbstractTask {
             //
             for(Transcript n : t.getNeighboursForNetwork(net)) {
                 
-                String key = ParseUtil.generateName(t, n);
+                String key = session.generateName(t, n);
                 if(!colocations.containsKey(key)) {
                     colocations.put(key, new Colocation(t, n));
                 }
@@ -120,11 +92,11 @@ public class ShuffleTask extends AbstractTask {
         k /= 2;
         for(Colocation c : colocations.values()) {
             c.actualCount /= 2;
-            int na = numTranscriptsForGene.get(c.getFirst().name);
-            int nb = numTranscriptsForGene.get(c.getSecond().name);
-            if(c.getFirst().name.equals(c.getSecond().name)) {
+            int na = numTranscriptsForGene[c.getFirst().type];
+            int nb = numTranscriptsForGene[c.getSecond().type];
+            if(c.getFirst().type == c.getSecond().type) {
                 c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
-                System.out.println("\n\n" + c.getFirst().name + k + "," + na);
+                System.out.println("\n\n" + session.name(c.getFirst().type) + k + "," + na);
             } else {
                 c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
             }
@@ -157,13 +129,13 @@ public class ShuffleTask extends AbstractTask {
         edgeTable.createColumn("normal", Double.class, false);
 
         // Add nodes into actual network
-        for (String n : numTranscriptsForGene.keySet())
+        for (int i = 0; i < numTranscriptsForGene.length; i++)
         {
             CyNode node = network.addNode();
             CyRow row = nodeTable.getRow(node.getSUID());
-            row.set(CyNetwork.NAME, n);
-            row.set("num", numTranscriptsForGene.get(n));
-            row.set("proportion", (double)numTranscriptsForGene.get(n)/N);
+            row.set(CyNetwork.NAME, session.name(i));
+            row.set("num", numTranscriptsForGene[i]);
+            row.set("proportion", (double)numTranscriptsForGene[i]/N);
         }
 
         for(String key : colocations.keySet()) {
@@ -192,9 +164,9 @@ public class ShuffleTask extends AbstractTask {
     private void addEdge(Colocation colocation, double Z, String key) {
 
             CyNode thisNode = NetworkUtil.getNodeWithName(network,
-                    nodeTable, colocation.getFirst().name);
+                    nodeTable, session.name(colocation.getFirst().type));
             CyNode otherNode = NetworkUtil.getNodeWithName(network,
-                    nodeTable, colocation.getSecond().name);
+                    nodeTable, session.name(colocation.getSecond().type));
             
             if(thisNode == otherNode) {
                 nodeTable.getRow(thisNode.getSUID())
@@ -211,5 +183,28 @@ public class ShuffleTask extends AbstractTask {
             row.set(CyEdge.INTERACTION, "Co-occurence");
             row.set("num", (int) colocation.actualCount); 
             row.set("normal", Math.abs(Z)); 
+    }
+    
+    class Colocation {
+
+        private Transcript first;
+        private Transcript second;
+
+        public int actualCount = 0;
+        public double expectedCount = 0;
+
+        public Colocation(Transcript t1, Transcript t2) {
+            Transcript[] ordered = session.orderTranscripts(t1, t2);
+            first = ordered[0];
+            second = ordered[1];
+        }
+
+        public Transcript getFirst() {
+            return first;
+        }
+        
+        public Transcript getSecond() {
+            return second;
+        }
     }
 }

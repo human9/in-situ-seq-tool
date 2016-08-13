@@ -2,7 +2,6 @@ package org.cytoscape.inseq.internal;
 
 import java.awt.Color;
 import java.awt.Paint;
-import java.util.Map;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
@@ -12,7 +11,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualMappingFunction;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualPropertyDependency;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
@@ -33,7 +31,7 @@ public class ViewStyler extends AbstractTask {
 		this.style = s;
 	}
 
-	public static VisualStyle initStyle(Map<String, Color> geneColours, CyAppAdapter a) {
+	public static VisualStyle initStyle(InseqSession s, CyAppAdapter a) {
 
 		VisualStyle vs = a.getVisualStyleFactory().createVisualStyle("Inseq Style");
 		
@@ -46,16 +44,16 @@ public class ViewStyler extends AbstractTask {
 		vs.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, new Color(204,255,204));
 		
 		VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
-		for(String name : geneColours.keySet())
+		for(InseqSession.Gene g : s.getGenes())
 		{
-			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(name, geneColours.get(name));
+			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(g.name, g.color);
 		}
 		vs.addVisualMappingFunction(nodeColour);
 		
 		VisualMappingFunction<String,Paint> labelColor = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
-		for(String name : geneColours.keySet())
+		for(InseqSession.Gene g : s.getGenes())
 		{
-			((DiscreteMapping<String,Paint>)labelColor).putMapValue(name, geneColours.get(name));
+			((DiscreteMapping<String,Paint>)labelColor).putMapValue(g.name, g.color);
 		}
 		vs.addVisualMappingFunction(labelColor);
 		
@@ -105,14 +103,13 @@ public class ViewStyler extends AbstractTask {
 
 	}
 
-    public static void updateColours(VisualStyle style, Map<String, Color> geneColours, CyAppAdapter a) {
+    public static void updateColours(VisualStyle style, InseqSession s, CyAppAdapter a) {
 		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
         VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
 		VisualMappingFunction<String,Paint> labelColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
-		for(String name : geneColours.keySet())
-		{
-			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(name, geneColours.get(name));
-			((DiscreteMapping<String,Paint>)labelColour).putMapValue(name, geneColours.get(name));
+		for(InseqSession.Gene g : s.getGenes()) {
+			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(g.name, g.color);
+			((DiscreteMapping<String,Paint>)labelColour).putMapValue(g.name, g.color);
 		}
         style.addVisualMappingFunction(nodeColour);
         style.addVisualMappingFunction(labelColour);

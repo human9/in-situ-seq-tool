@@ -39,12 +39,12 @@ public class VisualPicker extends JDialog implements ChangeListener
     private ImagePane p;
     private Color colour;
     private Color newColour;
-    private String name;
     private JColorChooser chooser;
     private Color old;
     private HashMap<Symbol, SymbolTile> tiles;
     private Symbol symbol;
     private Symbol oldSymbol;
+    private Integer type;
 
     public VisualPicker(ImagePane p, JFrame parent, InseqSession s) {
 
@@ -106,7 +106,7 @@ public class VisualPicker extends JDialog implements ChangeListener
     public void setVisible(boolean isVisible) {
 
         if(isVisible) {
-            setSelected(name);
+            setSelected(type);
             chooser.getSelectionModel().addChangeListener(this);
         }
         else {
@@ -122,39 +122,39 @@ public class VisualPicker extends JDialog implements ChangeListener
     }
 
     private void responseCancel() {
-        session.setGeneColour(name, old);
-        session.setGeneSymbol(name, oldSymbol);
+        session.setGeneColour(type, old);
+        session.setGeneSymbol(type, oldSymbol);
         p.forceRepaint();
         session.refreshStyle();
         setVisible(false);
     }
 
-    public void setSelected(String name) {
-        colour = session.getGeneColour(name);   
-        symbol = session.getGeneSymbol(name);
+    public void setSelected(Integer type) {
+        colour = session.getGeneColour(type);   
+        symbol = session.getGeneSymbol(type);
         oldSymbol = symbol;
         for(SymbolTile tile : tiles.values()) {
             tile.unselect();
         }
         tiles.get(symbol).select();
-        this.name = name;
-        this.old = session.getGeneColour(name);
+        this.type = type;
+        this.old = session.getGeneColour(type);
         
         chooser.setColor(colour);
-        this.setTitle("Editing " + name + " appearance");
+        this.setTitle("Editing " + session.name(type) + " appearance");
     }
 
     public void setSymbol(Symbol sym) {
         tiles.get(symbol).unselect();
         symbol = sym;
         tiles.get(symbol).select();
-        session.setGeneSymbol(name, symbol);
+        session.setGeneSymbol(type, symbol);
         p.forceRepaint();
     }
 
     public void stateChanged(ChangeEvent e) {
         newColour = chooser.getColor();
-        session.setGeneColour(name, newColour);
+        session.setGeneColour(type, newColour);
 
         // don't actually need this - could do it more intelligently
         p.forceRepaint();

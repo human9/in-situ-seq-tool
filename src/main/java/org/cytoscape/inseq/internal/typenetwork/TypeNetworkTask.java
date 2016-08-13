@@ -53,7 +53,7 @@ public class TypeNetworkTask extends AbstractTask {
 	 *  
 	 */
 	public void run(TaskMonitor taskMonitor) {
-
+/*
 		taskMonitor.showMessage(TaskMonitor.Level.INFO, "Creating network view");
 		Map<String, Node> nodes = new HashMap<String, Node>();
 
@@ -62,7 +62,7 @@ public class TypeNetworkTask extends AbstractTask {
 		// Iterate through all our transcripts
         for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
         {
-
+/*
             N++;
             // If we haven't made a node for this transcript name, make one
             if(!nodes.containsKey(t.name)) {
@@ -198,7 +198,7 @@ public class TypeNetworkTask extends AbstractTask {
 				 * n = total no. of this + other transcript
 				 * k = no. times these transcripts co-occur with each other
 				 */
-
+/*
 				// if 95% of random occurence likelihood is below us, this edge is significant
 				if(cpf < 0.95) continue;
 
@@ -226,5 +226,5 @@ public class TypeNetworkTask extends AbstractTask {
 				}
 			}
 		}
-	}
+	*/}
 }

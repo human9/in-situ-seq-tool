@@ -1,8 +1,10 @@
 package org.cytoscape.inseq.internal.gl;
 
+import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.util.List;
 
+import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.opengl.GL;
@@ -36,6 +38,7 @@ public class JqadvGL {
     private float[] values;
 
     private ShaderState st;
+    private InseqSession s;
 
     GLUniformData uni_width;
     GLUniformData uni_height;
@@ -47,14 +50,30 @@ public class JqadvGL {
     GLUniformData ptsize;
     GLUniformData texture;
 
-    public JqadvGL(List<Transcript> list) {
-        values = new float[list.size() * 2];
+    float[] colours;
+    FloatBuffer colours_buffer;
+    GLUniformData uni_colours;
+
+    public JqadvGL(InseqSession s, List<Transcript> list) {
+        this.s = s;
+        
+        int num = s.getGenes().size();
+        colours = new float[num * 3];
+        for(int i = 0; i < num; i++) {
+            Color c = s.getGeneColour(i);
+            int a = i*3;
+            float[] f = new float[3];
+            System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
+        }
+        colours_buffer = FloatBuffer.wrap(colours);
+        values = new float[list.size() * 3];
         int i = 0;
         for(Transcript t : list) {
             values[i++] = (float) t.pos.x;
             values[i++] = (float) t.pos.y;
+            values[i++] = t.type;
         }
-        nPoints = values.length;
+        nPoints = list.size();
     }
 
     protected void init(GL2 gl2) {
@@ -92,7 +111,7 @@ public class JqadvGL {
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
-                         nPoints * GLBuffers.SIZEOF_FLOAT,
+                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
                          vertices,
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
@@ -124,6 +143,10 @@ public class JqadvGL {
         uni_scale_master = new GLUniformData("scale_master", scale_master);
         st.ownUniform(uni_scale_master);
         st.uniform(gl2, uni_scale_master);
+
+        uni_colours = new GLUniformData("colours", 3, colours_buffer);
+        st.ownUniform(uni_colours);
+        st.uniform(gl2, uni_colours);
 
     }
 
@@ -163,9 +186,9 @@ public class JqadvGL {
         gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
 
-        gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints/2);
+        gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);

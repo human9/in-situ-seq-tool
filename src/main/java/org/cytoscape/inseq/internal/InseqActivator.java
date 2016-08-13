@@ -26,79 +26,79 @@ import edu.wlu.cs.levy.CG.KDTree;
  */
 public class InseqActivator extends AbstractCyActivator {
 
-	private InseqSession session;
-	private Properties properties;
-	private BundleContext context;
-	private MainPanel panel;
+    private InseqSession session;
+    private Properties properties;
+    private BundleContext context;
+    private MainPanel panel;
 
-	/** The entry point for app execution.
- 	 *  The only immediate visible change should be a new menu option.
-	 */
-	@Override
-	public void start(BundleContext c) throws Exception {
+    /** The entry point for app execution.
+     *  The only immediate visible change should be a new menu option.
+     */
+    @Override
+    public void start(BundleContext c) throws Exception {
 
-		properties = new Properties();
-		context = c;
+        properties = new Properties();
+        context = c;
         JoglInitializer.unpackNativeLibrariesForJOGL(c);
 
-		ImportAction menuAction = new ImportAction(this);
-		registerAllServices(context, menuAction, properties);
-	}
-	
-	public void constructTree(List<Transcript> rawImport, InseqActivator ia) {
+        ImportAction menuAction = new ImportAction(this);
+        registerAllServices(context, menuAction, properties);
+    }
+    
+    public void constructTree(List<String> names, List<Transcript> transcripts, InseqActivator ia) {
 
-		ConstructTreeTask builder = new ConstructTreeTask(rawImport, ia);
-		TaskIterator itr = new TaskIterator(builder);     
-		getCSAA().getDialogTaskManager().execute(itr);
-	}
+        ConstructTreeTask builder = new ConstructTreeTask(names, transcripts, ia);
+        TaskIterator itr = new TaskIterator(builder);     
+        getCSAA().getDialogTaskManager().execute(itr);
+    }
 
-	/** Initializes the session.
-	 *  This is called by ImportAction on successful import.
-	 */
-	public void initSession(KDTree<Transcript> tree, List<Transcript> raw) {
-		session = new InseqSession(tree, raw, getCAA());
+    /** Initializes the session.
+     *  This is called by ImportAction on successful import.
+     */
+    public void initSession(List<String> names, List<Transcript> transcripts, KDTree<Transcript> tree) {
+        session = new InseqSession(names, transcripts, tree, getCAA());
 
-		panel = new MainPanel(this, session);
-		registerAllServices(context, panel, properties);
+        panel = new MainPanel(this, session);
+        registerAllServices(context, panel, properties);
 
-		RowsSetListener rowsSetListener = new RowsSetListener() {
-			@Override
-			public void handleEvent(RowsSetEvent e) {
-				if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
-					panel.updateSelectionPanel();
-				}
-			}
-		};
-		registerService(context, rowsSetListener, RowsSetListener.class, properties);
+        RowsSetListener rowsSetListener = new RowsSetListener() {
+            @Override
+            public void handleEvent(RowsSetEvent e) {
+                if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
+                    panel.updateSelectionPanel();
+                }
+            }
+        };
+        registerService(context, rowsSetListener, RowsSetListener.class, properties);
 
-		// Switch to the Inseq control panel.
-		CytoPanel cyPanel = getCSAA().getCySwingApplication().getCytoPanel(CytoPanelName.WEST);
-		int index = cyPanel.indexOfComponent(panel);
-		cyPanel.setSelectedIndex(index);
-	}
+        // Switch to the Inseq control panel.
+        CytoPanel cyPanel = getCSAA().getCySwingApplication().getCytoPanel(CytoPanelName.WEST);
+        int index = cyPanel.indexOfComponent(panel);
+        cyPanel.setSelectedIndex(index);
+    }
 
-	/** Returns the current session.
-	 */
-	public InseqSession getSession() {
-		return this.session;
-	}
+    /** Returns the current session.
+     */
+    public InseqSession getSession() {
+        return this.session;
+    }
 
-	/** Returns the CyAppAdapter convenience interface.
-	 */
-	public CyAppAdapter getCAA() {
-		return getService(context, CyAppAdapter.class);
-	}
-	
-	/** Returns the CySwingAppAdapter convenience interface.
-	 */
-	public CySwingAppAdapter getCSAA() {
-		return getService(context, CySwingAppAdapter.class);
-	}
+    /** Returns the CyAppAdapter convenience interface.
+     */
+    public CyAppAdapter getCAA() {
+        return getService(context, CyAppAdapter.class);
+    }
+    
+    /** Returns the CySwingAppAdapter convenience interface.
+     */
+    public CySwingAppAdapter getCSAA() {
+        return getService(context, CySwingAppAdapter.class);
+    }
 
-	@Override
-	public void shutDown() {
-		if(panel != null) panel.shutDown();
-		session = null;
-		super.shutDown();
-	}
+    @Override
+    public void shutDown() {
+        if(panel != null) panel.shutDown();
+        session = null;
+        super.shutDown();
+    }
 }

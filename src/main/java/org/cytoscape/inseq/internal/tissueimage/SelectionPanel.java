@@ -33,6 +33,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
+import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvPanel;
 import org.cytoscape.inseq.internal.panel.VisualPicker;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
@@ -62,6 +63,7 @@ public class SelectionPanel extends JPanel {
     public StatusBar statusBar;
     private JButton colourPicker;
     private JFrame parent;
+    private InseqSession session;
         
     VisualPicker visualPicker;
 
@@ -104,6 +106,7 @@ public class SelectionPanel extends JPanel {
     
     public SelectionPanel(final InseqActivator ia) {
         this.ia = ia;
+        this.session = ia.getSession();
         this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 
         setLayout(new BorderLayout());
@@ -254,10 +257,10 @@ public class SelectionPanel extends JPanel {
         }
         else {
             DecimalFormat df = new DecimalFormat("#.##");
-            statusBar.setTranscript(t.name + " ("+df.format(t.pos.x)+", "
+            statusBar.setTranscript(session.name(t.type) + " ("+df.format(t.pos.x)+", "
                     + df.format(t.pos.y) + ")");
             colourPicker.setEnabled(true);
-            visualPicker.setSelected(t.name);
+            visualPicker.setSelected(t.type);
             visualPicker.toFront();
         }
 
@@ -274,28 +277,28 @@ public class SelectionPanel extends JPanel {
         List<CyEdge> edges 
             = CyTableUtil.getEdgesInState(network, "selected",true);
 
-        ia.getSession().nodeSelection = new ArrayList<String>();
+        ia.getSession().nodeSelection = new ArrayList<Integer>();
         for(CyNode node : nodes) {
-            String name 
-                = network.getDefaultNodeTable().getRow(node.getSUID())
-                .get(CyNetwork.NAME, String.class);
-            ia.getSession().nodeSelection.add(name);
+            Integer type 
+                = session.names.indexOf(network.getDefaultNodeTable().getRow(node.getSUID())
+                .get(CyNetwork.NAME, String.class));
+            ia.getSession().nodeSelection.add(type);
         }
-        ia.getSession().edgeSelection = new HashMap<String, List<String>>();
-        Map<String, List<String>> edgeSelection 
+        ia.getSession().edgeSelection = new HashMap<Integer, List<Integer>>();
+        Map<Integer, List<Integer>> edgeSelection 
             = ia.getSession().edgeSelection;
         for(CyEdge edge : edges)
         {
 
-            String source 
-                = network.getDefaultNodeTable().getRow(edge.getSource()
-                        .getSUID()).get(CyNetwork.NAME, String.class);
-            String target 
-                = network.getDefaultNodeTable().getRow(edge.getTarget()
-                        .getSUID()).get(CyNetwork.NAME, String.class);
+            Integer source 
+                = session.names.indexOf(network.getDefaultNodeTable().getRow(edge.getSource()
+                        .getSUID()).get(CyNetwork.NAME, String.class));
+            Integer target 
+                = session.names.indexOf(network.getDefaultNodeTable().getRow(edge.getTarget()
+                        .getSUID()).get(CyNetwork.NAME, String.class));
             if(!(edgeSelection.keySet().contains(source)))
             {
-                List<String> n = new ArrayList<String>();
+                List<Integer> n = new ArrayList<Integer>();
                 n.add(target);
                 edgeSelection.put(source, n);
             }
@@ -304,7 +307,7 @@ public class SelectionPanel extends JPanel {
             }
             if(!(edgeSelection.keySet().contains(target)))
             {
-                List<String> n = new ArrayList<String>();
+                List<Integer> n = new ArrayList<Integer>();
                 n.add(source);
                 ia.getSession().edgeSelection.put(target, n);
             }

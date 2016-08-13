@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFileChooser;
@@ -46,12 +47,14 @@ public class ImportAction extends AbstractCyAction {
 
 		File raw = new File(fc.getSelectedFile().getAbsolutePath());
 
+        List<String> names = new ArrayList<String>();
+        List<Transcript> transcripts = new ArrayList<Transcript>();
 		FileReader in;
 		try {
 			in = new FileReader(raw);
-			List<Transcript> rawImport = ParseUtil.parseXYFile(in);
+			if(!ParseUtil.parseXYFile(in, names, transcripts)) return;
 			in.close();
-			ia.constructTree(rawImport, ia);
+			ia.constructTree(names, transcripts, ia);
 		} 
 		catch (FileNotFoundException x) {
 			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.WARNING_MESSAGE);

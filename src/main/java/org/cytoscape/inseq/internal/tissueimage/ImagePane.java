@@ -134,7 +134,7 @@ public class ImagePane extends JPanel {
      * This method is called by SmartDraw.
      */
     private boolean isActive(TypeNetwork sel, Transcript t) {
-
+/*
         if(showNodes && session.nodeSelection != null 
                 && session.nodeSelection.contains(t.name)) return true;
 
@@ -151,7 +151,7 @@ public class ImagePane extends JPanel {
             if(session.nodeSelection.contains(t.name) && n.name.equals(t.name)) 
                     return true;
         }
-
+*/
         return false;
     }
 
@@ -162,14 +162,14 @@ public class ImagePane extends JPanel {
     private void smartDraw(TypeNetwork sel, Transcript t, Graphics2D g,
                            int size, int scaledOffset, Dimension off)
     {
-        if(isActive(sel, t)) {
+  /*      if(isActive(sel, t)) {
             g.setColor(session.getGeneColour(t.name));
             double s = pointScale * scale;
             g.draw(SymbolFactory.makeSymbol(session.getGeneSymbol(t.name),
                         (int)(s * t.pos.x) - scaledOffset + off.width,
                         (int)(s * t.pos.y) - scaledOffset + off.height,
                                 size,size));
-        }
+        }*/
     }
 
     /**
@@ -323,7 +323,7 @@ public class ImagePane extends JPanel {
                 timeoutTimer.cancel();
             }
             List<String> names = new ArrayList<String>();
-            names.addAll(session.edgeSelection.keySet());
+            /*names.addAll(session.edgeSelection.keySet());
             for(String name : session.nodeSelection) {
                 if(names.contains(name))
                     continue;
@@ -345,7 +345,7 @@ public class ImagePane extends JPanel {
                 gr.drawString(name, view.x+6,
                         view.y+(names.indexOf(name)+1)*14);
             }
-            
+            */
         }
         else
         {

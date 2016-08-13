@@ -12,17 +12,20 @@ import java.util.Map;
  */
 public class Transcript {
 
-	public Point2D.Double pos;
-	public String name;
+	public final Point2D.Double pos;
+    public final Integer index;
+    public final Integer type;
 	
     // The shape of the selection area, null if entire dataset
 	private Map<TypeNetwork, Shape> selection;
 
 	private Map<TypeNetwork, List<Transcript>> neighbours;
 	
-	public Transcript(Point2D.Double pos, String name) {
+	public Transcript(Point2D.Double pos, int type, int index) {
 		this.pos = pos;
-		this.name = name;
+		this.type = type;
+        this.index = index;
+
 		neighbours = new HashMap<TypeNetwork, List<Transcript>>();
 		selection = new HashMap<TypeNetwork, Shape>();
 	}
@@ -46,12 +49,8 @@ public class Transcript {
 		return selection.get(network);
 	}
 
-	
-
-	
-
 	@Override
 	public String toString() {
-		return "Transcript: " + name + " X: " + pos.x + " Y: " + pos.y;
+		return "X: " + pos.x + " Y: " + pos.y;
 	}
 }

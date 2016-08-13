@@ -35,7 +35,7 @@ public class JqadvPanel extends JPanel {
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
         canvas = new GLCanvas(capabilities);
-        jqadvgl = new JqadvGL(s.getRaw());
+        jqadvgl = new JqadvGL(s, s.getRaw());
         origin = new Point();
         session = s;
 
