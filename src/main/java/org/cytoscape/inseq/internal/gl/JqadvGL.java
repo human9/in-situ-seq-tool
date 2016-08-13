@@ -26,8 +26,8 @@ public class JqadvGL {
     private float offset_y = 0;
     private float mouse_x = 0;
     private float mouse_y = 0;
-    private float w = 0;
-    private float h = 0;
+    private float w;
+    private float h;
 
     private float scale_master = 1;
 
@@ -130,6 +130,7 @@ public class JqadvGL {
     protected void setup(GL2 gl2, int width, int height) {
         // coordinate system origin at lower left with width and height same as the window
         gl2.glViewport(0, 0, width, height);
+
         w = width;
         h = height;
         
@@ -172,21 +173,20 @@ public class JqadvGL {
     }
 
     /**
-     * Adjust the master scale.
+     * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.
      */
     public boolean scale(int direction, float x, float y) {
         
+        // If mouse has moved since last scale, we need to
+        // adjust for this (to allow zooming from mouse position).
         if(mouse_x != x || mouse_y != -y) {
 
-            offset_x += mouse_x / scale_master;
-            offset_y += mouse_y / scale_master;
+            offset_x += (mouse_x - x) / scale_master;
+            offset_y += (mouse_y + y) / scale_master;
 
             mouse_x = x;
             mouse_y = -y;
-            
-            offset_x -= mouse_x / scale_master;
-            offset_y -= mouse_y / scale_master;
         }
 
         if(direction < 0) {
@@ -203,8 +203,33 @@ public class JqadvGL {
         return false; 
     }
 
+    /**
+     * Pans the image.
+     */
     public void move(float x, float y) {
         offset_x -= (x / scale_master);
         offset_y += (y / scale_master);
+    }
+
+    /**
+     * Converts a graph point into gl coordinate space.
+     * Use this to find where a graph point will be rendered on the screen.
+     */
+    public float[] graphToGL(float x, float y) {
+        float[] gl = new float[2];
+        gl[0] = ((x + offset_x) * scale_master + mouse_x) / w;
+        gl[1] = ((y - offset_y) * scale_master + mouse_y) / h;
+        return gl;
+    }
+    
+    /**
+     * Converts a gl point into graph coordinate space.
+     * The inverse of graphToGL.
+     */
+    public float[] glToGraph(float x, float y) {
+        float[] graph = new float[2];
+        graph[0] = (x * w - mouse_x) / scale_master - offset_x;
+        graph[1] = (y * h + mouse_y) / scale_master + offset_y;
+        return graph;
     }
 }

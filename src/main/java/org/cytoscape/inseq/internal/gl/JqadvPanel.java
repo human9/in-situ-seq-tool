@@ -70,8 +70,9 @@ public class JqadvPanel extends JPanel {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
                 if(jqadvgl.scale(e.getWheelRotation(), 
-                              2f*e.getX() - canvas.getWidth(),
-                              2f*e.getY() - canvas.getHeight())) {
+                              glX(e.getX()),
+                              glY(e.getY()))
+                        ) {
                     canvas.display();
                 }
             }
@@ -80,6 +81,9 @@ public class JqadvPanel extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                origin.setLocation(e.getPoint());
+               float[] p = jqadvgl.glToGraph(glX(origin.x)/canvas.getWidth(),
+                                             glY(origin.y)/canvas.getHeight());
+               System.out.println(p[0] +", "+ p[1]);
             }
         });
         canvas.addMouseMotionListener(new MouseAdapter() {
@@ -98,4 +102,26 @@ public class JqadvPanel extends JPanel {
             }
         });
     }
+
+    /**
+     * Convert AWT xy to GL xy.
+     * Note: Divide these by canvas dimensions to get into -1 to 1 range.
+     */
+    public float[] awtToGL(Point p) {
+        return new float[] { glX(p.x), glY(p.y) };
+    }
+    /**
+     * Convert from AWT x to GL x coordinate.
+     */
+    public float glX(int x) {
+        return 2f * x - canvas.getWidth();
+    }
+    
+    /**
+     * Convert from AWT y to GL y coordinate.
+     */
+    public float glY(int y) {
+        return 2f * y - canvas.getHeight();
+    }
+
 }
