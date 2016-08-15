@@ -20,11 +20,12 @@ public class JqadvGL {
     
     private FloatBuffer vertices;
     private int verticesVBO;
+    private int imageVBO;
 
     private Texture image;
     private Texture pointSprites;
-
-    private int glProgram;
+    private ShaderProgram jqsp;
+    private ShaderProgram imgsp;
 
     private float offset_x = 0;
     private float offset_y = 0;
@@ -49,6 +50,9 @@ public class JqadvGL {
     GLUniformData uni_mouse_x;
     GLUniformData uni_mouse_y;
 
+    float[] img;
+    FloatBuffer img_buffer;
+
     float[] colours;
     FloatBuffer colours_buffer;
     GLUniformData uni_colours;
@@ -58,6 +62,7 @@ public class JqadvGL {
     GLUniformData uni_symbols;
     GLUniformData ptsize;
     GLUniformData sprite;
+    GLUniformData background;
 
     public JqadvGL(InseqSession s, List<Transcript> list) {
         
@@ -108,25 +113,48 @@ public class JqadvGL {
         gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
         image = Util.textureFromResource("/texture/background.jpg");
         image.bind(gl2);
+        img = new float[] {
+            -1.0f, -1.0f,
+             1.0f, -1.0f,
+             1.0f,  1.0f,
+             1.0f,  1.0f,
+            -1.0f, -1.0f,
+            -1.0f,  1.0f
+        };
+        img_buffer = FloatBuffer.wrap(img);
 
         vertices = FloatBuffer.wrap(values);
 
         st = new ShaderState();
-        final ShaderCode vp = 
+
+        final ShaderCode imgvp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_VERTEX_SHADER, this.getClass(),
+                    "shader", null, "image", false);
+        final ShaderCode imgfp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
+                    "shader", null, "image", false);
+        imgsp = new ShaderProgram();
+        imgsp.add(gl2, imgvp, System.err);
+        imgsp.add(gl2, imgfp, System.err);
+        st.attachShaderProgram(gl2, imgsp, false);
+        
+        final ShaderCode jqvp = 
             ShaderCode.create(gl2,
                     GL2.GL_VERTEX_SHADER, this.getClass(),
                     "shader", null, "jqadv", false);
-        final ShaderCode fp = 
+        final ShaderCode jqfp = 
             ShaderCode.create(gl2,
                     GL2.GL_FRAGMENT_SHADER, this.getClass(),
                     "shader", null, "jqadv", false);
-        ShaderProgram sp = new ShaderProgram();
-        sp.add(gl2, vp, System.err);
-        sp.add(gl2, fp, System.err);
-        st.attachShaderProgram(gl2, sp, true);
+        jqsp = new ShaderProgram();
+        jqsp.add(gl2, jqvp, System.err);
+        jqsp.add(gl2, jqfp, System.err);
+        st.attachShaderProgram(gl2, jqsp, true);
 
-        int buf[] = new int[1];
-        gl2.glGenBuffers(1, buf, 0);
+        int buf[] = new int[2];
+        gl2.glGenBuffers(2, buf, 0);
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -135,9 +163,13 @@ public class JqadvGL {
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        glProgram = sp.program();
-
-        gl2.glUseProgram(glProgram);
+        imageVBO = buf[1];
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         6 * 2 * GLBuffers.SIZEOF_FLOAT,
+                         img_buffer,
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         uni_offset_x = new GLUniformData("offset_x", offset_x);
         st.ownUniform(uni_offset_x);
@@ -149,6 +181,10 @@ public class JqadvGL {
         sprite = new GLUniformData("sprite", 0);
         st.ownUniform(sprite);
         st.uniform(gl2, sprite);
+        
+        background = new GLUniformData("background", 1);
+        st.ownUniform(background);
+        st.uniform(gl2, background);
 
         uni_mouse_x = new GLUniformData("mouse_x", mouse_x);
         st.ownUniform(uni_mouse_x);
@@ -159,7 +195,8 @@ public class JqadvGL {
         ptsize = new GLUniformData("ptsize", (float) pointSprites.getHeight());
         st.ownUniform(ptsize);
         st.uniform(gl2, ptsize);
-        GLUniformData texnum = new GLUniformData("texnum", (float) pointSprites.getHeight() / pointSprites.getWidth());
+        GLUniformData texnum = new GLUniformData("texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
+        System.out.println(texnum.floatValue());
         st.ownUniform(texnum);
         st.uniform(gl2, texnum);
 
@@ -205,6 +242,17 @@ public class JqadvGL {
         st.uniform(gl2, uni_mouse_y);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT);
+
+        st.attachShaderProgram(gl2, imgsp, true);
+        
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+
+        st.attachShaderProgram(gl2, jqsp, true);
 
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glEnableClientState(GL2.GL_POINT_SPRITE);

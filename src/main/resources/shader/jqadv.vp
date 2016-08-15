@@ -10,11 +10,14 @@ uniform float scale_master;
 uniform float ptsize;
 uniform vec3[128] colours;
 uniform float[128] symbols;
+uniform float texnum;
 varying float offset;
 varying float size;
+varying float num;
 
 void main(void) {
   size = ptsize;
+  num = texnum;
   offset = symbols[int(coord2d.z)]; 
   gl_Position = vec4(((coord2d.x + offset_x) * scale_master + mouse_x) / width,
                     ((-coord2d.y + offset_y) * scale_master + mouse_y) / height,

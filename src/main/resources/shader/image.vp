@@ -1,0 +1,7 @@
+attribute vec2 coordinate;
+varying vec2 coord;
+
+void main(void) {
+    gl_Position = vec4(coordinate, 0, 1);
+    coord = coordinate;
+}
