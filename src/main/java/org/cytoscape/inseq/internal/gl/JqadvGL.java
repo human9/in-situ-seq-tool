@@ -50,6 +50,9 @@ public class JqadvGL {
     GLUniformData uni_mouse_x;
     GLUniformData uni_mouse_y;
 
+	int iv;
+	int tc;
+
     float[] img;
     FloatBuffer img_buffer;
 
@@ -111,15 +114,17 @@ public class JqadvGL {
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 
         gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
-        image = Util.textureFromResource("/texture/background.jpg");
+        image = Util.textureFromResource("/texture/background.png");
         image.bind(gl2);
+		float h = image.getImageHeight();
+		float w = image.getImageWidth();
         img = new float[] {
-            -1.0f, -1.0f,
-             1.0f, -1.0f,
-             1.0f,  1.0f,
-             1.0f,  1.0f,
-            -1.0f, -1.0f,
-            -1.0f,  1.0f
+            0f, h, 0.0f, 0.0f,
+             w, h, 1.0f, 0.0f,
+             w,  0f, 1.0f, 1.0f,
+             w,  0f, 1.0f, 1.0f,
+            0f, h, 0.0f, 0.0f,
+            0f,  0f, 0.0f, 1.0f
         };
         img_buffer = FloatBuffer.wrap(img);
 
@@ -166,7 +171,7 @@ public class JqadvGL {
         imageVBO = buf[1];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                         6 * 2 * GLBuffers.SIZEOF_FLOAT,
+                         6 * 4 * GLBuffers.SIZEOF_FLOAT,
                          img_buffer,
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
@@ -247,7 +252,7 @@ public class JqadvGL {
         
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexPointer(4, GL.GL_FLOAT, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
