@@ -77,7 +77,7 @@ public class JqadvGL {
         // create the array specifying which symbol each type uses.
         symbols = new float[num];
         for(int i = 0; i < num; i++) {
-            symbols[i] = i % 2;
+            symbols[i] = i % 4;
         }
         symbols_buffer = FloatBuffer.wrap(symbols);
 
