@@ -130,7 +130,6 @@ public class JqadvGL {
         int[] tex_num = new int[1];
         gl2.glGetIntegerv(GL.GL_MAX_TEXTURE_SIZE, IntBuffer.wrap(tex_size));
         gl2.glGetIntegerv(GL2.GL_MAX_TEXTURE_IMAGE_UNITS, IntBuffer.wrap(tex_num));
-        System.out.println(tex_size[0] +"," + tex_num[0]);
         MAX_TEXTURE_SIZE = tex_size[0];
         MAX_TEXTURE_UNITS = tex_num[0];
     }
@@ -157,10 +156,11 @@ public class JqadvGL {
         int tileh = h / req.height;
         System.out.println(w +"," + h);
         for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
+
             int vl1 = (int) ((i%req.width) * tilew);
-            int vu1 = (int) ((i%req.height) * tileh);
+            int vu1 = (int) (((i/req.width)%req.height) * tileh);
             System.out.println(vl1 +"," + vu1);
-            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+2);
+            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+1);
             BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = (Graphics2D) sub.getGraphics();
             g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
@@ -338,8 +338,8 @@ public class JqadvGL {
         st.attachShaderProgram(gl2, imgsp, true);
         
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        for(int i = 0; i < num_tiles && i < MAX_TEXTURE_UNITS; i++) {
-            background.setData(i + 2);
+        for(int i = 0; i < num_tiles; i++) {
+            background.setData(i + 1);
             st.uniform(gl2, background);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
             gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);

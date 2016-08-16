@@ -51,7 +51,8 @@ public class Util
 
         int num = tiles.width * tiles.height;
         if(num > tile_max) {
-            System.out.println("Image size is beyond hardware capabilities");
+            System.out.println("Image size is beyond capabilities, "
+                +"scale down your image or buy a better graphics card.");
         }
 
         return tiles;
@@ -74,13 +75,14 @@ public class Util
 
         float tileh = (float) h / tiles.height;
 
+        System.out.println("### START VERTICES ###");
         for(int i = 0; i < num; i++) {
 
             // v for vertex, i for image.
             // l for long(width), u for up(height)
             // 1 for beginning, 2 for end
             float vl1 = (i%tiles.width) * tilew;
-            float vu1 = (i%tiles.height) * tileh;
+            float vu1 = ((i/tiles.width)%tiles.height) * tileh;
             float vl2 = vl1 + tilew;
             float vu2 = vu1 + tileh;
             
@@ -95,7 +97,9 @@ public class Util
             v[x++] = vl2; v[x++] = vu1; v[x++] = 1f; v[x++] = 0f;
             v[x++] = vl1; v[x++] = vu2; v[x++] = 0f; v[x++] = 1f;
             v[x++] = vl1; v[x++] = vu1; v[x++] = 0f; v[x++] = 0f;
+            System.out.println("X: "+ vl1 + ", Y: " + vu1);
         }
+        System.out.println("### END VERTICES ###");
 
         return v;
 
