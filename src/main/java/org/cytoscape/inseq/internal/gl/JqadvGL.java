@@ -1,7 +1,9 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
@@ -16,13 +18,21 @@ import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
 
+/**
+ * This class handles all OpenGL rendering code.
+ * 
+ */
 public class JqadvGL {
     
     private FloatBuffer vertices;
     private int verticesVBO;
     private int imageVBO;
 
+    private int MAX_TEXTURE_SIZE;
+    private int MAX_TEXTURE_UNITS;
+
     private Texture image;
+    private int num_tiles;
     private Texture pointSprites;
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
@@ -50,9 +60,6 @@ public class JqadvGL {
     GLUniformData uni_mouse_x;
     GLUniformData uni_mouse_y;
 
-	int iv;
-	int tc;
-
     float[] img;
     FloatBuffer img_buffer;
 
@@ -66,6 +73,14 @@ public class JqadvGL {
     GLUniformData ptsize;
     GLUniformData sprite;
     GLUniformData background;
+
+    private BufferedImage bufferedImage;
+    private boolean imageChanged;
+
+    public void setImage(BufferedImage image) {
+        this.bufferedImage = image;
+        imageChanged = true;
+    }
 
     public JqadvGL(InseqSession s, List<Transcript> list) {
         
@@ -100,63 +115,79 @@ public class JqadvGL {
 
     }
 
+    /**
+     * Detect how large textures can be, and how many we can have.
+     * If our image is larger than MAX_TEXTURE_SIZE, we will need to break
+     * it into no more than (MAX_TEXTURE_UNITS - 1) pieces (as one unit is 
+     * to be used for point sprites).
+     */
+    private void detectHardwareLimits(GL2 gl2) {
+        int[] tex_size = new int[1];
+        int[] tex_num = new int[1];
+        gl2.glGetIntegerv(GL.GL_MAX_TEXTURE_SIZE, IntBuffer.wrap(tex_size));
+        gl2.glGetIntegerv(GL2.GL_MAX_TEXTURE_IMAGE_UNITS, IntBuffer.wrap(tex_num));
+        System.out.println(tex_size[0] +"," + tex_num[0]);
+        MAX_TEXTURE_SIZE = tex_size[0];
+        MAX_TEXTURE_UNITS = tex_num[0];
+    }
+
+    /**
+     * Attempts to create an image that will back the points.
+     * If it will not fit within a single texture, it is split into smaller
+     * fragments. If the image is ridiculously huge and this fails, the image
+     * will be scaled down until it fits.
+     */
+    private void makeBackgroundImage(GL2 gl2) {
+
+        int w = bufferedImage.getWidth();
+        int h = bufferedImage.getHeight();
+        
+        // Detect texture limits.
+        detectHardwareLimits(gl2);
+
+        float[] img = Util.tileMaster(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
+        img_buffer = FloatBuffer.wrap(img);
+        num_tiles = img.length / 24;
+        System.out.println("Rendering image as " + num_tiles + " tile(s)");
+
+        gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
+        image = Util.textureFromBufferedImage(bufferedImage);
+        image.bind(gl2);
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         img.length * GLBuffers.SIZEOF_FLOAT,
+                         img_buffer,
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        
+    }
+
     protected void init(GL2 gl2) {
 
+        // Enable specific OpenGL capabilities.
         gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
+
+        // Create shaders and initialize the program.
+        generateShaderProgram(gl2);
         
+        // Retrieve and bind the point sprites. These are the symbols that
+        // appear on each transcript location.
         gl2.glActiveTexture(GL.GL_TEXTURE0);
         pointSprites = Util.textureFromResource("/texture/sprite_sheet.png");
         pointSprites.bind(gl2);
+
+        // Disable texture interpolation for point sprites.
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 
-        gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
-        image = Util.textureFromResource("/texture/background.png");
-        image.bind(gl2);
-		float h = image.getImageHeight();
-		float w = image.getImageWidth();
-        img = new float[] {
-            0f, h, 0.0f, 0.0f,
-             w, h, 1.0f, 0.0f,
-             w,  0f, 1.0f, 1.0f,
-             w,  0f, 1.0f, 1.0f,
-            0f, h, 0.0f, 0.0f,
-            0f,  0f, 0.0f, 1.0f
-        };
-        img_buffer = FloatBuffer.wrap(img);
 
         vertices = FloatBuffer.wrap(values);
 
-        st = new ShaderState();
-
-        final ShaderCode imgvp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_VERTEX_SHADER, this.getClass(),
-                    "shader", null, "image", false);
-        final ShaderCode imgfp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
-                    "shader", null, "image", false);
-        imgsp = new ShaderProgram();
-        imgsp.add(gl2, imgvp, System.err);
-        imgsp.add(gl2, imgfp, System.err);
-        st.attachShaderProgram(gl2, imgsp, false);
-        
-        final ShaderCode jqvp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_VERTEX_SHADER, this.getClass(),
-                    "shader", null, "jqadv", false);
-        final ShaderCode jqfp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
-                    "shader", null, "jqadv", false);
-        jqsp = new ShaderProgram();
-        jqsp.add(gl2, jqvp, System.err);
-        jqsp.add(gl2, jqfp, System.err);
-        st.attachShaderProgram(gl2, jqsp, true);
 
         int buf[] = new int[2];
         gl2.glGenBuffers(2, buf, 0);
@@ -167,14 +198,10 @@ public class JqadvGL {
                          vertices,
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
         imageVBO = buf[1];
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
-        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                         6 * 4 * GLBuffers.SIZEOF_FLOAT,
-                         img_buffer,
-                         GL.GL_STATIC_DRAW);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        if(bufferedImage != null) {
+            makeBackgroundImage(gl2);
+        }
 
         uni_offset_x = new GLUniformData("offset_x", offset_x);
         st.ownUniform(uni_offset_x);
@@ -217,6 +244,43 @@ public class JqadvGL {
         st.uniform(gl2, uni_colours);
 
     }
+    
+    /**
+     * Create the shader program used to render our image and points.
+     * Look under the resources folder to find the source code for these
+     * shaders.
+     */
+    private void generateShaderProgram(GL2 gl2) {
+        st = new ShaderState();
+
+        final ShaderCode imgvp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_VERTEX_SHADER, this.getClass(),
+                    "shader", null, "image", false);
+        final ShaderCode imgfp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
+                    "shader", null, "image", false);
+        imgsp = new ShaderProgram();
+        imgsp.add(gl2, imgvp, System.err);
+        imgsp.add(gl2, imgfp, System.err);
+        st.attachShaderProgram(gl2, imgsp, false);
+        
+        final ShaderCode jqvp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_VERTEX_SHADER, this.getClass(),
+                    "shader", null, "jqadv", false);
+        final ShaderCode jqfp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
+                    "shader", null, "jqadv", false);
+        jqsp = new ShaderProgram();
+        jqsp.add(gl2, jqvp, System.err);
+        jqsp.add(gl2, jqfp, System.err);
+        st.attachShaderProgram(gl2, jqsp, true);
+    }
+
+
 
     protected void setup(GL2 gl2, int width, int height) {
         // coordinate system origin at lower left with width and height same as the window
@@ -235,6 +299,11 @@ public class JqadvGL {
     }
 
     protected void render(GL2 gl2, int width, int height) {
+
+        if(imageChanged) {
+            makeBackgroundImage(gl2);
+            imageChanged = false;
+        }
         uni_scale_master.setData(scale_master);
         st.uniform(gl2, uni_scale_master);
         uni_offset_x.setData(offset_x);
@@ -253,7 +322,7 @@ public class JqadvGL {
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
         gl2.glVertexPointer(4, GL.GL_FLOAT, 0, 0);
-        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, num_tiles * 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 

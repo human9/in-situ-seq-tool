@@ -64,6 +64,7 @@ public class SelectionPanel extends JPanel {
     private JButton colourPicker;
     private JFrame parent;
     private InseqSession session;
+    private JqadvPanel jqadvpanel;
         
     VisualPicker visualPicker;
 
@@ -115,7 +116,7 @@ public class SelectionPanel extends JPanel {
         
         add(plotControls, BorderLayout.PAGE_START);
 
-        JqadvPanel jqadvpanel = new JqadvPanel(ia.getSession());
+        jqadvpanel = new JqadvPanel(ia.getSession());
         add(jqadvpanel, BorderLayout.CENTER);
         //final ImagePane ip = new ImagePane(null, ia.getSession(), 
           //      new Dimension(300,300));
@@ -150,7 +151,7 @@ public class SelectionPanel extends JPanel {
                             .getJFrame());
                 if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
-                changeImage(fc.getSelectedFile().getAbsolutePath());
+                jqadvpanel.changeImage(getImageFile(fc.getSelectedFile().getAbsolutePath()));
             }
 
         });

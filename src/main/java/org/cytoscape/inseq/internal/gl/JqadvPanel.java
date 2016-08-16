@@ -7,6 +7,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
@@ -101,6 +102,11 @@ public class JqadvPanel extends JPanel {
                 canvas.display();
             }
         });
+    }
+
+    public void changeImage(BufferedImage image) {
+        jqadvgl.setImage(image);
+        canvas.display();
     }
 
     /**
