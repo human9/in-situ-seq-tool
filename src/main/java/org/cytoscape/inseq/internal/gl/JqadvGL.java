@@ -52,7 +52,7 @@ public class JqadvGL {
 
     private int nPoints;
 
-    private float[] values;
+    private float[] coords;
 
     private ShaderState st;
 
@@ -108,13 +108,15 @@ public class JqadvGL {
         }
         symbols_buffer = FloatBuffer.wrap(symbols);
 
-        values = new float[list.size() * 3];
+        // create array of our transcript locations
+        coords = new float[list.size() * 3];
         int i = 0;
         for(Transcript t : list) {
-            values[i++] = (float) t.pos.x;
-            values[i++] = (float) t.pos.y;
-            values[i++] = t.type;
+            coords[i++] = (float) t.pos.x;
+            coords[i++] = (float) t.pos.y;
+            coords[i++] = t.type;
         }
+        vertices = FloatBuffer.wrap(coords);
         nPoints = list.size();
 
     }
@@ -137,15 +139,14 @@ public class JqadvGL {
     /**
      * Attempts to create an image that will back the points.
      * If it will not fit within a single texture, it is split into smaller
-     * fragments. If the image is ridiculously huge and this fails, the image
-     * will be scaled down until it fits.
+     * fragments. 
      */
     private void makeBackgroundImage(GL2 gl2) {
 
         int w = bufferedImage.getWidth();
         int h = bufferedImage.getHeight();
         
-        // Detect texture limits.
+        // Detect texture size limits.
         detectHardwareLimits(gl2);
 
         Dimension req = Util.getRequiredTiles(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
@@ -154,24 +155,21 @@ public class JqadvGL {
         // make and bind subimage tiles
         int tilew = w / req.width;
         int tileh = h / req.height;
-        System.out.println(w +"," + h);
         for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
 
             int vl1 = (int) ((i%req.width) * tilew);
             int vu1 = (int) (((i/req.width)%req.height) * tileh);
-            System.out.println(vl1 +"," + vu1);
             gl2.glActiveTexture(GL.GL_TEXTURE0 + i+1);
-            BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = (Graphics2D) sub.getGraphics();
-            g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
+            
+            BufferedImage buf = bufferedImage.getSubimage(vl1, vu1, tilew, tileh);
 
-            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), sub, true);
+            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), buf, true);
             gl2.glBindTexture(GL.GL_TEXTURE_2D, tile.getTextureObject());
         }
 
         img_buffer = FloatBuffer.wrap(img);
         num_tiles = img.length / 24;
-        System.out.println("Rendering image as " + num_tiles + " tile(s)");
+        System.out.println("Rendering image with " + num_tiles + " tile(s)");
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
@@ -205,7 +203,6 @@ public class JqadvGL {
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 
 
-        vertices = FloatBuffer.wrap(values);
 
 
         int buf[] = new int[2];
@@ -246,7 +243,6 @@ public class JqadvGL {
         st.ownUniform(ptsize);
         st.uniform(gl2, ptsize);
         GLUniformData texnum = new GLUniformData("texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
-        System.out.println(texnum.floatValue());
         st.ownUniform(texnum);
         st.uniform(gl2, texnum);
 

@@ -76,25 +76,8 @@ public class SelectionPanel extends JPanel {
 
         File input = new File(path);
         BufferedImage bimg;
-        BufferedImage optImage;
         try {
             bimg = ImageIO.read(input);
-            GraphicsEnvironment ge 
-                = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                
-            // Create the buffered image
-            GraphicsDevice gs = ge.getDefaultScreenDevice();
-            GraphicsConfiguration gc = gs.getDefaultConfiguration();
-
-            optImage = gc.createCompatibleImage(bimg.getWidth(),
-                    bimg.getHeight());
-            
-            // Copy image to buffered image
-            Graphics g = optImage.createGraphics();
-            g.drawImage(bimg, 0, 0, null);
-            g.dispose();
-
-
         } catch (IOException|NullPointerException e) {
             JOptionPane.showMessageDialog(null, 
                     "The selected file could not be opened.", "Warning!",
@@ -102,7 +85,8 @@ public class SelectionPanel extends JPanel {
             return null;
         }
         
-        return optImage;
+        System.out.println("Image load success.");
+        return bimg;
     }
     
     public SelectionPanel(final InseqActivator ia) {

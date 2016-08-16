@@ -1,7 +1,7 @@
 package org.cytoscape.inseq.internal.dataimport;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -43,18 +43,17 @@ public class ConstructTreeTask extends AbstractTask {
         taskMonitor.setStatusMessage(transcripts.size() + " unique transcripts found.");
 
         // Getting sorted lists of the transcripts makes finding the median easy.
-        sortByAxis(transcripts, 0);
-        ArrayList<Transcript> xsorted = new ArrayList<Transcript>(transcripts);
-        sortByAxis(transcripts, 1);
-        ArrayList<Transcript> ysorted = new ArrayList<Transcript>(transcripts);
+        boolean[] added = new boolean[transcripts.size()]; 
+        Transcript[] xsort = transcripts.toArray(new Transcript[transcripts.size()]);
+        Transcript[] ysort = Arrays.copyOf(xsort, xsort.length);
+        sortByAxis(xsort, 0);
+        sortByAxis(ysort, 1);
 
-        
         int xmed = (int)Math.ceil(transcripts.size()/2d) - 1;
         int ymed = xmed;
 
         KDTree<Transcript> kdTree = new KDTree<Transcript>(2);
     
-
         // Probably overengineered, but quickly and reliably gets the next median
         // based on x or y and inserts it into the tree
         for(int i = 0, x = 0, y = 0; ; i++)
@@ -67,16 +66,26 @@ public class ConstructTreeTask extends AbstractTask {
             }
             boolean axis = (i % 2) == 0;
             if(axis) {
-                do {
-                    if(x == transcripts.size()) break;
+outer:
+                while(x != transcripts.size()) {
                     xmed += x * (((x++ % 2) == 0) ? -1 : 1);
-                } while(!insertTranscript(xsorted.get(xmed), kdTree));
+                    if(!added[xsort[xmed].index]) {
+                        insertTranscript(xsort[xmed], kdTree);
+                        added[xsort[xmed].index] = true;
+                        break outer;
+                    }
+                }
             }
             else {
-                do {
-                    if(y == transcripts.size()) break;
+outer:
+                while(y != transcripts.size()) {
                     ymed += y * (((y++ % 2) == 0) ? -1 : 1);
-                } while(!insertTranscript(ysorted.get(ymed), kdTree));
+                    if(!added[ysort[ymed].index]) {
+                        insertTranscript(ysort[ymed], kdTree);
+                        added[ysort[ymed].index] = true;
+                        break outer;
+                    }
+                }
             }
             if (x == transcripts.size() && y == transcripts.size()) break;
         }
@@ -91,8 +100,8 @@ public class ConstructTreeTask extends AbstractTask {
         
     /** Sorts a Transcript List in ascending order of the coordinates of a given axis.
      */
-    List<Transcript> sortByAxis(List<Transcript> list, int axis) {
-        Collections.sort(list, new Comparator<Transcript>() {
+    Transcript[] sortByAxis(Transcript[] list, int axis) {
+        Arrays.sort(list, new Comparator<Transcript>() {
             @Override
             public int compare(final Transcript t1, final Transcript t2) {
                 return Double.compare(axis == 0 ? t1.pos.x : t1.pos.y, axis == 0 ? t2.pos.x : t2.pos.y);

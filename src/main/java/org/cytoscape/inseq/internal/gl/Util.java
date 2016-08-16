@@ -60,10 +60,6 @@ public class Util
 
     public static float[] getVertices(Dimension tiles, int w, int h) {
         int num = tiles.width * tiles.height;
-
-
-        // TODO: splice bufferedimage with  getSubimage(int x, int y, int w, int h)
-        // then iterate through uniform bindings to render?
         
         // Each rectangle is composed of two triangles, which require 3
         // coordinates each, which have an x and y component. Then there
@@ -75,7 +71,6 @@ public class Util
 
         float tileh = (float) h / tiles.height;
 
-        System.out.println("### START VERTICES ###");
         for(int i = 0; i < num; i++) {
 
             // v for vertex, i for image.
@@ -97,9 +92,7 @@ public class Util
             v[x++] = vl2; v[x++] = vu1; v[x++] = 1f; v[x++] = 0f;
             v[x++] = vl1; v[x++] = vu2; v[x++] = 0f; v[x++] = 1f;
             v[x++] = vl1; v[x++] = vu1; v[x++] = 0f; v[x++] = 0f;
-            System.out.println("X: "+ vl1 + ", Y: " + vu1);
         }
-        System.out.println("### END VERTICES ###");
 
         return v;
 
