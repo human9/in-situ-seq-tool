@@ -1,6 +1,8 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -11,12 +13,14 @@ import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.GLUniformData;
 import com.jogamp.opengl.util.GLBuffers;
 import com.jogamp.opengl.util.glsl.ShaderCode;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
 /**
  * This class handles all OpenGL rendering code.
@@ -145,14 +149,29 @@ public class JqadvGL {
         // Detect texture limits.
         detectHardwareLimits(gl2);
 
-        float[] img = Util.tileMaster(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
+        Dimension req = Util.getRequiredTiles(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
+        img = Util.getVertices(req, w, h);
+
+        // make and bind subimage tiles
+        int tilew = w / req.width;
+        int tileh = h / req.height;
+        System.out.println(w +"," + h);
+        for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
+            int vl1 = (int) ((i%req.width) * tilew);
+            int vu1 = (int) ((i%req.height) * tileh);
+            System.out.println(vl1 +"," + vu1);
+            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+2);
+            BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = (Graphics2D) sub.getGraphics();
+            g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
+
+            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), sub, true);
+            gl2.glBindTexture(GL.GL_TEXTURE_2D, tile.getTextureObject());
+        }
+
         img_buffer = FloatBuffer.wrap(img);
         num_tiles = img.length / 24;
         System.out.println("Rendering image as " + num_tiles + " tile(s)");
-
-        gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
-        image = Util.textureFromBufferedImage(bufferedImage);
-        image.bind(gl2);
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
@@ -179,7 +198,7 @@ public class JqadvGL {
         // appear on each transcript location.
         gl2.glActiveTexture(GL.GL_TEXTURE0);
         pointSprites = Util.textureFromResource("/texture/sprite_sheet.png");
-        pointSprites.bind(gl2);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, pointSprites.getTextureObject());
 
         // Disable texture interpolation for point sprites.
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
@@ -202,7 +221,6 @@ public class JqadvGL {
         if(bufferedImage != null) {
             makeBackgroundImage(gl2);
         }
-
         uni_offset_x = new GLUniformData("offset_x", offset_x);
         st.ownUniform(uni_offset_x);
         st.uniform(gl2, uni_offset_x);
@@ -320,10 +338,14 @@ public class JqadvGL {
         st.attachShaderProgram(gl2, imgsp, true);
         
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
-        gl2.glVertexPointer(4, GL.GL_FLOAT, 0, 0);
-        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, num_tiles * 6);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        for(int i = 0; i < num_tiles && i < MAX_TEXTURE_UNITS; i++) {
+            background.setData(i + 2);
+            st.uniform(gl2, background);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
+            gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);
+            gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        }
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 
         st.attachShaderProgram(gl2, jqsp, true);

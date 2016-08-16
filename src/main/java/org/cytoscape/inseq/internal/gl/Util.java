@@ -29,7 +29,7 @@ public class Util
         return AWTTextureIO.newTexture(GLProfile.getDefault(), img, true);
     }
 
-    public static float[] tileMaster(int dim_max, int tile_max, int w, int h) {
+    public static Dimension getRequiredTiles(int dim_max, int tile_max, int w, int h) {
         
         // Will describe how many tiles are needed in each dimension.
         Dimension tiles = new Dimension();
@@ -49,16 +49,19 @@ public class Util
             tiles.height = (int)Math.ceil(height);
         }
 
-        System.out.println(tiles);
-
         int num = tiles.width * tiles.height;
-
         if(num > tile_max) {
             System.out.println("Image size is beyond hardware capabilities");
         }
 
+        return tiles;
+    }
+
+    public static float[] getVertices(Dimension tiles, int w, int h) {
+        int num = tiles.width * tiles.height;
+
+
         // TODO: splice bufferedimage with  getSubimage(int x, int y, int w, int h)
-        // and split up into different methods.
         // then iterate through uniform bindings to render?
         
         // Each rectangle is composed of two triangles, which require 3
@@ -76,12 +79,12 @@ public class Util
             // v for vertex, i for image.
             // l for long(width), u for up(height)
             // 1 for beginning, 2 for end
-            float vl1 = i * tilew;
-            float vu1 = i * tileh;
+            float vl1 = (i%tiles.width) * tilew;
+            float vu1 = (i%tiles.height) * tileh;
             float vl2 = vl1 + tilew;
             float vu2 = vu1 + tileh;
             
-            int x = i;
+            int x = i*24;
 
             // These are coordinates that decribe a rectangle made of two
             // triangles in the left two columns, and the desired texture
