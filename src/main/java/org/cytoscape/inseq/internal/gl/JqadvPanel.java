@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
@@ -15,6 +16,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqSession;
+import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.opengl.GLAutoDrawable;
@@ -36,8 +38,9 @@ public class JqadvPanel extends JPanel {
     private GLCanvas canvas;
     private Point origin;
     private InseqSession session;
+    private SelectionPanel sp;
 
-    public JqadvPanel(InseqSession s) {
+    public JqadvPanel(InseqSession s, SelectionPanel p) {
         
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
@@ -46,6 +49,7 @@ public class JqadvPanel extends JPanel {
         setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
         origin = new Point();
         session = s;
+        sp = p;
 
         canvas.addGLEventListener(new GLEventListener() {
             
@@ -81,6 +85,9 @@ public class JqadvPanel extends JPanel {
                               glX(e.getX()),
                               glY(e.getY()))
                         ) {
+                    sp.updateZoom(jqadvgl.getScale());
+
+        //statusBar.setZoom(df.format(imagePane.getScale()*100)+"%");
                     canvas.display();
                 }
             }
@@ -128,10 +135,13 @@ public class JqadvPanel extends JPanel {
             list = session.tree.nearestEuclidean(
                     new double[]{p[0], p[1]}, Math.pow(dist, 2));
             Collections.reverse(list);
+            Transcript t = null;
             if(list.size() > 0) {
-                jqadvgl.selectTranscript(list.get(0));
-                canvas.display();
+                t = list.get(0);
             }
+            jqadvgl.selectTranscript(t);
+            canvas.display();
+            sp.setSelected(t);
         }
         catch (KeySizeException exc) {
             exc.printStackTrace();
@@ -168,4 +178,18 @@ public class JqadvPanel extends JPanel {
         return 2f * y - canvas.getHeight();
     }
 
+    public void updateColour(int type, Color c) {
+        jqadvgl.updateColour(type, c);
+        canvas.display();
+    }
+    
+    public void setPointScale(float value) {
+        jqadvgl.setPointScale(value);
+        canvas.display();
+    }
+
+    public void largePoints(boolean e) {
+        jqadvgl.largePoints(e);
+        canvas.display();
+    }
 }

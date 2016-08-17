@@ -242,7 +242,7 @@ public class ZoomPane extends JScrollPane {
 			imagePane.scaleDown();
 		}
 		double newScale = imagePane.getScale();
-		imagePane.sp.updateZoom();
+		imagePane.sp.updateZoom(1f);
 
 		x = (int) (Math.round(ratioX * newScale * imgDims.width) - Math.round(ratioX * oldScale * imgDims.width));
 		y = (int) (Math.round(ratioY * newScale * imgDims.height) - Math.round(ratioY * oldScale * imgDims.height));

@@ -11,17 +11,22 @@ uniform float ptsize;
 uniform vec3[128] colours;
 uniform float[128] symbols;
 uniform float texnum;
+uniform float sel;
+uniform float ptscale;
+uniform float extrascale;
 varying float offset;
 varying float size;
 varying float num;
+varying float x;
 
 void main(void) {
+  x = sel;
   size = ptsize;
   num = texnum;
   offset = symbols[int(coord2d.z)]; 
-  gl_Position = vec4(((coord2d.x + offset_x) * scale_master + mouse_x) / width,
-                    ((-coord2d.y + offset_y) * scale_master + mouse_y) / height,
+  gl_Position = vec4(((coord2d.x * extrascale + offset_x) * scale_master + mouse_x) / width,
+                    ((-coord2d.y * extrascale + offset_y) * scale_master + mouse_y) / height,
                     0, 1);
   f_color = vec4(colours[int(coord2d.z)], 1);
-  gl_PointSize = ptsize;
+  gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
 }

@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -76,14 +77,14 @@ public class SelectionPanel extends JPanel {
         
         add(plotControls, BorderLayout.PAGE_START);
 
-        jqadvpanel = new JqadvPanel(ia.getSession());
+        jqadvpanel = new JqadvPanel(ia.getSession(), this);
         add(jqadvpanel, BorderLayout.CENTER);
         //final ImagePane ip = new ImagePane(null, ia.getSession(), 
           //      new Dimension(300,300));
         //imagePane = ip;
-        //visualPicker = new VisualPicker(imagePane, parent, ia.getSession());
+        visualPicker = new VisualPicker(jqadvpanel, parent, ia.getSession());
         statusBar = new StatusBar();
-        updateZoom();
+        updateZoom(1f);
         //zp = new ZoomPane(this, ia.getSession());
         //add(zp, BorderLayout.CENTER);
 
@@ -159,6 +160,15 @@ public class SelectionPanel extends JPanel {
             }
         });
 
+        JCheckBox bigSymbols = new JCheckBox("Big symbols");
+        plotControls.add(bigSymbols);
+        bigSymbols.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.largePoints(bigSymbols.isSelected());
+            }
+        });
+
         colourPicker = new JButton("C/S");
         plotControls.add(colourPicker);
         colourPicker.addActionListener(new ActionListener() {
@@ -191,15 +201,14 @@ public class SelectionPanel extends JPanel {
         pointScale.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                //imagePane.setPointScale((Double)pointScale.getValue());   
-                //imagePane.forceRepaint();
+                jqadvpanel.setPointScale(((Double)pointScale.getValue()).floatValue());   
             }
         });
     }
 
-    public void updateZoom() {
-        //DecimalFormat df = new DecimalFormat("#.##");
-        //statusBar.setZoom(df.format(imagePane.getScale()*100)+"%");
+    public void updateZoom(float z) {
+        DecimalFormat df = new DecimalFormat("#.##");
+        statusBar.setZoom(df.format(z*100)+"%");
     }
 
     private void changeImage(String path) {
@@ -212,6 +221,7 @@ public class SelectionPanel extends JPanel {
     }
 
     public void setSelected(Transcript t) {
+        System.out.println("SET SELECTED");
         if(t == null) {
             statusBar.setTranscript(""); 
             colourPicker.setEnabled(false);
@@ -299,7 +309,7 @@ class StatusBar extends JLabel {
         updateText();
     }
     
-    void setZoom(String str) {
+    public void setZoom(String str) {
         this.zoom = str;
         updateText();
     }

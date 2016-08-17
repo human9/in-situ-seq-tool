@@ -8,8 +8,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
@@ -52,6 +50,7 @@ public class JqadvGL {
     private float h;
 
     private float scale_master = 1;
+    private float point_scale = 1f;
 
     private int nPoints;
 
@@ -66,6 +65,7 @@ public class JqadvGL {
     GLUniformData uni_offset_y;
     GLUniformData uni_mouse_x;
     GLUniformData uni_mouse_y;
+    GLUniformData sel;
 
     float[] img;
     FloatBuffer img_buffer;
@@ -81,6 +81,7 @@ public class JqadvGL {
     FloatBuffer symbols_buffer;
     GLUniformData uni_symbols;
     GLUniformData ptsize;
+    GLUniformData ptscale;
     GLUniformData sprite;
     GLUniformData background;
 
@@ -88,12 +89,35 @@ public class JqadvGL {
     private BufferedImage pointSprites;
 
     private boolean imageChanged;
-    private boolean selectionChanged;
+    private boolean colourChange;
     private Transcript selection;
+
+    private GLUniformData uni_extrascale;
+    private float extrascale = 1f;
+
+    public void setPointScale(float value) {
+
+        extrascale = value;
+    }
+
+    public void largePoints(boolean e) {
+        if(e)
+            point_scale = 2;
+        else
+            point_scale = 1;
+    }
 
     public void setImage(BufferedImage image) {
         this.bufferedImage = image;
         imageChanged = true;
+    }
+
+    public void updateColour(int type, Color c) {
+            int a = type*3;
+            float[] f = new float[3];
+            System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
+            colourChange = true;
+
     }
 
     public JqadvGL(InseqSession s, List<Transcript> list) {
@@ -146,6 +170,19 @@ public class JqadvGL {
     /**
      * Detect how large textures can be, and how many we can have.
      * If our image is larger than MAX_TEXTURE_SIZE, we will need to break
+* 
+        }
+        vertices = FloatBuffer.wrap(coords);
+        nPoints = list.size();
+
+    }
+
+        }
+        vertices = FloatBuffer.wrap(coords);
+        nPoints = list.size();
+
+    }
+
      * it into no more than (MAX_TEXTURE_UNITS - 1) pieces (as one unit is 
      * to be used for point sprites).
      */
@@ -276,6 +313,9 @@ public class JqadvGL {
         ptsize = new GLUniformData("ptsize", (float) pointSprites.getHeight());
         st.ownUniform(ptsize);
         st.uniform(gl2, ptsize);
+        ptscale = new GLUniformData("ptscale", point_scale);
+        st.ownUniform(ptscale);
+        st.uniform(gl2, ptscale);
         GLUniformData texnum = new GLUniformData("texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
         st.ownUniform(texnum);
         st.uniform(gl2, texnum);
@@ -283,6 +323,9 @@ public class JqadvGL {
         uni_scale_master = new GLUniformData("scale_master", scale_master);
         st.ownUniform(uni_scale_master);
         st.uniform(gl2, uni_scale_master);
+        uni_extrascale = new GLUniformData("extrascale", extrascale);
+        st.ownUniform(uni_extrascale);
+        st.uniform(gl2, uni_extrascale);
 
         uni_symbols = new GLUniformData("symbols", 1, symbols_buffer);
         st.ownUniform(uni_symbols);
@@ -290,6 +333,10 @@ public class JqadvGL {
         uni_colours = new GLUniformData("colours", 3, colours_buffer);
         st.ownUniform(uni_colours);
         st.uniform(gl2, uni_colours);
+        
+        sel = new GLUniformData("sel",0f);
+        st.ownUniform(sel);
+        st.uniform(gl2, sel);
 
     }
     
@@ -365,10 +412,15 @@ public class JqadvGL {
             makeBackgroundImage(gl2);
             imageChanged = false;
         }
-        if(selectionChanged) {
-            changeSelection(gl2);
-            selectionChanged = false;
+        if(colourChange) {
+            uni_colours.setData(colours_buffer);
+            st.uniform(gl2, uni_colours);
+            colourChange = false;
         }
+        uni_extrascale.setData(extrascale);
+        st.uniform(gl2, uni_extrascale);
+        ptscale.setData(point_scale);
+        st.uniform(gl2, ptscale);
         uni_scale_master.setData(scale_master);
         st.uniform(gl2, uni_scale_master);
         uni_offset_x.setData(offset_x);
@@ -408,9 +460,18 @@ public class JqadvGL {
         gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
 
+        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
         gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
+
+        if(selection != null) {
+            sel.setData(1f);
+            st.uniform(gl2, sel);
+            gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
+            gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
+            sel.setData(0f);
+            st.uniform(gl2, sel);
+        }
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
@@ -422,7 +483,6 @@ public class JqadvGL {
      */
     public void selectTranscript(Transcript t) {
         selection = t;
-        selectionChanged = true;
     }
 
     public void changeSelection(GL2 gl2) {
@@ -441,6 +501,9 @@ public class JqadvGL {
 
     }
 */
+    public float getScale() {
+        return scale_master;
+    }
     /**
      * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.
@@ -486,8 +549,8 @@ public class JqadvGL {
      */
     public float[] graphToGL(float x, float y) {
         float[] gl = new float[2];
-        gl[0] = ((x + offset_x) * scale_master + mouse_x) / w;
-        gl[1] = ((y - offset_y) * scale_master + mouse_y) / h;
+        gl[0] = ((x * extrascale + offset_x) * scale_master + mouse_x) / w;
+        gl[1] = ((y  * extrascale - offset_y) * scale_master + mouse_y) / h;
         return gl;
     }
     
@@ -497,8 +560,8 @@ public class JqadvGL {
      */
     public float[] glToGraph(float x, float y) {
         float[] graph = new float[2];
-        graph[0] = (x * w - mouse_x) / scale_master - offset_x;
-        graph[1] = (y * h + mouse_y) / scale_master + offset_y;
+        graph[0] = ((x * w - mouse_x) / scale_master - offset_x) / extrascale;
+        graph[1] = ((y * h + mouse_y) / scale_master + offset_y) / extrascale;
         return graph;
     }
 }

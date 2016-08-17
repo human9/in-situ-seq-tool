@@ -28,7 +28,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.inseq.internal.tissueimage.ImagePane;
+import org.cytoscape.inseq.internal.gl.JqadvPanel;
 import org.cytoscape.inseq.internal.util.SymbolFactory;
 import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 
@@ -36,7 +36,6 @@ public class VisualPicker extends JDialog implements ChangeListener
 {
 
     private InseqSession session;
-    private ImagePane p;
     private Color colour;
     private Color newColour;
     private JColorChooser chooser;
@@ -45,12 +44,13 @@ public class VisualPicker extends JDialog implements ChangeListener
     private Symbol symbol;
     private Symbol oldSymbol;
     private Integer type;
+    private JqadvPanel panel;
 
-    public VisualPicker(ImagePane p, JFrame parent, InseqSession s) {
+    public VisualPicker(JqadvPanel jqv, JFrame parent, InseqSession s) {
 
         super(parent, ModalityType.APPLICATION_MODAL);
         this.session = s;
-        this.p = p;
+        this.panel = jqv;
 
         setMinimumSize(new Dimension(100,100));
         setPreferredSize(new Dimension(600, 460));
@@ -124,7 +124,7 @@ public class VisualPicker extends JDialog implements ChangeListener
     private void responseCancel() {
         session.setGeneColour(type, old);
         session.setGeneSymbol(type, oldSymbol);
-        p.forceRepaint();
+        //p.forceRepaint();
         session.refreshStyle();
         setVisible(false);
     }
@@ -149,16 +149,15 @@ public class VisualPicker extends JDialog implements ChangeListener
         symbol = sym;
         tiles.get(symbol).select();
         session.setGeneSymbol(type, symbol);
-        p.forceRepaint();
+        //p.forceRepaint();
     }
 
     public void stateChanged(ChangeEvent e) {
         newColour = chooser.getColor();
         session.setGeneColour(type, newColour);
+        panel.updateColour(type, newColour);
 
-        // don't actually need this - could do it more intelligently
-        p.forceRepaint();
-        session.refreshStyle();
+        //session.refreshStyle();
     }
 
     class SymbolTile extends JPanel {
