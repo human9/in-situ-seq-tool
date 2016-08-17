@@ -8,8 +8,11 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
+import org.cytoscape.inseq.internal.util.ParseUtil;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
@@ -37,7 +40,6 @@ public class JqadvGL {
     private int MAX_TEXTURE_UNITS;
 
     private int num_tiles;
-    private Texture pointSprites;
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
     private ShaderProgram bgrndsp;
@@ -83,7 +85,11 @@ public class JqadvGL {
     GLUniformData background;
 
     private BufferedImage bufferedImage;
+    private BufferedImage pointSprites;
+
     private boolean imageChanged;
+    private boolean selectionChanged;
+    private Transcript selection;
 
     public void setImage(BufferedImage image) {
         this.bufferedImage = image;
@@ -116,10 +122,11 @@ public class JqadvGL {
         }
         colours_buffer = FloatBuffer.wrap(colours);
         
+        pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
         // create the array specifying which symbol each type uses.
         symbols = new float[num];
         for(int i = 0; i < num; i++) {
-            symbols[i] = i % 4;
+            symbols[i] = i % (pointSprites.getWidth() / pointSprites.getHeight());
         }
         symbols_buffer = FloatBuffer.wrap(symbols);
 
@@ -215,15 +222,12 @@ public class JqadvGL {
         // Retrieve and bind the point sprites. These are the symbols that
         // appear on each transcript location.
         gl2.glActiveTexture(GL.GL_TEXTURE0);
-        pointSprites = Util.textureFromResource("/texture/sprite_sheet.png");
-        gl2.glBindTexture(GL.GL_TEXTURE_2D, pointSprites.getTextureObject());
+        Texture symbols = Util.textureFromBufferedImage(pointSprites);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, symbols.getTextureObject());
 
         // Disable texture interpolation for point sprites.
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
         gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
-
-
-
 
         int buf[] = new int[3];
         gl2.glGenBuffers(3, buf, 0);
@@ -361,6 +365,10 @@ public class JqadvGL {
             makeBackgroundImage(gl2);
             imageChanged = false;
         }
+        if(selectionChanged) {
+            changeSelection(gl2);
+            selectionChanged = false;
+        }
         uni_scale_master.setData(scale_master);
         st.uniform(gl2, uni_scale_master);
         uni_offset_x.setData(offset_x);
@@ -409,6 +417,30 @@ public class JqadvGL {
 
     }
 
+    /**
+     * Marks the selected point.
+     */
+    public void selectTranscript(Transcript t) {
+        selection = t;
+        selectionChanged = true;
+    }
+
+    public void changeSelection(GL2 gl2) {
+        //TODO: Bind a uniform with the data?
+    }
+/* Good example of glSubBufferData, but not using it for this
+    public void changeSelection(GL2 gl2) {
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+        float[] i = new float[1];
+        i[0] = selection.type + 0.5f;
+        FloatBuffer data = FloatBuffer.wrap(i);
+        gl2.glBufferSubData(GL.GL_ARRAY_BUFFER,
+                            selection.index * 3 * GLBuffers.SIZEOF_FLOAT + 2 * GLBuffers.SIZEOF_FLOAT,
+                            GLBuffers.SIZEOF_FLOAT,
+                            data);
+
+    }
+*/
     /**
      * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.

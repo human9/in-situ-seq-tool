@@ -1,9 +1,14 @@
 package org.cytoscape.inseq.internal.util;
 
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -50,5 +55,38 @@ public class ParseUtil {
 		}
 		return true;
 	}
+    
+    public static BufferedImage getImageResource(String path) {
+
+        BufferedImage bimg;
+        try {
+            bimg = ImageIO.read(ParseUtil.class.getResourceAsStream(path));
+        } catch (IOException|NullPointerException e) {
+            JOptionPane.showMessageDialog(null, 
+                    "The image at: " + path + " could not be loaded", "Warning!",
+            JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
+        
+        System.out.println("Resource load success.");
+        return bimg;
+    }
+
+    public static BufferedImage getImageFile(String path) {
+
+        File input = new File(path);
+        BufferedImage bimg;
+        try {
+            bimg = ImageIO.read(input);
+        } catch (IOException|NullPointerException e) {
+            JOptionPane.showMessageDialog(null, 
+                    "The image at: " + path + " could not be loaded", "Warning!",
+            JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
+        
+        System.out.println("File load success.");
+        return bimg;
+    }
 
 }

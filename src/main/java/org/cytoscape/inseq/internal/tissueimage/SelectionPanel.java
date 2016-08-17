@@ -1,15 +1,8 @@
 package org.cytoscape.inseq.internal.tissueimage;
 
 import java.awt.BorderLayout;
-import java.awt.Graphics;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +15,6 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -38,6 +30,7 @@ import org.cytoscape.inseq.internal.gl.JqadvPanel;
 import org.cytoscape.inseq.internal.panel.VisualPicker;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
+import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.inseq.internal.util.WrapLayout;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -70,23 +63,6 @@ public class SelectionPanel extends JPanel {
 
     public void setWindow(JFrame parent) {
         this.parent = parent;
-    }
-
-    public BufferedImage getImageFile(String path) {
-
-        File input = new File(path);
-        BufferedImage bimg;
-        try {
-            bimg = ImageIO.read(input);
-        } catch (IOException|NullPointerException e) {
-            JOptionPane.showMessageDialog(null, 
-                    "The selected file could not be opened.", "Warning!",
-            JOptionPane.WARNING_MESSAGE);
-            return null;
-        }
-        
-        System.out.println("Image load success.");
-        return bimg;
     }
     
     public SelectionPanel(final InseqActivator ia) {
@@ -135,7 +111,7 @@ public class SelectionPanel extends JPanel {
                             .getJFrame());
                 if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
-                jqadvpanel.changeImage(getImageFile(fc.getSelectedFile().getAbsolutePath()));
+                jqadvpanel.changeImage(ParseUtil.getImageFile(fc.getSelectedFile().getAbsolutePath()));
             }
 
         });

@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -42,6 +43,7 @@ public class JqadvPanel extends JPanel {
         GLCapabilities capabilities = new GLCapabilities(profile);
         canvas = new GLCanvas(capabilities);
         jqadvgl = new JqadvGL(s, s.getRaw());
+        setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
         origin = new Point();
         session = s;
 
@@ -126,7 +128,10 @@ public class JqadvPanel extends JPanel {
             list = session.tree.nearestEuclidean(
                     new double[]{p[0], p[1]}, Math.pow(dist, 2));
             Collections.reverse(list);
-            if(list.size() > 0) System.out.println(list.get(0));
+            if(list.size() > 0) {
+                jqadvgl.selectTranscript(list.get(0));
+                canvas.display();
+            }
         }
         catch (KeySizeException exc) {
             exc.printStackTrace();
