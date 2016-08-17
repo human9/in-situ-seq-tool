@@ -8,16 +8,21 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
+import java.util.List;
 
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqSession;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+
+import edu.wlu.cs.levy.CG.KeySizeException;
 
 /**
  * JOGL data viewer.
@@ -81,10 +86,11 @@ public class JqadvPanel extends JPanel {
         canvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-               origin.setLocation(e.getPoint());
-               float[] p = jqadvgl.glToGraph(glX(origin.x)/canvas.getWidth(),
+                origin.setLocation(e.getPoint());
+                float[] p = jqadvgl.glToGraph(glX(origin.x)/canvas.getWidth(),
                                              glY(origin.y)/canvas.getHeight());
-               System.out.println(p[0] +", "+ p[1]);
+                //System.out.println(p[0] +", "+ p[1]);
+                select(p);
             }
         });
         canvas.addMouseMotionListener(new MouseAdapter() {
@@ -104,18 +110,45 @@ public class JqadvPanel extends JPanel {
         });
     }
 
+    /**
+     * Called when user clicks on screen.
+     * If a point is found near to that click it is selected.
+     */
+    private void select(float[] p) {
+        List<Transcript> list;
+
+        // This is calculating the distance in graph coordinates that we want
+        // to search, required because this distance changes with zoom level.
+        double dist = euclideanDistance(
+                jqadvgl.glToGraph(glX(0)/ canvas.getWidth(), glY(0)/canvas.getHeight()),
+                jqadvgl.glToGraph(glX(10)/ canvas.getWidth(), glY(0)/canvas.getHeight()) );
+        try {
+            list = session.tree.nearestEuclidean(
+                    new double[]{p[0], p[1]}, Math.pow(dist, 2));
+            Collections.reverse(list);
+            if(list.size() > 0) System.out.println(list.get(0));
+        }
+        catch (KeySizeException exc) {
+            exc.printStackTrace();
+        }
+    }
+
+    /**
+     * Call this method to change the image which points will be overlayed on.
+     */
     public void changeImage(BufferedImage image) {
         jqadvgl.setImage(image);
         canvas.display();
     }
-
+    
     /**
-     * Convert AWT xy to GL xy.
-     * Note: Divide these by canvas dimensions to get into -1 to 1 range.
+     * Calculate a simple euclidean distance between two points.
      */
-    public float[] awtToGL(Point p) {
-        return new float[] { glX(p.x), glY(p.y) };
+    public static double euclideanDistance(float[] a, float[] b) {
+        double sqrdist = Math.pow((a[0] - b[0]) , 2) + Math.pow((a[1] - b[1]), 2);
+        return Math.sqrt(sqrdist);
     }
+
     /**
      * Convert from AWT x to GL x coordinate.
      */
