@@ -31,15 +31,16 @@ public class JqadvGL {
     private FloatBuffer vertices;
     private int verticesVBO;
     private int imageVBO;
+    private int bkgrndVBO;
 
     private int MAX_TEXTURE_SIZE;
     private int MAX_TEXTURE_UNITS;
 
-    private Texture image;
     private int num_tiles;
     private Texture pointSprites;
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
+    private ShaderProgram bgrndsp;
 
     private float offset_x = 0;
     private float offset_y = 0;
@@ -70,6 +71,9 @@ public class JqadvGL {
     float[] colours;
     FloatBuffer colours_buffer;
     GLUniformData uni_colours;
+
+    float[] bkgrnd;
+    FloatBuffer bkgrnd_buffer;
     
     float[] symbols;
     FloatBuffer symbols_buffer;
@@ -90,6 +94,17 @@ public class JqadvGL {
         
         // num = how many types of gene we have
         int num = s.getGenes().size();
+
+        // vertices required to cover the background
+        bkgrnd = new float[] {
+            -1f,  1f,
+             1f,  1f,
+             1f, -1f,
+             1f, -1f,
+            -1f,  1f,
+            -1f, -1f
+        };
+        bkgrnd_buffer = FloatBuffer.wrap(bkgrnd);
 
         // create array specifying what colour each type uses.
         colours = new float[num * 3];
@@ -155,15 +170,20 @@ public class JqadvGL {
         // make and bind subimage tiles
         int tilew = w / req.width;
         int tileh = h / req.height;
+        BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
         for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
 
             int vl1 = (int) ((i%req.width) * tilew);
             int vu1 = (int) (((i/req.width)%req.height) * tileh);
             gl2.glActiveTexture(GL.GL_TEXTURE0 + i+1);
             
-            BufferedImage buf = bufferedImage.getSubimage(vl1, vu1, tilew, tileh);
+            // BufferedImage buf = bufferedImage.getSubimage(vl1, vu1, tilew, tileh);
+            // BufferedImage.getSubimage sometimes fails for reasons unknown.
+            
+            Graphics2D g = (Graphics2D) sub.getGraphics();
+            g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
 
-            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), buf, true);
+            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), sub, true);
             gl2.glBindTexture(GL.GL_TEXTURE_2D, tile.getTextureObject());
         }
 
@@ -205,8 +225,8 @@ public class JqadvGL {
 
 
 
-        int buf[] = new int[2];
-        gl2.glGenBuffers(2, buf, 0);
+        int buf[] = new int[3];
+        gl2.glGenBuffers(3, buf, 0);
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -218,6 +238,16 @@ public class JqadvGL {
         if(bufferedImage != null) {
             makeBackgroundImage(gl2);
         }
+
+        bkgrndVBO = buf[2];
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                6 * 2 * GLBuffers.SIZEOF_FLOAT,
+                bkgrnd_buffer,
+                GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+
         uni_offset_x = new GLUniformData("offset_x", offset_x);
         st.ownUniform(uni_offset_x);
         st.uniform(gl2, uni_offset_x);
@@ -292,6 +322,19 @@ public class JqadvGL {
         jqsp.add(gl2, jqvp, System.err);
         jqsp.add(gl2, jqfp, System.err);
         st.attachShaderProgram(gl2, jqsp, true);
+        
+        final ShaderCode bgrndvp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_VERTEX_SHADER, this.getClass(),
+                    "shader", null, "bgrnd", false);
+        final ShaderCode bgrndfp = 
+            ShaderCode.create(gl2,
+                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
+                    "shader", null, "bgrnd", false);
+        bgrndsp = new ShaderProgram();
+        bgrndsp.add(gl2, bgrndvp, System.err);
+        bgrndsp.add(gl2, bgrndfp, System.err);
+        st.attachShaderProgram(gl2, bgrndsp, true);
     }
 
 
@@ -331,8 +374,15 @@ public class JqadvGL {
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT);
 
+        st.attachShaderProgram(gl2, bgrndsp, true);
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+
         st.attachShaderProgram(gl2, imgsp, true);
-        
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         for(int i = 0; i < num_tiles; i++) {
             background.setData(i + 1);
