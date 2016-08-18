@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Shape;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
+import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
@@ -37,6 +39,7 @@ public class InseqSession {
     private List<Transcript> raw;
     public List<String> names;
     private Integer selectedNetwork;
+    private List<BufferedImage> symbols;
 
     public class Gene {
         String name;
@@ -72,11 +75,28 @@ public class InseqSession {
             genes.add(g);
         }
 
+        // Initialise symbols
+        BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
+        int len = pointSprites.getWidth() / pointSprites.getHeight();
+        int size = pointSprites.getHeight();
+        symbols = new ArrayList<BufferedImage>();
+        for(int i = 0; i < len; i++) {
+            symbols.add(pointSprites.getSubimage(i*size, 0, size, size)); 
+        }
+
         networks = new ArrayList<TypeNetwork>();
 
         // Initialise network style
         updateStyle();
 
+    }
+
+    public void setSymbolList(List<BufferedImage> list) {
+        this.symbols = list;
+    }
+
+    public List<BufferedImage> getSymbolList() {
+        return this.symbols;
     }
 
     public List<Gene> getGenes() {

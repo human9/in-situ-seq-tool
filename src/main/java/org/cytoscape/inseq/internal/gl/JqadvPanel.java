@@ -183,6 +183,11 @@ public class JqadvPanel extends JPanel {
         canvas.display();
     }
     
+    public void updateSymbol(int type, int sym) {
+        jqadvgl.updateSymbol(type, sym);
+        canvas.display();
+    }
+    
     public void setPointScale(float value) {
         jqadvgl.setPointScale(value);
         canvas.display();

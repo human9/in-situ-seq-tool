@@ -12,7 +12,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -29,7 +30,6 @@ import javax.swing.event.ChangeListener;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvPanel;
-import org.cytoscape.inseq.internal.util.SymbolFactory;
 import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 
 public class VisualPicker extends JDialog implements ChangeListener
@@ -40,9 +40,9 @@ public class VisualPicker extends JDialog implements ChangeListener
     private Color newColour;
     private JColorChooser chooser;
     private Color old;
-    private HashMap<Symbol, SymbolTile> tiles;
-    private Symbol symbol;
-    private Symbol oldSymbol;
+    private List<SymbolTile> tiles;
+    private int symbol;
+    private int oldSymbol;
     private Integer type;
     private JqadvPanel panel;
 
@@ -70,12 +70,11 @@ public class VisualPicker extends JDialog implements ChangeListener
         JPanel symbols = new JPanel();
         symbols.setLayout(new FlowLayout());
         
-        tiles = new HashMap<Symbol, SymbolTile>();
-        for(Symbol sym : Symbol.values()) {
-            SymbolTile tile = new SymbolTile(sym);
+        tiles = new ArrayList<SymbolTile>();
+        for(int i = 0; i < s.getSymbolList().size(); i++) {
+            SymbolTile tile = new SymbolTile(i);
             symbols.add(tile);
-            tiles.put(sym, tile);
-
+            tiles.add(tile);
         }
         symbols.setBorder(new TitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Symbol"));
         add(symbols, BorderLayout.CENTER);
@@ -123,7 +122,7 @@ public class VisualPicker extends JDialog implements ChangeListener
 
     private void responseCancel() {
         session.setGeneColour(type, old);
-        session.setGeneSymbol(type, oldSymbol);
+        //session.setGeneSymbol(type, oldSymbol);
         //p.forceRepaint();
         session.refreshStyle();
         setVisible(false);
@@ -131,12 +130,12 @@ public class VisualPicker extends JDialog implements ChangeListener
 
     public void setSelected(Integer type) {
         colour = session.getGeneColour(type);   
-        symbol = session.getGeneSymbol(type);
+        symbol = type;
         oldSymbol = symbol;
-        for(SymbolTile tile : tiles.values()) {
+        for(SymbolTile tile : tiles) {
             tile.unselect();
         }
-        tiles.get(symbol).select();
+        tiles.get(type).select();
         this.type = type;
         this.old = session.getGeneColour(type);
         
@@ -144,11 +143,12 @@ public class VisualPicker extends JDialog implements ChangeListener
         this.setTitle("Editing " + session.name(type) + " appearance");
     }
 
-    public void setSymbol(Symbol sym) {
+    public void setSymbol(int sym) {
         tiles.get(symbol).unselect();
         symbol = sym;
-        tiles.get(symbol).select();
-        session.setGeneSymbol(type, symbol);
+        tiles.get(sym).select();
+        panel.updateSymbol(type, sym);
+        //session.setGeneSymbol(type, symbol);
         //p.forceRepaint();
     }
 
@@ -162,9 +162,9 @@ public class VisualPicker extends JDialog implements ChangeListener
 
     class SymbolTile extends JPanel {
 
-        private Symbol sym;
+        private int sym;
 
-        public SymbolTile(Symbol sym) {
+        public SymbolTile(int sym) {
             setPreferredSize(new Dimension(40, 40));
             this.sym = sym;
             this.setBorder(new LineBorder(Color.BLACK, 2));
@@ -189,7 +189,7 @@ public class VisualPicker extends JDialog implements ChangeListener
             gr.setColor(Color.WHITE);
             gr.fillRect(0, 0, getWidth(), getHeight());
             gr.setColor(Color.BLACK);
-            gr.draw(SymbolFactory.makeSymbol(sym, 11, 11, 16, 16));
+            gr.drawImage(session.getSymbolList().get(sym), 0, 0, 40, 40, Color.BLACK, null);
         }
     }
 }

@@ -90,6 +90,7 @@ public class JqadvGL {
 
     private boolean imageChanged;
     private boolean colourChange;
+    private boolean symbolChange;
     private Transcript selection;
 
     private GLUniformData uni_extrascale;
@@ -112,6 +113,10 @@ public class JqadvGL {
         imageChanged = true;
     }
 
+    public void updateSymbol(int type, int sym) {
+       symbols[type] = (float)sym; 
+       symbolChange = true;
+    }
     public void updateColour(int type, Color c) {
             int a = type*3;
             float[] f = new float[3];
@@ -150,7 +155,7 @@ public class JqadvGL {
         // create the array specifying which symbol each type uses.
         symbols = new float[num];
         for(int i = 0; i < num; i++) {
-            symbols[i] = i % (pointSprites.getWidth() / pointSprites.getHeight());
+            symbols[i] = 0;
         }
         symbols_buffer = FloatBuffer.wrap(symbols);
 
@@ -416,6 +421,10 @@ public class JqadvGL {
             uni_colours.setData(colours_buffer);
             st.uniform(gl2, uni_colours);
             colourChange = false;
+        }
+        if(symbolChange) {
+            uni_symbols.setData(symbols_buffer);
+            st.uniform(gl2, uni_symbols);
         }
         uni_extrascale.setData(extrascale);
         st.uniform(gl2, uni_extrascale);
