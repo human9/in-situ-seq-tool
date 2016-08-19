@@ -96,6 +96,9 @@ public class JqadvGL {
     private GLUniformData uni_extrascale;
     private float extrascale = 1f;
 
+    private List<Transcript> transcripts;
+    private InseqSession session;
+
     public void setPointScale(float value) {
 
         extrascale = value;
@@ -117,6 +120,7 @@ public class JqadvGL {
        symbols[type] = (float)sym; 
        symbolChange = true;
     }
+    
     public void updateColour(int type, Color c) {
             int a = type*3;
             float[] f = new float[3];
@@ -126,6 +130,8 @@ public class JqadvGL {
     }
 
     public JqadvGL(InseqSession s, List<Transcript> list) {
+        this.transcripts = list;
+        this.session = s;
         
         // num = how many types of gene we have
         int num = s.getGenes().size();
@@ -155,7 +161,7 @@ public class JqadvGL {
         // create the array specifying which symbol each type uses.
         symbols = new float[num];
         for(int i = 0; i < num; i++) {
-            symbols[i] = 0;
+            symbols[i] = s.getGeneSymbol(i);
         }
         symbols_buffer = FloatBuffer.wrap(symbols);
 
@@ -172,22 +178,25 @@ public class JqadvGL {
 
     }
 
+    public void changeSelection(GL2 gl2) {
+        for(int i = 0; i < transcripts.size(); i++) {
+            // set it to negative to make it not appear
+            Transcript t = transcripts.get(i);
+            if(session.isActive(t)) {
+                coords[i*3+2] = t.type;
+            } else {
+                coords[i*3+2] = -t.type;
+            }
+        }
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
+                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
+                         vertices,
+                         GL.GL_STATIC_DRAW);
+    }
+
     /**
      * Detect how large textures can be, and how many we can have.
      * If our image is larger than MAX_TEXTURE_SIZE, we will need to break
-* 
-        }
-        vertices = FloatBuffer.wrap(coords);
-        nPoints = list.size();
-
-    }
-
-        }
-        vertices = FloatBuffer.wrap(coords);
-        nPoints = list.size();
-
-    }
-
      * it into no more than (MAX_TEXTURE_UNITS - 1) pieces (as one unit is 
      * to be used for point sprites).
      */
@@ -494,22 +503,6 @@ public class JqadvGL {
         selection = t;
     }
 
-    public void changeSelection(GL2 gl2) {
-        //TODO: Bind a uniform with the data?
-    }
-/* Good example of glSubBufferData, but not using it for this
-    public void changeSelection(GL2 gl2) {
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-        float[] i = new float[1];
-        i[0] = selection.type + 0.5f;
-        FloatBuffer data = FloatBuffer.wrap(i);
-        gl2.glBufferSubData(GL.GL_ARRAY_BUFFER,
-                            selection.index * 3 * GLBuffers.SIZEOF_FLOAT + 2 * GLBuffers.SIZEOF_FLOAT,
-                            GLBuffers.SIZEOF_FLOAT,
-                            data);
-
-    }
-*/
     public float getScale() {
         return scale_master;
     }

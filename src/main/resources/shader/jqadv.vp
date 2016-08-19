@@ -20,13 +20,16 @@ varying float num;
 varying float x;
 
 void main(void) {
-  x = sel;
-  size = ptsize;
-  num = texnum;
-  offset = symbols[int(coord2d.z)]; 
-  gl_Position = vec4(((coord2d.x * extrascale + offset_x) * scale_master + mouse_x) / width,
-                    ((-coord2d.y * extrascale + offset_y) * scale_master + mouse_y) / height,
-                    0, 1);
-  f_color = vec4(colours[int(coord2d.z)], 1);
-  gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
+  if(coord2d.z >= 0.0) {
+      x = sel;
+      size = ptsize;
+      num = texnum;
+      offset = symbols[int(coord2d.z)]; 
+      gl_Position = vec4(((coord2d.x * extrascale + offset_x) * scale_master + mouse_x) / width,
+                        ((-coord2d.y * extrascale + offset_y) * scale_master + mouse_y) / height,
+                        0, 1);
+      f_color = vec4(colours[int(coord2d.z)], 1);
+      gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
+    }
 }
+

@@ -30,33 +30,38 @@ import javax.swing.event.ChangeListener;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvPanel;
-import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 
 public class VisualPicker extends JDialog implements ChangeListener
 {
 
     private InseqSession session;
-    private Color colour;
-    private Color newColour;
     private JColorChooser chooser;
-    private Color old;
-    private List<SymbolTile> tiles;
-    private int symbol;
-    private int oldSymbol;
-    private Integer type;
     private JqadvPanel panel;
+    
+    // Currently selected transcript type
+    private Integer type;
+    
+    private int symbol;
+    private List<SymbolTile> tiles;
+    
+    private Color colour;
 
-    public VisualPicker(JqadvPanel jqv, JFrame parent, InseqSession s) {
+    public VisualPicker(JFrame parent, InseqSession s, JqadvPanel jqv, int t) {
 
         super(parent, ModalityType.APPLICATION_MODAL);
         this.session = s;
+        this.type = t;
         this.panel = jqv;
+        
+        colour = session.getGeneColour(type);   
+        symbol = session.getGeneSymbol(type);
+        this.setTitle("Editing " + session.name(type) + " appearance");
 
         setMinimumSize(new Dimension(100,100));
         setPreferredSize(new Dimension(600, 460));
         getRootPane().setBorder(new EmptyBorder(2,2,2,2));
-        addWindowListener(new WindowAdapter() {
 
+        addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 responseCancel();
@@ -66,6 +71,8 @@ public class VisualPicker extends JDialog implements ChangeListener
         chooser = new JColorChooser();
         chooser.setBorder(new TitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Colour"));
         add(chooser, BorderLayout.PAGE_START);
+        chooser.setColor(colour);
+        chooser.getSelectionModel().addChangeListener(this);
 
         JPanel symbols = new JPanel();
         symbols.setLayout(new FlowLayout());
@@ -76,6 +83,8 @@ public class VisualPicker extends JDialog implements ChangeListener
             symbols.add(tile);
             tiles.add(tile);
         }
+        tiles.get(session.getGeneSymbol(type)).select();
+
         symbols.setBorder(new TitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Symbol"));
         add(symbols, BorderLayout.CENTER);
 
@@ -99,78 +108,51 @@ public class VisualPicker extends JDialog implements ChangeListener
 
         pack();
         setLocationRelativeTo(parent);
-    }
-
-    @Override
-    public void setVisible(boolean isVisible) {
-
-        if(isVisible) {
-            setSelected(type);
-            chooser.getSelectionModel().addChangeListener(this);
-        }
-        else {
-            chooser.getSelectionModel().removeChangeListener(this);
-        }
-
-        super.setVisible(isVisible);
-
+        setVisible(true);
     }
 
     private void responseOk() {
-        setVisible(false);
+        session.setGeneColour(type, colour);
+        session.setGeneSymbol(type, symbol);
+        session.refreshStyle();
+        dispose();
     }
 
     private void responseCancel() {
-        session.setGeneColour(type, old);
-        //session.setGeneSymbol(type, oldSymbol);
-        //p.forceRepaint();
-        session.refreshStyle();
-        setVisible(false);
+        panel.updateColour(type, session.getGeneColour(type));
+        panel.updateSymbol(type, session.getGeneSymbol(type));
+        dispose();
     }
 
-    public void setSelected(Integer type) {
-        colour = session.getGeneColour(type);   
-        symbol = type;
-        oldSymbol = symbol;
+    private void clearTiles() {
         for(SymbolTile tile : tiles) {
             tile.unselect();
         }
-        tiles.get(type).select();
-        this.type = type;
-        this.old = session.getGeneColour(type);
-        
-        chooser.setColor(colour);
-        this.setTitle("Editing " + session.name(type) + " appearance");
     }
 
-    public void setSymbol(int sym) {
-        tiles.get(symbol).unselect();
-        symbol = sym;
-        tiles.get(sym).select();
-        panel.updateSymbol(type, sym);
-        //session.setGeneSymbol(type, symbol);
-        //p.forceRepaint();
+    private void setSymbol(int index) {
+        clearTiles();
+        symbol = index;
+        tiles.get(symbol).select();
+        panel.updateSymbol(type, symbol);
     }
 
     public void stateChanged(ChangeEvent e) {
-        newColour = chooser.getColor();
-        session.setGeneColour(type, newColour);
-        panel.updateColour(type, newColour);
-
-        //session.refreshStyle();
+        colour = chooser.getColor();
+        panel.updateColour(type, colour);
     }
 
-    class SymbolTile extends JPanel {
+    private class SymbolTile extends JPanel {
 
-        private int sym;
+        private int index;
 
-        public SymbolTile(int sym) {
+        public SymbolTile(int i) {
             setPreferredSize(new Dimension(40, 40));
-            this.sym = sym;
+            this.index = i;
             this.setBorder(new LineBorder(Color.BLACK, 2));
             addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
-                    setSymbol(sym);
+                    setSymbol(index);
                 }
             });
         }
@@ -186,10 +168,10 @@ public class VisualPicker extends JDialog implements ChangeListener
         @Override
         public void paintComponent(Graphics g) {
             Graphics2D gr = (Graphics2D)g;
-            gr.setColor(Color.WHITE);
+            gr.setColor(Color.BLACK);
             gr.fillRect(0, 0, getWidth(), getHeight());
             gr.setColor(Color.BLACK);
-            gr.drawImage(session.getSymbolList().get(sym), 0, 0, 40, 40, Color.BLACK, null);
+            gr.drawImage(session.getSymbolList().get(index), 10, 10, 20, 20, Color.BLACK, null);
         }
     }
 }

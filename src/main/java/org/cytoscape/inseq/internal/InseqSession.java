@@ -12,7 +12,6 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
-import org.cytoscape.inseq.internal.util.SymbolFactory.Symbol;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -41,10 +40,16 @@ public class InseqSession {
     private Integer selectedNetwork;
     private List<BufferedImage> symbols;
 
+    /**
+     * Defines the appearance of a certain gene.
+     */
     public class Gene {
+        // The name of the gene
         String name;
+        // The colour to be displayed
         Color  color;
-        Symbol symbol;
+        // The position of the symbol in the symbols array
+        Integer symbol;
     }
     private List<Gene> genes;
 
@@ -63,6 +68,15 @@ public class InseqSession {
         this.raw = transcripts;
         this.min = getMinimumPlotSize();
 
+        // Initialise symbols
+        BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
+        int len = pointSprites.getWidth() / pointSprites.getHeight();
+        int size = pointSprites.getHeight();
+        symbols = new ArrayList<BufferedImage>();
+        for(int i = 0; i < len; i++) {
+            symbols.add(pointSprites.getSubimage(i*size, 0, size, size)); 
+        }
+
         // Give each gene a unique colour as well spaced as possible.
         genes = new ArrayList<Gene>();
         int x = 1;
@@ -71,17 +85,8 @@ public class InseqSession {
             int i = (int)(x++*(360d/names.size()));
             g.name = name;
             g.color = Color.getHSBColor(((i)%360)/360f, 1, 1);
-            g.symbol = Symbol.DIAMOND;
+            g.symbol = (x-2)%symbols.size();
             genes.add(g);
-        }
-
-        // Initialise symbols
-        BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
-        int len = pointSprites.getWidth() / pointSprites.getHeight();
-        int size = pointSprites.getHeight();
-        symbols = new ArrayList<BufferedImage>();
-        for(int i = 0; i < len; i++) {
-            symbols.add(pointSprites.getSubimage(i*size, 0, size, size)); 
         }
 
         networks = new ArrayList<TypeNetwork>();
@@ -101,6 +106,30 @@ public class InseqSession {
 
     public List<Gene> getGenes() {
         return genes;
+    }
+
+    public boolean isActive(Transcript t) {
+        TypeNetwork sel = getSelectedNetwork();
+        if(sel == null) return true;
+
+        if(nodeSelection != null 
+                && nodeSelection.contains(t.type)) return true;
+
+        if(t.getNeighboursForNetwork(sel) == null 
+                || t.getNeighboursForNetwork(sel).size() < 1
+                || t.getSelection(sel) != sel.getSelection() 
+                || (!edgeSelection.keySet().contains(t.type)) 
+                && (!nodeSelection.contains(t.type))) return false;
+        
+        for(Transcript n : t.getNeighboursForNetwork(sel)) {
+            if(edgeSelection.get(t.type) != null 
+                    && edgeSelection.get(t.type).contains(n.type)) 
+                    return true;
+            if(nodeSelection.contains(t.type) && n.type == t.type) 
+                    return true;
+        }
+
+        return false;
     }
     
     /**
@@ -181,8 +210,8 @@ public class InseqSession {
         }
     }
     
-    public Integer getSelectedNetwork() {
-        return selectedNetwork;
+    public TypeNetwork getSelectedNetwork() {
+        return networks.get(selectedNetwork);
     }
 
     public void setGeneColour(Integer type, Color color) {
@@ -193,11 +222,11 @@ public class InseqSession {
         return genes.get(type).color;
     }
 
-    public void setGeneSymbol(Integer type, Symbol symbol) {
+    public void setGeneSymbol(Integer type, Integer symbol) {
         genes.get(type).symbol = symbol;
     }
 
-    public Symbol getGeneSymbol(Integer type) {
+    public Integer getGeneSymbol(Integer type) {
         return genes.get(type).symbol;
     }
 

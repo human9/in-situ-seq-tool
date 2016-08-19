@@ -52,15 +52,13 @@ public class SelectionPanel extends JPanel {
     public JPanel plotControls;
     public JPanel externalControls;
     InseqActivator ia;
-    public ImagePane imagePane;
     boolean showAllSelected = false;
     public StatusBar statusBar;
     private JButton colourPicker;
     private JFrame parent;
     private InseqSession session;
     private JqadvPanel jqadvpanel;
-        
-    VisualPicker visualPicker;
+    private Transcript selected;
 
     public void setWindow(JFrame parent) {
         this.parent = parent;
@@ -82,7 +80,6 @@ public class SelectionPanel extends JPanel {
         //final ImagePane ip = new ImagePane(null, ia.getSession(), 
           //      new Dimension(300,300));
         //imagePane = ip;
-        visualPicker = new VisualPicker(jqadvpanel, parent, ia.getSession());
         statusBar = new StatusBar();
         updateZoom(1f);
         //zp = new ZoomPane(this, ia.getSession());
@@ -174,9 +171,7 @@ public class SelectionPanel extends JPanel {
         colourPicker.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                visualPicker.setVisible(true);
-                visualPicker.toFront();
-                visualPicker.repaint();
+                new VisualPicker(parent, session, jqadvpanel, selected.type);
             }
         });
         colourPicker.setEnabled(false);
@@ -211,28 +206,17 @@ public class SelectionPanel extends JPanel {
         statusBar.setZoom(df.format(z*100)+"%");
     }
 
-    private void changeImage(String path) {
-        //final ImagePane ip = new ImagePane(getImageFile(path), 
-          //      ia.getSession(), zp.getViewport().getExtentSize());
-        //ip.sp = this;
-        //imagePane = ip;
-        //zp.updateViewport(ip);
-        repaint();
-    }
-
     public void setSelected(Transcript t) {
-        System.out.println("SET SELECTED");
         if(t == null) {
             statusBar.setTranscript(""); 
             colourPicker.setEnabled(false);
         }
         else {
+            selected = t;
             DecimalFormat df = new DecimalFormat("#.##");
             statusBar.setTranscript(session.name(t.type) + " ("+df.format(t.pos.x)+", "
                     + df.format(t.pos.y) + ")");
             colourPicker.setEnabled(true);
-            visualPicker.setSelected(t.type);
-            visualPicker.toFront();
         }
 
     }
@@ -241,8 +225,7 @@ public class SelectionPanel extends JPanel {
     public void updateSelection() {
 
         CyNetwork network 
-            = ia.getSession().getNetwork(ia.getSession()
-                    .getSelectedNetwork()).getNetwork();
+            = ia.getSession().getSelectedNetwork().getNetwork();
         List<CyNode> nodes 
             = CyTableUtil.getNodesInState(network, "selected", true);
         List<CyEdge> edges 
@@ -286,9 +269,6 @@ public class SelectionPanel extends JPanel {
                 edgeSelection.get(target).add(source);
             }
         }
-
-        //zp.repaint();
-        //imagePane.forceRepaint();
     }
 
 }
