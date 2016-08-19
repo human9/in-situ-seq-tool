@@ -132,22 +132,6 @@ public class JqadvGL {
 
     }
 
-    public void changeSelection(GL2 gl2) {
-        for(int i = 0; i < transcripts.size(); i++) {
-            // set it to negative to make it not appear
-            Transcript t = transcripts.get(i);
-            if(session.isActive(t)) {
-                coords[i*3+2] = t.type;
-            } else {
-                coords[i*3+2] = -t.type;
-            }
-        }
-        gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
-                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
-                         vertices,
-                         GL.GL_STATIC_DRAW);
-    }
-
 
     protected void init(GL2 gl2) {
 
@@ -382,6 +366,7 @@ public class JqadvGL {
     /**
      * Queried during rendering for any changes that need to be uploaded to the
      * GPU.
+     * Keeps multiple variable updating contained and orderly.
      */
     public class UpdateEngine {
 
@@ -389,6 +374,16 @@ public class JqadvGL {
         private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
 
         public void changeNetworkComponents() {
+
+            for(int i = 0; i < transcripts.size(); i++) {
+                // set it to negative to make it not appear
+                Transcript t = transcripts.get(i);
+                if(session.isActive(t)) {
+                    coords[i*3+2] = t.type;
+                } else {
+                    coords[i*3+2] = -t.type-1;
+                }
+            }
             
             updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
             canvas.display();
@@ -415,12 +410,20 @@ public class JqadvGL {
             canvas.display();
         }
 
+        /**
+         * Allows changes that require access to the main OpenGL thread to
+         * run later.
+         */
         public void makeChanges(GL2 gl2) {
             
             for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
                 UpdateType update = i.next();
                 switch(update) {
                     case NETWORK_COMPONENT_SELECTED:
+                        gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
+                                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
+                                         vertices,
+                                         GL.GL_STATIC_DRAW);
                         break;
                     case IMAGE_CHANGED:
                         num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);

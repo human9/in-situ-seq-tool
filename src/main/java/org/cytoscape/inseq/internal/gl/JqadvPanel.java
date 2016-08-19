@@ -134,13 +134,16 @@ public class JqadvPanel extends JPanel {
             list = session.tree.nearestEuclidean(
                     new double[]{p[0], p[1]}, Math.pow(dist, 2));
             Collections.reverse(list);
-            Transcript t = null;
-            if(list.size() > 0) {
-                t = list.get(0);
+            for(Transcript t : list) {
+                if(session.isActive(t)) {
+                    jqadvgl.selectTranscript(t);
+                    sp.setSelected(t);
+                    canvas.display();
+                    return;
+                }
             }
-            jqadvgl.selectTranscript(t);
+            sp.setSelected(null);
             canvas.display();
-            sp.setSelected(t);
         }
         catch (KeySizeException exc) {
             exc.printStackTrace();

@@ -105,8 +105,7 @@ public class SelectionPanel extends JPanel {
                 fc.setFileFilter(filter);
                 
                 int returnVal 
-                    = fc.showOpenDialog(ia.getCSAA().getCySwingApplication()
-                            .getJFrame());
+                    = fc.showOpenDialog(parent);
                 if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
                 jqadvpanel.getUpdater().changeImage(
@@ -231,6 +230,9 @@ public class SelectionPanel extends JPanel {
             = CyTableUtil.getNodesInState(network, "selected", true);
         List<CyEdge> edges 
             = CyTableUtil.getEdgesInState(network, "selected",true);
+
+        // Nothing is selected, don't bother doing anything more
+        if(nodes.size() < 1 && edges.size() < 1) return;
 
         ia.getSession().nodeSelection = new ArrayList<Integer>();
         for(CyNode node : nodes) {
