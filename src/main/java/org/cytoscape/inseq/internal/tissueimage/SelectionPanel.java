@@ -109,7 +109,8 @@ public class SelectionPanel extends JPanel {
                             .getJFrame());
                 if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
-                jqadvpanel.changeImage(ParseUtil.getImageFile(fc.getSelectedFile().getAbsolutePath()));
+                jqadvpanel.getUpdater().changeImage(
+                        ParseUtil.getImageFile(fc.getSelectedFile().getAbsolutePath()));
             }
 
         });
@@ -269,6 +270,9 @@ public class SelectionPanel extends JPanel {
                 edgeSelection.get(target).add(source);
             }
         }
+
+        jqadvpanel.getUpdater().changeNetworkComponents();
+
     }
 
 }

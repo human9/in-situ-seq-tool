@@ -119,8 +119,8 @@ public class VisualPicker extends JDialog implements ChangeListener
     }
 
     private void responseCancel() {
-        panel.updateColour(type, session.getGeneColour(type));
-        panel.updateSymbol(type, session.getGeneSymbol(type));
+        panel.getUpdater().changeColour(type, session.getGeneColour(type));
+        panel.getUpdater().changeSymbol(type, session.getGeneSymbol(type));
         dispose();
     }
 
@@ -134,12 +134,12 @@ public class VisualPicker extends JDialog implements ChangeListener
         clearTiles();
         symbol = index;
         tiles.get(symbol).select();
-        panel.updateSymbol(type, symbol);
+        panel.getUpdater().changeSymbol(type, symbol);
     }
 
     public void stateChanged(ChangeEvent e) {
         colour = chooser.getColor();
-        panel.updateColour(type, colour);
+        panel.getUpdater().changeColour(type, colour);
     }
 
     private class SymbolTile extends JPanel {

@@ -1,7 +1,6 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
@@ -9,13 +8,13 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JPanel;
 
 import org.cytoscape.inseq.internal.InseqSession;
+import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
 import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
@@ -45,7 +44,7 @@ public class JqadvPanel extends JPanel {
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
         canvas = new GLCanvas(capabilities);
-        jqadvgl = new JqadvGL(s, s.getRaw());
+        jqadvgl = new JqadvGL(s, canvas);
         setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
         origin = new Point();
         session = s;
@@ -147,14 +146,6 @@ public class JqadvPanel extends JPanel {
             exc.printStackTrace();
         }
     }
-
-    /**
-     * Call this method to change the image which points will be overlayed on.
-     */
-    public void changeImage(BufferedImage image) {
-        jqadvgl.setImage(image);
-        canvas.display();
-    }
     
     /**
      * Calculate a simple euclidean distance between two points.
@@ -178,16 +169,6 @@ public class JqadvPanel extends JPanel {
         return 2f * y - canvas.getHeight();
     }
 
-    public void updateColour(int type, Color c) {
-        jqadvgl.updateColour(type, c);
-        canvas.display();
-    }
-    
-    public void updateSymbol(int type, int sym) {
-        jqadvgl.updateSymbol(type, sym);
-        canvas.display();
-    }
-    
     public void setPointScale(float value) {
         jqadvgl.setPointScale(value);
         canvas.display();
@@ -196,5 +177,9 @@ public class JqadvPanel extends JPanel {
     public void largePoints(boolean e) {
         jqadvgl.largePoints(e);
         canvas.display();
+    }
+
+    public UpdateEngine getUpdater() {
+        return jqadvgl.engine;
     }
 }

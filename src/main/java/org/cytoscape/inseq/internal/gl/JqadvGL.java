@@ -1,11 +1,10 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
@@ -14,14 +13,12 @@ import org.cytoscape.inseq.internal.util.ParseUtil;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.GLUniformData;
+import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.GLBuffers;
-import com.jogamp.opengl.util.glsl.ShaderCode;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
 /**
  * This class handles all OpenGL rendering code.
@@ -34,10 +31,12 @@ public class JqadvGL {
     private int imageVBO;
     private int bkgrndVBO;
 
-    private int MAX_TEXTURE_SIZE;
-    private int MAX_TEXTURE_UNITS;
-
     private int num_tiles;
+    private BufferedImage image;
+
+
+    // Shaders
+    private ShaderState st;
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
     private ShaderProgram bgrndsp;
@@ -48,56 +47,31 @@ public class JqadvGL {
     private float mouse_y = 0;
     private float w;
     private float h;
-
     private float scale_master = 1;
     private float point_scale = 1f;
 
     private int nPoints;
 
     private float[] coords;
-
-    private ShaderState st;
-
-    GLUniformData uni_width;
-    GLUniformData uni_height;
-    GLUniformData uni_scale_master;
-    GLUniformData uni_offset_x;
-    GLUniformData uni_offset_y;
-    GLUniformData uni_mouse_x;
-    GLUniformData uni_mouse_y;
-    GLUniformData sel;
-
     float[] img;
-    FloatBuffer img_buffer;
-
     float[] colours;
-    FloatBuffer colours_buffer;
-    GLUniformData uni_colours;
-
     float[] bkgrnd;
-    FloatBuffer bkgrnd_buffer;
-    
     float[] symbols;
-    FloatBuffer symbols_buffer;
-    GLUniformData uni_symbols;
-    GLUniformData ptsize;
-    GLUniformData ptscale;
-    GLUniformData sprite;
-    GLUniformData background;
 
-    private BufferedImage bufferedImage;
+    GLUniformData uniColours;
+    GLUniformData uniSymbols;
+
     private BufferedImage pointSprites;
 
-    private boolean imageChanged;
-    private boolean colourChange;
-    private boolean symbolChange;
     private Transcript selection;
 
-    private GLUniformData uni_extrascale;
     private float extrascale = 1f;
 
     private List<Transcript> transcripts;
     private InseqSession session;
+    private GLCanvas canvas;
+
+    final public UpdateEngine engine = new UpdateEngine();
 
     public void setPointScale(float value) {
 
@@ -111,27 +85,10 @@ public class JqadvGL {
             point_scale = 1;
     }
 
-    public void setImage(BufferedImage image) {
-        this.bufferedImage = image;
-        imageChanged = true;
-    }
-
-    public void updateSymbol(int type, int sym) {
-       symbols[type] = (float)sym; 
-       symbolChange = true;
-    }
-    
-    public void updateColour(int type, Color c) {
-            int a = type*3;
-            float[] f = new float[3];
-            System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
-            colourChange = true;
-
-    }
-
-    public JqadvGL(InseqSession s, List<Transcript> list) {
-        this.transcripts = list;
+    public JqadvGL(InseqSession s, GLCanvas canvas) {
         this.session = s;
+        this.transcripts = s.getRaw();
+        this.canvas = canvas;
         
         // num = how many types of gene we have
         int num = s.getGenes().size();
@@ -145,7 +102,6 @@ public class JqadvGL {
             -1f,  1f,
             -1f, -1f
         };
-        bkgrnd_buffer = FloatBuffer.wrap(bkgrnd);
 
         // create array specifying what colour each type uses.
         colours = new float[num * 3];
@@ -155,7 +111,6 @@ public class JqadvGL {
             float[] f = new float[3];
             System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
         }
-        colours_buffer = FloatBuffer.wrap(colours);
         
         pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
         // create the array specifying which symbol each type uses.
@@ -163,18 +118,17 @@ public class JqadvGL {
         for(int i = 0; i < num; i++) {
             symbols[i] = s.getGeneSymbol(i);
         }
-        symbols_buffer = FloatBuffer.wrap(symbols);
 
         // create array of our transcript locations
-        coords = new float[list.size() * 3];
+        coords = new float[transcripts.size() * 3];
         int i = 0;
-        for(Transcript t : list) {
+        for(Transcript t : transcripts) {
             coords[i++] = (float) t.pos.x;
             coords[i++] = (float) t.pos.y;
             coords[i++] = t.type;
         }
         vertices = FloatBuffer.wrap(coords);
-        nPoints = list.size();
+        nPoints = transcripts.size();
 
     }
 
@@ -194,70 +148,6 @@ public class JqadvGL {
                          GL.GL_STATIC_DRAW);
     }
 
-    /**
-     * Detect how large textures can be, and how many we can have.
-     * If our image is larger than MAX_TEXTURE_SIZE, we will need to break
-     * it into no more than (MAX_TEXTURE_UNITS - 1) pieces (as one unit is 
-     * to be used for point sprites).
-     */
-    private void detectHardwareLimits(GL2 gl2) {
-        int[] tex_size = new int[1];
-        int[] tex_num = new int[1];
-        gl2.glGetIntegerv(GL.GL_MAX_TEXTURE_SIZE, IntBuffer.wrap(tex_size));
-        gl2.glGetIntegerv(GL2.GL_MAX_TEXTURE_IMAGE_UNITS, IntBuffer.wrap(tex_num));
-        MAX_TEXTURE_SIZE = tex_size[0];
-        MAX_TEXTURE_UNITS = tex_num[0];
-    }
-
-    /**
-     * Attempts to create an image that will back the points.
-     * If it will not fit within a single texture, it is split into smaller
-     * fragments. 
-     */
-    private void makeBackgroundImage(GL2 gl2) {
-
-        int w = bufferedImage.getWidth();
-        int h = bufferedImage.getHeight();
-        
-        // Detect texture size limits.
-        detectHardwareLimits(gl2);
-
-        Dimension req = Util.getRequiredTiles(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
-        img = Util.getVertices(req, w, h);
-
-        // make and bind subimage tiles
-        int tilew = w / req.width;
-        int tileh = h / req.height;
-        BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
-        for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
-
-            int vl1 = (int) ((i%req.width) * tilew);
-            int vu1 = (int) (((i/req.width)%req.height) * tileh);
-            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+1);
-            
-            // BufferedImage buf = bufferedImage.getSubimage(vl1, vu1, tilew, tileh);
-            // BufferedImage.getSubimage sometimes fails for reasons unknown.
-            
-            Graphics2D g = (Graphics2D) sub.getGraphics();
-            g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
-
-            Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), sub, true);
-            gl2.glBindTexture(GL.GL_TEXTURE_2D, tile.getTextureObject());
-        }
-
-        img_buffer = FloatBuffer.wrap(img);
-        num_tiles = img.length / 24;
-        System.out.println("Rendering image with " + num_tiles + " tile(s)");
-
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
-        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                         img.length * GLBuffers.SIZEOF_FLOAT,
-                         img_buffer,
-                         GL.GL_STATIC_DRAW);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-        
-    }
 
     protected void init(GL2 gl2) {
 
@@ -273,12 +163,16 @@ public class JqadvGL {
         // Retrieve and bind the point sprites. These are the symbols that
         // appear on each transcript location.
         gl2.glActiveTexture(GL.GL_TEXTURE0);
-        Texture symbols = Util.textureFromBufferedImage(pointSprites);
-        gl2.glBindTexture(GL.GL_TEXTURE_2D, symbols.getTextureObject());
+        Texture symbols_tex = Util.textureFromBufferedImage(pointSprites);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, symbols_tex.getTextureObject());
 
         // Disable texture interpolation for point sprites.
-        gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
-        gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+        gl2.glTexParameteri(GL.GL_TEXTURE_2D,
+                            GL.GL_TEXTURE_MIN_FILTER,
+                            GL.GL_NEAREST);
+        gl2.glTexParameteri(GL.GL_TEXTURE_2D,
+                            GL.GL_TEXTURE_MAG_FILTER,
+                            GL.GL_NEAREST);
 
         int buf[] = new int[3];
         gl2.glGenBuffers(3, buf, 0);
@@ -290,67 +184,40 @@ public class JqadvGL {
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         imageVBO = buf[1];
-        if(bufferedImage != null) {
-            makeBackgroundImage(gl2);
+        
+        if(image != null) {
+            //TODO: Maybe ask if you really want to reload the image
+            //(it can take a while if it's huge)
+            num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);
         }
 
         bkgrndVBO = buf[2];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                 6 * 2 * GLBuffers.SIZEOF_FLOAT,
-                bkgrnd_buffer,
+                FloatBuffer.wrap(bkgrnd),
                 GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
+        Util.makeUniform(gl2, st, "offset_x", offset_x);
+        Util.makeUniform(gl2, st, "offset_y", offset_y);
+        Util.makeUniform(gl2, st, "mouse_x", mouse_x);
+        Util.makeUniform(gl2, st, "mouse_y", mouse_y);
+        Util.makeUniform(gl2, st, "sprite", 0);
+        Util.makeUniform(gl2, st, "background", 1);
+        Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
+        Util.makeUniform(gl2, st, "ptscale", point_scale);
+        Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
+        Util.makeUniform(gl2, st, "scale_master", scale_master);
+        Util.makeUniform(gl2, st, "extrascale", extrascale);
+        Util.makeUniform(gl2, st, "sel", 0f);
+        Util.makeUniform(gl2, st, "width", 1f);
+        Util.makeUniform(gl2, st, "height", 1f);
 
-        uni_offset_x = new GLUniformData("offset_x", offset_x);
-        st.ownUniform(uni_offset_x);
-        st.uniform(gl2, uni_offset_x);
-        uni_offset_y = new GLUniformData("offset_y", offset_y);
-        st.ownUniform(uni_offset_y);
-        st.uniform(gl2, uni_offset_y);
-        
-        sprite = new GLUniformData("sprite", 0);
-        st.ownUniform(sprite);
-        st.uniform(gl2, sprite);
-        
-        background = new GLUniformData("background", 1);
-        st.ownUniform(background);
-        st.uniform(gl2, background);
-
-        uni_mouse_x = new GLUniformData("mouse_x", mouse_x);
-        st.ownUniform(uni_mouse_x);
-        st.uniform(gl2, uni_mouse_x);
-        uni_mouse_y = new GLUniformData("mouse_y", mouse_y);
-        st.ownUniform(uni_mouse_y);
-        st.uniform(gl2, uni_mouse_y);
-        ptsize = new GLUniformData("ptsize", (float) pointSprites.getHeight());
-        st.ownUniform(ptsize);
-        st.uniform(gl2, ptsize);
-        ptscale = new GLUniformData("ptscale", point_scale);
-        st.ownUniform(ptscale);
-        st.uniform(gl2, ptscale);
-        GLUniformData texnum = new GLUniformData("texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
-        st.ownUniform(texnum);
-        st.uniform(gl2, texnum);
-
-        uni_scale_master = new GLUniformData("scale_master", scale_master);
-        st.ownUniform(uni_scale_master);
-        st.uniform(gl2, uni_scale_master);
-        uni_extrascale = new GLUniformData("extrascale", extrascale);
-        st.ownUniform(uni_extrascale);
-        st.uniform(gl2, uni_extrascale);
-
-        uni_symbols = new GLUniformData("symbols", 1, symbols_buffer);
-        st.ownUniform(uni_symbols);
-        st.uniform(gl2, uni_symbols);
-        uni_colours = new GLUniformData("colours", 3, colours_buffer);
-        st.ownUniform(uni_colours);
-        st.uniform(gl2, uni_colours);
-        
-        sel = new GLUniformData("sel",0f);
-        st.ownUniform(sel);
-        st.uniform(gl2, sel);
+        uniSymbols = new GLUniformData("symbols", 1, FloatBuffer.wrap(symbols));
+        st.uniform(gl2, uniSymbols);
+        uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
+        st.uniform(gl2, uniColours);
 
     }
     
@@ -360,95 +227,42 @@ public class JqadvGL {
      * shaders.
      */
     private void generateShaderProgram(GL2 gl2) {
+
         st = new ShaderState();
 
-        final ShaderCode imgvp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_VERTEX_SHADER, this.getClass(),
-                    "shader", null, "image", false);
-        final ShaderCode imgfp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
-                    "shader", null, "image", false);
-        imgsp = new ShaderProgram();
-        imgsp.add(gl2, imgvp, System.err);
-        imgsp.add(gl2, imgfp, System.err);
+        imgsp = Util.compileProgram(gl2, "image");
         st.attachShaderProgram(gl2, imgsp, false);
-        
-        final ShaderCode jqvp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_VERTEX_SHADER, this.getClass(),
-                    "shader", null, "jqadv", false);
-        final ShaderCode jqfp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
-                    "shader", null, "jqadv", false);
-        jqsp = new ShaderProgram();
-        jqsp.add(gl2, jqvp, System.err);
-        jqsp.add(gl2, jqfp, System.err);
+
+        jqsp = Util.compileProgram(gl2, "jqadv");
         st.attachShaderProgram(gl2, jqsp, true);
         
-        final ShaderCode bgrndvp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_VERTEX_SHADER, this.getClass(),
-                    "shader", null, "bgrnd", false);
-        final ShaderCode bgrndfp = 
-            ShaderCode.create(gl2,
-                    GL2.GL_FRAGMENT_SHADER, this.getClass(),
-                    "shader", null, "bgrnd", false);
-        bgrndsp = new ShaderProgram();
-        bgrndsp.add(gl2, bgrndvp, System.err);
-        bgrndsp.add(gl2, bgrndfp, System.err);
+        bgrndsp = Util.compileProgram(gl2, "bgrnd");
         st.attachShaderProgram(gl2, bgrndsp, true);
     }
 
-
-
     protected void setup(GL2 gl2, int width, int height) {
-        // coordinate system origin at lower left with width and height same as the window
+        
+        // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
 
         w = width;
         h = height;
         
-        uni_width = new GLUniformData("width", (float)width);
-        st.ownUniform(uni_width);
-        st.uniform(gl2, uni_width);
-        
-        uni_height = new GLUniformData("height", (float)height);
-        st.ownUniform(uni_height);
-        st.uniform(gl2, uni_height);
+        Util.updateUniform(gl2, st, "width", (float)width);
+        Util.updateUniform(gl2, st, "height", (float)height);
     }
 
     protected void render(GL2 gl2, int width, int height) {
 
-        if(imageChanged) {
-            makeBackgroundImage(gl2);
-            imageChanged = false;
-        }
-        if(colourChange) {
-            uni_colours.setData(colours_buffer);
-            st.uniform(gl2, uni_colours);
-            colourChange = false;
-        }
-        if(symbolChange) {
-            uni_symbols.setData(symbols_buffer);
-            st.uniform(gl2, uni_symbols);
-        }
-        uni_extrascale.setData(extrascale);
-        st.uniform(gl2, uni_extrascale);
-        ptscale.setData(point_scale);
-        st.uniform(gl2, ptscale);
-        uni_scale_master.setData(scale_master);
-        st.uniform(gl2, uni_scale_master);
-        uni_offset_x.setData(offset_x);
-        st.uniform(gl2, uni_offset_x);
-        uni_offset_y.setData(offset_y);
-        st.uniform(gl2, uni_offset_y);
-        uni_mouse_x.setData(mouse_x);
-        st.uniform(gl2, uni_mouse_x);
-        uni_mouse_y.setData(mouse_y);
-        st.uniform(gl2, uni_mouse_y);
+        engine.makeChanges(gl2);
+
+        Util.updateUniform(gl2, st, "extrascale", extrascale);
+        Util.updateUniform(gl2, st, "ptscale", point_scale);
+        Util.updateUniform(gl2, st, "scale_master", scale_master);
+        Util.updateUniform(gl2, st, "offset_x", offset_x);
+        Util.updateUniform(gl2, st, "offset_y", offset_y);
+        Util.updateUniform(gl2, st, "mouse_x", mouse_x);
+        Util.updateUniform(gl2, st, "mouse_y", mouse_y);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT);
 
@@ -463,8 +277,7 @@ public class JqadvGL {
         st.attachShaderProgram(gl2, imgsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         for(int i = 0; i < num_tiles; i++) {
-            background.setData(i + 1);
-            st.uniform(gl2, background);
+            Util.updateUniform(gl2, st, "background", i+1);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
             gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
@@ -483,12 +296,10 @@ public class JqadvGL {
         gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
 
         if(selection != null) {
-            sel.setData(1f);
-            st.uniform(gl2, sel);
+            Util.updateUniform(gl2, st, "sel", 1f);
             gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
-            sel.setData(0f);
-            st.uniform(gl2, sel);
+            Util.updateUniform(gl2, st, "sel", 0f);
         }
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
@@ -506,6 +317,7 @@ public class JqadvGL {
     public float getScale() {
         return scale_master;
     }
+
     /**
      * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.
@@ -565,5 +377,72 @@ public class JqadvGL {
         graph[0] = ((x * w - mouse_x) / scale_master - offset_x) / extrascale;
         graph[1] = ((y * h + mouse_y) / scale_master + offset_y) / extrascale;
         return graph;
+    }
+
+    /**
+     * Queried during rendering for any changes that need to be uploaded to the
+     * GPU.
+     */
+    public class UpdateEngine {
+
+        // An empty set of update type enums
+        private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
+
+        public void changeNetworkComponents() {
+            
+            updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
+            canvas.display();
+        }
+
+        public void changeImage(BufferedImage i) {
+            image = i;
+            updates.add(UpdateType.IMAGE_CHANGED);
+            canvas.display();
+        }
+
+        public void changeSymbol(Integer type, Integer symbol) {
+            symbols[type] = symbol;
+            updates.add(UpdateType.SYMBOL_CHANGED);
+            canvas.display();
+        }
+
+        public void changeColour(Integer type, Color c) {
+            int a = type*3;
+            float[] f = new float[3];
+            System.arraycopy(
+                    c.getRGBColorComponents(f), 0, colours, a, 3);
+            updates.add(UpdateType.COLOUR_CHANGED);
+            canvas.display();
+        }
+
+        public void makeChanges(GL2 gl2) {
+            
+            for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
+                UpdateType update = i.next();
+                switch(update) {
+                    case NETWORK_COMPONENT_SELECTED:
+                        break;
+                    case IMAGE_CHANGED:
+                        num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);
+                        break;
+                    case COLOUR_CHANGED:
+                        uniColours.setData(FloatBuffer.wrap(colours));
+                        st.uniform(gl2, uniColours);
+                        break;
+                    case SYMBOL_CHANGED:
+                        uniSymbols.setData(FloatBuffer.wrap(symbols));
+                        st.uniform(gl2, uniSymbols);
+                        break;
+                }
+                i.remove();
+            }
+        }
+    }
+    
+    private enum UpdateType {
+        NETWORK_COMPONENT_SELECTED,
+        IMAGE_CHANGED,
+        COLOUR_CHANGED,
+        SYMBOL_CHANGED
     }
 }
