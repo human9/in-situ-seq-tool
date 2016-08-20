@@ -3,11 +3,13 @@ package org.cytoscape.inseq.internal.gl;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.GeneralPath;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,12 +34,23 @@ import edu.wlu.cs.levy.CG.KeySizeException;
  * @author John Salamon
  */
 public class JqadvPanel extends JPanel {
+
+    static final long serialVersionUID = 22l;
     
     private JqadvGL jqadvgl;
     private GLCanvas canvas;
     private Point origin;
     private InseqSession session;
     private SelectionPanel sp;
+
+    private GeneralPath polygon;
+    private Rectangle rectangle;
+    private Point start;
+    private boolean selectButton;
+    private boolean dragButton;
+    private boolean usePolygon;
+    private boolean initPolygon;
+    private float[] polyOrigin;
 
     public JqadvPanel(InseqSession s, SelectionPanel p) {
         
@@ -85,8 +98,6 @@ public class JqadvPanel extends JPanel {
                               glY(e.getY()))
                         ) {
                     sp.updateZoom(jqadvgl.getScale());
-
-        //statusBar.setZoom(df.format(imagePane.getScale()*100)+"%");
                     canvas.display();
                 }
             }
@@ -94,20 +105,103 @@ public class JqadvPanel extends JPanel {
         canvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                origin.setLocation(e.getPoint());
-                float[] p = jqadvgl.glToGraph(glX(origin.x)/canvas.getWidth(),
-                                             glY(origin.y)/canvas.getHeight());
-                //System.out.println(p[0] +", "+ p[1]);
-                select(p);
+                float[] p = toGraph(e.getPoint());
+                if(e.getButton() == MouseEvent.BUTTON1) {
+                    // Left mouse button
+                    dragButton = true;
+                    origin.setLocation(e.getPoint());
+                    start = e.getPoint();
+                }
+                else if(e.getButton() == MouseEvent.BUTTON3) {
+                    // Right mouse button
+                    if(!usePolygon) {
+                        selectButton = true;
+                        rectangle = new Rectangle();
+                        session.setSelection(null);
+                        origin.move(e.getX(), e.getY());
+                    }
+                    else {
+                        if(!initPolygon) {
+                            polygon = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 8);
+                            polyOrigin = p;
+                            polygon.moveTo(p[0], p[1]);
+                            initPolygon = true;
+                            session.setSelection(null);
+                        }
+                        else {
+                            if(euclideanDistance(toPixel(polyOrigin),
+                                new float[] {e.getX(), e.getY()}) < 20) 
+                            {
+                                polygon.closePath();
+                                session.setSelection(polygon);
+                                initPolygon = false;
+                            } else {
+                                polygon.lineTo(p[0], p[1]);
+                                GeneralPath current = (GeneralPath) polygon.clone();
+                                session.setSelection(current);
+                            }
+                        }
+                    }
+                }
             }
+
+            @Override
+			public void mouseReleased(MouseEvent e) {
+				if (e.getButton() == MouseEvent.BUTTON1) {
+                    float[] p = toGraph(e.getPoint());
+					if(e.getPoint().equals(start))
+					{
+                        select(p);
+                    }
+					dragButton = false;
+				}
+				if (e.getButton() == MouseEvent.BUTTON3) {
+					selectButton = false;
+				}
+			}
         });
         canvas.addMouseMotionListener(new MouseAdapter() {
             @Override
+            public void mouseMoved(MouseEvent e) {
+                float[] p = toGraph(e.getPoint());
+                if(initPolygon && usePolygon) {
+                    GeneralPath current = (GeneralPath) polygon.clone();
+                    if(euclideanDistance(toPixel(polyOrigin),
+                                new float[] {e.getX(), e.getY()}) < 20)
+                    {
+                        current.closePath();
+                    } else {
+                        current.lineTo(p[0], p[1]);
+                    }
+                    session.setSelection(current);
+                }
+            }
+
+            @Override
             public void mouseDragged(MouseEvent e) {
-                jqadvgl.move(2f*((origin.x - e.getX())),
-                             2f*((origin.y - e.getY())));
-                origin.setLocation(e.getPoint());
-                canvas.display();
+                float[] p = toGraph(e.getPoint());
+                if(dragButton) {
+                    jqadvgl.move(2f*((origin.x - e.getX())),
+                                 2f*((origin.y - e.getY())));
+                    origin.setLocation(e.getPoint());
+                    canvas.display();
+                }
+				if (selectButton && !usePolygon) {
+                    rectangle.setFrameFromDiagonal(
+                            origin,
+                            new Point((int)p[0], (int)p[1]));
+                    session.setSelection(rectangle);
+				}
+                if (initPolygon && usePolygon) {
+                    GeneralPath current = (GeneralPath) polygon.clone();
+                    if(euclideanDistance(toPixel(polyOrigin),
+                                new float[] {e.getX(), e.getY()}) < 20) {
+                        current.closePath();
+                    } else {
+                        current.lineTo(p[0], p[1]);
+                    }
+                    session.setSelection(current);
+                }
             }
         });
 
@@ -116,6 +210,17 @@ public class JqadvPanel extends JPanel {
                 canvas.display();
             }
         });
+    }
+
+    public void enablePoly() {
+        usePolygon = true;
+        initPolygon = false;
+        session.setSelection(null);
+    }
+    
+    public void enableRect() {
+        usePolygon = false;
+        session.setSelection(null);
     }
 
     /**
@@ -134,15 +239,15 @@ public class JqadvPanel extends JPanel {
             list = session.tree.nearestEuclidean(
                     new double[]{p[0], p[1]}, Math.pow(dist, 2));
             Collections.reverse(list);
+            Transcript tr = null;
             for(Transcript t : list) {
                 if(session.isActive(t)) {
-                    jqadvgl.selectTranscript(t);
-                    sp.setSelected(t);
-                    canvas.display();
-                    return;
+                    tr = t;
+                    break;
                 }
             }
-            sp.setSelected(null);
+            jqadvgl.selectTranscript(tr);
+            sp.setSelected(tr);
             canvas.display();
         }
         catch (KeySizeException exc) {
@@ -156,6 +261,25 @@ public class JqadvPanel extends JPanel {
     public static double euclideanDistance(float[] a, float[] b) {
         double sqrdist = Math.pow((a[0] - b[0]) , 2) + Math.pow((a[1] - b[1]), 2);
         return Math.sqrt(sqrdist);
+    }
+
+    /**
+     * Get exact pixel coordinates of where a graph point is.
+     */
+    private float[] toPixel(float[] p) {
+        float[] pixel = jqadvgl.graphToGL(p[0], p[1]);
+        pixel[0] =  (pixel[0] / 2f - canvas.getWidth()) * canvas.getWidth();
+        pixel[1] =  (pixel[1] / 2f - canvas.getHeight()) * canvas.getHeight();
+        return pixel;
+    }
+
+    /**
+     * Get graph coordinates of where a pixel point is.
+     */
+    private float[] toGraph(Point p) {
+        float[] graph = jqadvgl.glToGraph(glX(p.x) / canvas.getWidth(),
+                glY(p.y) / canvas.getHeight());
+        return graph;
     }
 
     /**
