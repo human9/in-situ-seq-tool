@@ -6,8 +6,13 @@ varying float offset;
 varying float size;
 varying float num;
 varying float x;
+varying float d;
 
 void main(void) {
+
+    if(d == 1.0) {
+        discard;
+    }
     vec2 TextureCoord = vec2(offset/num, 0);
     vec2 TextureSize = vec2(1/num, 1);
     vec2 real = TextureCoord + (gl_PointCoord * TextureSize);

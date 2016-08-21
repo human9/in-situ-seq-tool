@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,15 +27,15 @@ import edu.wlu.cs.levy.CG.KDTree;
 public class InseqSession {
     
     public KDTree<Transcript> tree;
-    public Map<Integer, List<Integer>> edgeSelection;
-    public List<Integer> nodeSelection;
+    public Map<Integer, List<Integer>> edgeSelection = new HashMap<Integer, List<Integer>>();
+    public List<Integer> nodeSelection = new ArrayList<Integer>();
     public Dimension min;
 
     private Shape selection;
     private VisualStyle style;
 
     private CyAppAdapter CAA;
-    private List<TypeNetwork> networks;
+    private List<TypeNetwork> networks = new ArrayList<TypeNetwork>();;
     private List<Transcript> raw;
     public List<String> names;
     private Integer selectedNetwork;
@@ -212,7 +213,11 @@ public class InseqSession {
     }
     
     public TypeNetwork getSelectedNetwork() {
-        return networks.get(selectedNetwork);
+        try {
+            return networks.get(selectedNetwork);
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     public void setGeneColour(Integer type, Color color) {

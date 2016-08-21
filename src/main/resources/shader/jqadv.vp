@@ -18,9 +18,11 @@ varying float offset;
 varying float size;
 varying float num;
 varying float x;
+varying float d;
 
 void main(void) {
   if(coord2d.z >= 0.0) {
+      d = 0.0;
       x = sel;
       size = ptsize;
       num = texnum;
@@ -30,6 +32,9 @@ void main(void) {
                         0, 1);
       f_color = vec4(colours[int(coord2d.z)], 1);
       gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
+    }
+    else {
+        d = 1.0;
     }
 }
 

@@ -41,6 +41,7 @@ public class JqadvPanel extends JPanel {
     private JqadvGL jqadvgl;
     private GLCanvas canvas;
     private Point origin;
+    private Point leftClick;
     private InseqSession session;
     private SelectionPanel sp;
 
@@ -111,6 +112,7 @@ public class JqadvPanel extends JPanel {
                     // Left mouse button
                     dragButton = true;
                     start = e.getPoint();
+                    leftClick = e.getPoint();
                 }
                 else if(e.getButton() == MouseEvent.BUTTON3) {
                     // Right mouse button
@@ -121,6 +123,7 @@ public class JqadvPanel extends JPanel {
                         rectangle = new Rectangle2D.Float();
                         session.setSelection(null);
                         origin.setLocation(new Point2D.Float(p[0], p[1]));
+                        pathClosed = true;
                     }
                     else {
                         if(!initPolygon) {
@@ -153,7 +156,7 @@ public class JqadvPanel extends JPanel {
 			public void mouseReleased(MouseEvent e) {
 				if (e.getButton() == MouseEvent.BUTTON1) {
                     float[] p = toGraph(e.getPoint());
-					if(e.getPoint().equals(start))
+					if(e.getPoint().equals(leftClick))
 					{
                         select(p);
                     }
@@ -198,7 +201,7 @@ public class JqadvPanel extends JPanel {
                             origin,
                             new Point2D.Float(p[0], p[1]));
                     session.setSelection(rectangle);
-                    getUpdater().selectionChanged(false);
+                    getUpdater().selectionChanged(true);
 				}
                 if (initPolygon && usePolygon) {
                     GeneralPath current = (GeneralPath) polygon.clone();

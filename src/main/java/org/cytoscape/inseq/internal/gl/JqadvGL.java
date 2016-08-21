@@ -55,13 +55,14 @@ public class JqadvGL {
     private float point_scale = 1f;
 
     private int nPoints;
+    private boolean pc;
 
     private float[] coords;
     float[] img;
     float[] colours;
     float[] bkgrnd;
     float[] symbols;
-    float[] selectionShape;
+    FloatBuffer selectionShape;
 
     GLUniformData uniColours;
     GLUniformData uniSymbols;
@@ -197,8 +198,8 @@ public class JqadvGL {
 
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
             gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                             selectionShape.length * GLBuffers.SIZEOF_FLOAT,
-                             FloatBuffer.wrap(selectionShape),
+                             selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
+                             selectionShape,
                              GL.GL_STATIC_DRAW);
         }
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
@@ -218,6 +219,7 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "sel", 0f);
         Util.makeUniform(gl2, st, "width", 1f);
         Util.makeUniform(gl2, st, "height", 1f);
+        Util.makeUniform(gl2, st, "closed", 0f);
 
         uniSymbols = new GLUniformData("symbols", 1, FloatBuffer.wrap(symbols));
         st.uniform(gl2, uniSymbols);
@@ -304,6 +306,7 @@ public class JqadvGL {
 
         gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
         gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
@@ -315,19 +318,30 @@ public class JqadvGL {
             gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
             
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+            gl2.glLineWidth(3f);
+            gl2.glEnable(GL.GL_LINE_SMOOTH);
             gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-            gl2.glDrawArrays(GL.GL_LINE_STRIP, 0, selectionShape.length / 2);
+            if(pc) {
+                Util.updateUniform(gl2, st, "closed", 1f);
+                gl2.glDrawArrays(GL.GL_LINE_LOOP, 0, selectionShape.capacity() / 2);
+            } else {
+                Util.updateUniform(gl2, st, "closed", 0f);
+                gl2.glDrawArrays(GL.GL_LINE_STRIP, 0, selectionShape.capacity() / 2);
+            }
+            gl2.glLineWidth(1f);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         }
 
         if(selection != null) {
+            
+            st.attachShaderProgram(gl2, jqsp, true);
             gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
             gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
-            st.attachShaderProgram(gl2, jqsp, true);
             
             Util.updateUniform(gl2, st, "sel", 1f);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
             gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
             Util.updateUniform(gl2, st, "sel", 0f);
@@ -448,15 +462,10 @@ public class JqadvGL {
                     shape.add(segment[1]);
                     pi.next();
                 }
-                if(pathClosed) {
-                    // The path is closed. Add the first coordinates at the end.
-                    // The other way would be to use GL_LINE_LOOP
-                    shape.add(shape.get(0));
-                    shape.add(shape.get(1));
-                }
-                selectionShape = new float[shape.size()];
+                pc = pathClosed;
+                selectionShape = FloatBuffer.allocate(shape.size());
                 for(int a = 0; a < shape.size(); a++) {
-                    selectionShape[a] = shape.get(a);
+                    selectionShape.put(a, shape.get(a));
                 }
             } else {
                 selectionShape = null;
@@ -502,14 +511,16 @@ public class JqadvGL {
                                          nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
                                          vertices,
                                          GL.GL_STATIC_DRAW);
+                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
                         break;
                     case SELECTION_AREA_CHANGED:
                         if(session.getSelection() != null) {
                             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
                             gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                                             selectionShape.length * GLBuffers.SIZEOF_FLOAT,
-                                             FloatBuffer.wrap(selectionShape),
-                                             GL.GL_STATIC_DRAW);
+                                             selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
+                                             selectionShape,
+                                             GL.GL_DYNAMIC_DRAW);
+                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
                         }
                         break;
                     case IMAGE_CHANGED:

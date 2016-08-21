@@ -7,8 +7,11 @@ uniform float mouse_y;
 uniform float width;
 uniform float height;
 uniform float scale_master;
+uniform float closed;
+varying float c;
 
 void main(void) {
+    c = closed;
     gl_Position = vec4(((shape.x + offset_x) * scale_master + mouse_x) / width,
 			          ((-shape.y + offset_y) * scale_master + mouse_y) / height, 0, 1);
 }
