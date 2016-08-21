@@ -1,8 +1,10 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.Color;
+import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +32,7 @@ public class JqadvGL {
     private int verticesVBO;
     private int imageVBO;
     private int bkgrndVBO;
+    private int selectionVBO;
 
     private int num_tiles;
     private BufferedImage image;
@@ -40,6 +43,7 @@ public class JqadvGL {
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
     private ShaderProgram bgrndsp;
+    private ShaderProgram simplesp;
 
     private float offset_x = 0;
     private float offset_y = 0;
@@ -57,6 +61,7 @@ public class JqadvGL {
     float[] colours;
     float[] bkgrnd;
     float[] symbols;
+    float[] selectionShape;
 
     GLUniformData uniColours;
     GLUniformData uniSymbols;
@@ -129,7 +134,6 @@ public class JqadvGL {
         }
         vertices = FloatBuffer.wrap(coords);
         nPoints = transcripts.size();
-
     }
 
 
@@ -158,8 +162,13 @@ public class JqadvGL {
                             GL.GL_TEXTURE_MAG_FILTER,
                             GL.GL_NEAREST);
 
-        int buf[] = new int[3];
-        gl2.glGenBuffers(3, buf, 0);
+        // Create four vertex buffer objects
+        // 1. verticesVBO: contains the actual transcript points
+        // 2. imageVBO: coordinates to stretch an image across
+        // 3. bkgrndVBO: A rectangle that covers the entire screen
+        // 4. selectionVBO: Coordinates of the current selection
+        int buf[] = new int[4];
+        gl2.glGenBuffers(4, buf, 0);
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -182,6 +191,17 @@ public class JqadvGL {
                 FloatBuffer.wrap(bkgrnd),
                 GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        
+        selectionVBO = buf[3];
+        if(selectionShape != null) {
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+            gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                             2 * GLBuffers.SIZEOF_FLOAT,
+                             FloatBuffer.wrap(selectionShape),
+                             GL.GL_STATIC_DRAW);
+        }
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
 
         Util.makeUniform(gl2, st, "offset_x", offset_x);
         Util.makeUniform(gl2, st, "offset_y", offset_y);
@@ -220,8 +240,12 @@ public class JqadvGL {
         jqsp = Util.compileProgram(gl2, "jqadv");
         st.attachShaderProgram(gl2, jqsp, true);
         
+        simplesp = Util.compileProgram(gl2, "simple");
+        st.attachShaderProgram(gl2, simplesp, false);
+
         bgrndsp = Util.compileProgram(gl2, "bgrnd");
         st.attachShaderProgram(gl2, bgrndsp, true);
+        
     }
 
     protected void setup(GL2 gl2, int width, int height) {
@@ -269,6 +293,7 @@ public class JqadvGL {
         }
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 
+
         st.attachShaderProgram(gl2, jqsp, true);
 
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
@@ -279,15 +304,36 @@ public class JqadvGL {
         gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
         gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
 
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+
+
+        if(selectionShape != null) {
+            
+            st.attachShaderProgram(gl2, simplesp, true);
+            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+            
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+            gl2.glDrawArrays(GL.GL_LINE_STRIP, 0, selectionShape.length / 2);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        }
+
         if(selection != null) {
+            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+            gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
+            st.attachShaderProgram(gl2, jqsp, true);
+            
             Util.updateUniform(gl2, st, "sel", 1f);
             gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
             Util.updateUniform(gl2, st, "sel", 0f);
-        }
 
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+            gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+        }
 
     }
 
@@ -348,7 +394,7 @@ public class JqadvGL {
     public float[] graphToGL(float x, float y) {
         float[] gl = new float[2];
         gl[0] = ((x * extrascale + offset_x) * scale_master + mouse_x) / w;
-        gl[1] = ((y  * extrascale - offset_y) * scale_master + mouse_y) / h;
+        gl[1] = ((y  * extrascale - offset_y) * scale_master - mouse_y) / h;
         return gl;
     }
     
@@ -389,6 +435,30 @@ public class JqadvGL {
             canvas.display();
         }
 
+        public void selectionChanged() {
+
+            if(session.getSelection() != null) {
+                PathIterator pi = session.getSelection().getPathIterator(null);
+                float[] segment = new float[6];
+                ArrayList<Float> shape = new ArrayList<Float>();
+                while(!pi.isDone()) {
+                    pi.currentSegment(segment);
+                    shape.add(segment[0]);
+                    shape.add(segment[1]);
+                    pi.next();
+                }
+                selectionShape = new float[shape.size()];
+                for(int a = 0; a < shape.size(); a++) {
+                    selectionShape[a] = shape.get(a);
+                }
+            } else {
+                selectionShape = null;
+            }
+
+            updates.add(UpdateType.SELECTION_AREA_CHANGED);
+            canvas.display();
+        }
+
         public void changeImage(BufferedImage i) {
             image = i;
             updates.add(UpdateType.IMAGE_CHANGED);
@@ -420,10 +490,20 @@ public class JqadvGL {
                 UpdateType update = i.next();
                 switch(update) {
                     case NETWORK_COMPONENT_SELECTED:
+                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
                         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
                                          nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
                                          vertices,
                                          GL.GL_STATIC_DRAW);
+                        break;
+                    case SELECTION_AREA_CHANGED:
+                        if(session.getSelection() != null) {
+                            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+                            gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                                             selectionShape.length * GLBuffers.SIZEOF_FLOAT,
+                                             FloatBuffer.wrap(selectionShape),
+                                             GL.GL_STATIC_DRAW);
+                        }
                         break;
                     case IMAGE_CHANGED:
                         num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);
@@ -444,6 +524,7 @@ public class JqadvGL {
     
     private enum UpdateType {
         NETWORK_COMPONENT_SELECTED,
+        SELECTION_AREA_CHANGED,
         IMAGE_CHANGED,
         COLOUR_CHANGED,
         SYMBOL_CHANGED

@@ -69,7 +69,8 @@ public class InseqSession {
         this.min = getMinimumPlotSize();
 
         // Initialise symbols
-        BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
+        BufferedImage pointSprites
+            = ParseUtil.getImageResource("/texture/sprite_sheet.png");
         int len = pointSprites.getWidth() / pointSprites.getHeight();
         int size = pointSprites.getHeight();
         symbols = new ArrayList<BufferedImage>();

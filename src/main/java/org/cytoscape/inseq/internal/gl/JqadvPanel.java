@@ -142,6 +142,7 @@ public class JqadvPanel extends JPanel {
                             }
                         }
                     }
+                    getUpdater().selectionChanged();
                 }
             }
 
@@ -174,6 +175,7 @@ public class JqadvPanel extends JPanel {
                         current.lineTo(p[0], p[1]);
                     }
                     session.setSelection(current);
+                    getUpdater().selectionChanged();
                 }
             }
 
@@ -191,6 +193,7 @@ public class JqadvPanel extends JPanel {
                             origin,
                             new Point((int)p[0], (int)p[1]));
                     session.setSelection(rectangle);
+                    getUpdater().selectionChanged();
 				}
                 if (initPolygon && usePolygon) {
                     GeneralPath current = (GeneralPath) polygon.clone();
@@ -201,6 +204,7 @@ public class JqadvPanel extends JPanel {
                         current.lineTo(p[0], p[1]);
                     }
                     session.setSelection(current);
+                    getUpdater().selectionChanged();
                 }
             }
         });
@@ -268,8 +272,8 @@ public class JqadvPanel extends JPanel {
      */
     private float[] toPixel(float[] p) {
         float[] pixel = jqadvgl.graphToGL(p[0], p[1]);
-        pixel[0] =  (pixel[0] / 2f - canvas.getWidth()) * canvas.getWidth();
-        pixel[1] =  (pixel[1] / 2f - canvas.getHeight()) * canvas.getHeight();
+        pixel[0] = (canvas.getWidth() * pixel[0] + canvas.getWidth()) / 2f;
+        pixel[1] = (canvas.getHeight() * pixel[1] + canvas.getHeight()) / 2f;
         return pixel;
     }
 

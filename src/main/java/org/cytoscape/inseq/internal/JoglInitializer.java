@@ -24,6 +24,7 @@ import com.jogamp.common.util.JarUtil;
 /**
  * For JOGL to find the platform native libraries they must be unpacked from this 
  * bundle jar to the file system. Then we must tell JOGL where to find them.
+ * Adapted from github.com/cytoscape/zugzwang/
  */
 public class JoglInitializer
 {	

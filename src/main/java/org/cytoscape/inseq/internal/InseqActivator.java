@@ -31,12 +31,12 @@ public class InseqActivator extends AbstractCyActivator {
     private BundleContext context;
     private MainPanel panel;
 
-    /** The entry point for app execution.
+    /** 
+     *  The entry point for app execution.
      *  The only immediate visible change should be a new menu option.
      */
     @Override
     public void start(BundleContext c) throws Exception {
-
         properties = new Properties();
         context = c;
         JoglInitializer.unpackNativeLibrariesForJOGL(c);
@@ -45,23 +45,30 @@ public class InseqActivator extends AbstractCyActivator {
         registerAllServices(context, menuAction, properties);
     }
     
-    public void constructTree(List<String> names, List<Transcript> transcripts, InseqActivator ia) {
-
-        ConstructTreeTask builder = new ConstructTreeTask(names, transcripts, ia);
-        TaskIterator itr = new TaskIterator(builder);     
+    /**
+     * Builds the main KD-Tree datastructure used to find colocations.
+     */
+    public void constructTree(List<String> names,
+                              List<Transcript> transcripts,
+                              InseqActivator ia) {
+        ConstructTreeTask ctt = new ConstructTreeTask(names, transcripts, ia);
+        TaskIterator itr = new TaskIterator(ctt);     
         getCSAA().getDialogTaskManager().execute(itr);
     }
 
-    /** Initializes the session.
+    /** 
+     *  Initializes the session.
      *  This is called by ImportAction on successful import.
      */
-    public void initSession(List<String> names, List<Transcript> transcripts, KDTree<Transcript> tree) {
+    public void initSession(List<String> names,
+                            List<Transcript> transcripts,
+                            KDTree<Transcript> tree) {
         session = new InseqSession(names, transcripts, tree, getCAA());
 
         panel = new MainPanel(this, session);
         registerAllServices(context, panel, properties);
 
-        RowsSetListener rowsSetListener = new RowsSetListener() {
+        RowsSetListener rsl = new RowsSetListener() {
             @Override
             public void handleEvent(RowsSetEvent e) {
                 if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
@@ -69,27 +76,31 @@ public class InseqActivator extends AbstractCyActivator {
                 }
             }
         };
-        registerService(context, rowsSetListener, RowsSetListener.class, properties);
+        registerService(context, rsl, RowsSetListener.class, properties);
 
         // Switch to the Inseq control panel.
-        CytoPanel cyPanel = getCSAA().getCySwingApplication().getCytoPanel(CytoPanelName.WEST);
+        CytoPanel cyPanel = getCSAA().getCySwingApplication()
+            .getCytoPanel(CytoPanelName.WEST);
         int index = cyPanel.indexOfComponent(panel);
         cyPanel.setSelectedIndex(index);
     }
 
-    /** Returns the current session.
+    /** 
+     *  Returns the current session.
      */
     public InseqSession getSession() {
         return this.session;
     }
 
-    /** Returns the CyAppAdapter convenience interface.
+    /** 
+     *  Returns the CyAppAdapter convenience interface.
      */
     public CyAppAdapter getCAA() {
         return getService(context, CyAppAdapter.class);
     }
     
-    /** Returns the CySwingAppAdapter convenience interface.
+    /** 
+     *  Returns the CySwingAppAdapter convenience interface.
      */
     public CySwingAppAdapter getCSAA() {
         return getService(context, CySwingAppAdapter.class);
