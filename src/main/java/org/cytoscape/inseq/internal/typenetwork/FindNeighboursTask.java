@@ -60,7 +60,7 @@ public class FindNeighboursTask extends AbstractTask {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
 
-                if(selection != null) {
+                if(subset && selection != null) {
                     if(!selection.contains(t.pos.x, t.pos.y)) continue;
                 }
 

@@ -3,13 +3,14 @@ package org.cytoscape.inseq.internal.gl;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,7 +45,7 @@ public class JqadvPanel extends JPanel {
     private SelectionPanel sp;
 
     private GeneralPath polygon;
-    private Rectangle rectangle;
+    private Rectangle2D.Float rectangle;
     private Point start;
     private boolean selectButton;
     private boolean dragButton;
@@ -109,16 +110,17 @@ public class JqadvPanel extends JPanel {
                 if(e.getButton() == MouseEvent.BUTTON1) {
                     // Left mouse button
                     dragButton = true;
-                    origin.setLocation(e.getPoint());
                     start = e.getPoint();
                 }
                 else if(e.getButton() == MouseEvent.BUTTON3) {
                     // Right mouse button
+
+                    boolean pathClosed = false;
                     if(!usePolygon) {
                         selectButton = true;
-                        rectangle = new Rectangle();
+                        rectangle = new Rectangle2D.Float();
                         session.setSelection(null);
-                        origin.move(e.getX(), e.getY());
+                        origin.setLocation(new Point2D.Float(p[0], p[1]));
                     }
                     else {
                         if(!initPolygon) {
@@ -134,6 +136,7 @@ public class JqadvPanel extends JPanel {
                             {
                                 polygon.closePath();
                                 session.setSelection(polygon);
+                                pathClosed = true;
                                 initPolygon = false;
                             } else {
                                 polygon.lineTo(p[0], p[1]);
@@ -142,7 +145,7 @@ public class JqadvPanel extends JPanel {
                             }
                         }
                     }
-                    getUpdater().selectionChanged();
+                    getUpdater().selectionChanged(pathClosed);
                 }
             }
 
@@ -167,15 +170,17 @@ public class JqadvPanel extends JPanel {
                 float[] p = toGraph(e.getPoint());
                 if(initPolygon && usePolygon) {
                     GeneralPath current = (GeneralPath) polygon.clone();
+                    boolean pathClosed = false;
                     if(euclideanDistance(toPixel(polyOrigin),
                                 new float[] {e.getX(), e.getY()}) < 20)
                     {
                         current.closePath();
+                        pathClosed = true;
                     } else {
                         current.lineTo(p[0], p[1]);
                     }
                     session.setSelection(current);
-                    getUpdater().selectionChanged();
+                    getUpdater().selectionChanged(pathClosed);
                 }
             }
 
@@ -183,28 +188,30 @@ public class JqadvPanel extends JPanel {
             public void mouseDragged(MouseEvent e) {
                 float[] p = toGraph(e.getPoint());
                 if(dragButton) {
-                    jqadvgl.move(2f*((origin.x - e.getX())),
-                                 2f*((origin.y - e.getY())));
-                    origin.setLocation(e.getPoint());
+                    jqadvgl.move(2f*((start.x - e.getX())),
+                                 2f*((start.y - e.getY())));
+                    start.setLocation(e.getPoint());
                     canvas.display();
                 }
 				if (selectButton && !usePolygon) {
                     rectangle.setFrameFromDiagonal(
                             origin,
-                            new Point((int)p[0], (int)p[1]));
+                            new Point2D.Float(p[0], p[1]));
                     session.setSelection(rectangle);
-                    getUpdater().selectionChanged();
+                    getUpdater().selectionChanged(false);
 				}
                 if (initPolygon && usePolygon) {
                     GeneralPath current = (GeneralPath) polygon.clone();
+                    boolean pathClosed = false;
                     if(euclideanDistance(toPixel(polyOrigin),
                                 new float[] {e.getX(), e.getY()}) < 20) {
                         current.closePath();
+                        pathClosed = true;
                     } else {
                         current.lineTo(p[0], p[1]);
                     }
                     session.setSelection(current);
-                    getUpdater().selectionChanged();
+                    getUpdater().selectionChanged(pathClosed);
                 }
             }
         });

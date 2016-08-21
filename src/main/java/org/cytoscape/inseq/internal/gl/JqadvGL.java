@@ -194,9 +194,10 @@ public class JqadvGL {
         
         selectionVBO = buf[3];
         if(selectionShape != null) {
+
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
             gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                             2 * GLBuffers.SIZEOF_FLOAT,
+                             selectionShape.length * GLBuffers.SIZEOF_FLOAT,
                              FloatBuffer.wrap(selectionShape),
                              GL.GL_STATIC_DRAW);
         }
@@ -435,7 +436,7 @@ public class JqadvGL {
             canvas.display();
         }
 
-        public void selectionChanged() {
+        public void selectionChanged(boolean pathClosed) {
 
             if(session.getSelection() != null) {
                 PathIterator pi = session.getSelection().getPathIterator(null);
@@ -446,6 +447,12 @@ public class JqadvGL {
                     shape.add(segment[0]);
                     shape.add(segment[1]);
                     pi.next();
+                }
+                if(pathClosed) {
+                    // The path is closed. Add the first coordinates at the end.
+                    // The other way would be to use GL_LINE_LOOP
+                    shape.add(shape.get(0));
+                    shape.add(shape.get(1));
                 }
                 selectionShape = new float[shape.size()];
                 for(int a = 0; a < shape.size(); a++) {
