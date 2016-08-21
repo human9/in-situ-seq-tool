@@ -1,3 +1,5 @@
+#version 120
+
 attribute vec3 coord2d;
 varying vec4 f_color;
 uniform float offset_x;
@@ -18,11 +20,9 @@ varying float offset;
 varying float size;
 varying float num;
 varying float x;
-varying float d;
 
 void main(void) {
   if(coord2d.z >= 0.0) {
-      d = 0.0;
       x = sel;
       size = ptsize;
       num = texnum;
@@ -34,7 +34,8 @@ void main(void) {
       gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
     }
     else {
-        d = 1.0;
+		gl_Position = vec4(-2, -2, 0, 1);
+		gl_PointSize = 0;
     }
 }
 

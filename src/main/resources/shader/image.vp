@@ -1,3 +1,5 @@
+#version 120
+
 attribute vec4 tex_coords;
 varying vec2 coord;
 
