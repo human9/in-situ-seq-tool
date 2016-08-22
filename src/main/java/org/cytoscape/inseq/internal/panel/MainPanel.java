@@ -81,15 +81,15 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 
     class SeparateFrame extends JFrame {
         static final long serialVersionUID = 4324324l;
-        SeparateFrame(String title, Dimension size) {
+        SeparateFrame(JFrame parent, String title, Dimension size) {
             super(title);
             this.setMinimumSize(new Dimension(100,100));
             setPreferredSize(new Dimension((int)Math.max(size.getWidth(), 400), (int)Math.max(size.getHeight(), 400)));
-            setVisible(true);
             setLayout(new BorderLayout());
             add(selectionPanel);
             pack();
-            
+            setLocationRelativeTo(parent);
+            setVisible(true);
         }
 
     }
@@ -298,6 +298,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
                 else { 
                     session.setSelection(selected.getSelection());
                 }
+                selectionPanel.getJqadvPanel().getUpdater().selectionChanged(true);
             }
         });
         small.add(netBox, netBoxCons);
@@ -322,7 +323,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 pop.setVisible(false);
-                frame = new SeparateFrame("Imageplot", selectionPanel.getSize());
+                frame = new SeparateFrame(ia.getCSAA().getCySwingApplication().getJFrame(), "Imageplot", selectionPanel.getSize());
                 selectionPanel.setWindow(frame);
                 frame.addWindowListener(new WindowAdapter() {
 

@@ -63,6 +63,10 @@ public class SelectionPanel extends JPanel {
     public void setWindow(JFrame parent) {
         this.parent = parent;
     }
+
+    public JqadvPanel getJqadvPanel() {
+        return jqadvpanel;
+    }
     
     public SelectionPanel(final InseqActivator ia) {
         this.ia = ia;

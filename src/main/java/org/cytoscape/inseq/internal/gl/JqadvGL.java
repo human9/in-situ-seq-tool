@@ -57,6 +57,7 @@ public class JqadvGL {
 
     private int nPoints;
     private boolean pc;
+    private boolean initDone = false;
 
     private float[] coords;
     float[] img;
@@ -226,6 +227,8 @@ public class JqadvGL {
         st.uniform(gl2, uniSymbols);
         uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
         st.uniform(gl2, uniColours);
+
+        initDone = true;
 
     }
     
@@ -494,27 +497,29 @@ public class JqadvGL {
 
         public void selectionChanged(boolean pathClosed) {
 
-            if(session.getSelection() != null) {
-                PathIterator pi = session.getSelection().getPathIterator(null);
-                float[] segment = new float[6];
-                ArrayList<Float> shape = new ArrayList<Float>();
-                while(!pi.isDone()) {
-                    pi.currentSegment(segment);
-                    shape.add(segment[0]);
-                    shape.add(segment[1]);
-                    pi.next();
+            if(initDone) {
+                if(session.getSelection() != null) {
+                    PathIterator pi = session.getSelection().getPathIterator(null);
+                    float[] segment = new float[6];
+                    ArrayList<Float> shape = new ArrayList<Float>();
+                    while(!pi.isDone()) {
+                        pi.currentSegment(segment);
+                        shape.add(segment[0]);
+                        shape.add(segment[1]);
+                        pi.next();
+                    }
+                    pc = pathClosed;
+                    selectionShape = FloatBuffer.allocate(shape.size());
+                    for(int a = 0; a < shape.size(); a++) {
+                        selectionShape.put(a, shape.get(a));
+                    }
+                } else {
+                    selectionShape = null;
                 }
-                pc = pathClosed;
-                selectionShape = FloatBuffer.allocate(shape.size());
-                for(int a = 0; a < shape.size(); a++) {
-                    selectionShape.put(a, shape.get(a));
-                }
-            } else {
-                selectionShape = null;
-            }
 
-            updates.add(UpdateType.SELECTION_AREA_CHANGED);
-            canvas.display();
+                updates.add(UpdateType.SELECTION_AREA_CHANGED);
+                canvas.display();
+            }
         }
 
         public void changeImage(BufferedImage i) {
