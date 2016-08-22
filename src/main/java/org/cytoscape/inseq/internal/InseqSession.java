@@ -46,11 +46,11 @@ public class InseqSession {
      */
     public class Gene {
         // The name of the gene
-        String name;
+        public String name;
         // The colour to be displayed
-        Color  color;
+        public Color  color;
         // The position of the symbol in the symbols array
-        Integer symbol;
+        public Integer symbol;
     }
     private List<Gene> genes;
 

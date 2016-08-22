@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
@@ -13,6 +14,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,6 +28,7 @@ import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import com.jogamp.graph.curve.Region;
 import com.jogamp.graph.curve.opengl.RegionRenderer;
 import com.jogamp.graph.curve.opengl.RenderState;
+import com.jogamp.graph.curve.opengl.TextRegionUtil;
 import com.jogamp.graph.font.Font;
 import com.jogamp.graph.font.FontFactory;
 import com.jogamp.graph.geom.SVertex;
@@ -66,14 +69,15 @@ public class JqadvPanel extends JPanel {
     private boolean usePolygon;
     private boolean initPolygon;
     private float[] polyOrigin;
+    int w;
+    int h;
 
 
     public static final int[] SAMPLE_COUNT = new int[]{4};
     public static final int RENDER_MODES = Region.VBAA_RENDERING_BIT;
-    private RegionRenderer entityTextRenderer;
-    private RegionRenderer guiTextRenderer;
+    private RegionRenderer renderer;
+    private TextRegionUtil util;
     private Font font;
-    private Label fpsLabel;
     public JqadvPanel(InseqSession s, SelectionPanel p) {
         
         GLProfile profile = GLProfile.getDefault();
@@ -85,6 +89,7 @@ public class JqadvPanel extends JPanel {
         session = s;
         sp = p;
 
+
         canvas.addGLEventListener(new GLEventListener() {
             
             public void reshape(GLAutoDrawable glautodrawable, 
@@ -92,16 +97,17 @@ public class JqadvPanel extends JPanel {
                                 int width, int height) {
                 jqadvgl.setup(glautodrawable.getGL().getGL2(),
                               width, height);
-                sp.updateZoom(jqadvgl.getScale());
-        entityTextRenderer.reshapeOrtho(width, height, -1, 1);
-        guiTextRenderer.reshapeOrtho(width, height, -1, 1);
+                //sp.updateZoom(jqadvgl.getScale());
+                w = width;
+                h = height;
+        
+                renderer.reshapeOrtho(width, height, -1, 1);
             }
             
             public void init(GLAutoDrawable drawable) {
                 GL gl = drawable.getGL().getGL2();
                 jqadvgl.init((GL2)gl);
                 
-                // load font
                 try {
                     InputStream fs = JqadvGL.class.getResourceAsStream("/font/DroidSans.ttf");
                     font = FontFactory.get(fs, true);
@@ -110,19 +116,14 @@ public class JqadvPanel extends JPanel {
                 }
                 gl.glActiveTexture(GL.GL_TEXTURE0);
 
-                //for font
                 RenderState renderState = RenderState.createRenderState(SVertex.factory());
-                renderState.setColorStatic(1, 1, 1, 1);
-                entityTextRenderer = RegionRenderer.create(renderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
-                entityTextRenderer.init((GL2ES2)gl, RENDER_MODES);
-                entityTextRenderer.enable((GL2ES2)gl, false);
+                renderState.setColorStatic(1, 1, 0, 1);
+                renderState.setHintMask(RenderState.BITHINT_GLOBAL_DEPTH_TEST_ENABLED);
 
-                RenderState guiRenderState = RenderState.createRenderState(SVertex.factory());
-                guiRenderState.setColorStatic(1, 1, 1, 1);
-                guiTextRenderer = RegionRenderer.create(guiRenderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
-                guiTextRenderer.init((GL2ES2)gl, RENDER_MODES);
-                guiTextRenderer.enable((GL2ES2)gl, false);
-                fpsLabel = new Label(guiRenderState.getVertexFactory(), RENDER_MODES, font, 18, "X");
+                renderer = RegionRenderer.create(renderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
+                renderer.init((GL2ES2)gl, RENDER_MODES);
+                
+                util = new TextRegionUtil(RENDER_MODES);
 
             }
             
@@ -137,17 +138,39 @@ public class JqadvPanel extends JPanel {
                     
                 
                 gl.glActiveTexture(GL.GL_TEXTURE0);
-                entityTextRenderer.enable((GL2ES2)gl, true);
-                guiTextRenderer.enable((GL2ES2)gl, true);
-                PMVMatrix matrix = guiTextRenderer.getMatrix();
+                
+                renderer.enable((GL2ES2)gl, true);
+                
+                PMVMatrix matrix = renderer.getMatrix();
                 matrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
                 matrix.glLoadIdentity();
-                matrix.glTranslatef(30, 50, 0);
+                matrix.glTranslatef(10, h-15, 0);
+                
+                float fontSize = font.getPixelSize(10, 96);
+                util.clear((GL2ES2) gl);
+                RenderState rs = renderer.getRenderState();
+                for(InseqSession.Gene gene : session.getGenes()) {
 
-                fpsLabel.setColor(1F, 0.1F, 0.1F, 1);
-                fpsLabel.setText("SHOW ME THE MONEY");
-                fpsLabel.drawShape((GL2ES2)gl, guiTextRenderer, SAMPLE_COUNT);
-                guiTextRenderer.enable((GL2ES2)gl, false);
+                    float[] colour = new float[4];
+                    gene.color.getRGBComponents(colour);
+                    rs.setColorStatic(colour[0], colour[1], colour[2], 1);
+
+                    util.drawString3D((GL2ES2)gl, renderer, font, fontSize, gene.name,
+                            null, SAMPLE_COUNT);
+                
+                    matrix.glTranslatef(0, -15, 0);
+                }
+                rs.setColorStatic(1,1,1,1);
+
+                // Bottom text
+                matrix.glLoadIdentity();
+                matrix.glTranslatef(10, 10, 0);
+                
+                DecimalFormat df = new DecimalFormat("#.##");
+                util.drawString3D((GL2ES2)gl, renderer, font, fontSize, "Zoom: " + df.format(jqadvgl.getScale()*100)+"%",
+                        null, SAMPLE_COUNT);
+
+                renderer.enable((GL2ES2)gl, false);
 
 
             }
@@ -218,19 +241,19 @@ public class JqadvPanel extends JPanel {
             }
 
             @Override
-			public void mouseReleased(MouseEvent e) {
-				if (e.getButton() == MouseEvent.BUTTON1) {
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON1) {
                     float[] p = toGraph(e.getPoint());
-					if(e.getPoint().equals(leftClick))
-					{
+                    if(e.getPoint().equals(leftClick))
+                    {
                         select(p);
                     }
-					dragButton = false;
-				}
-				if (e.getButton() == MouseEvent.BUTTON3) {
-					selectButton = false;
-				}
-			}
+                    dragButton = false;
+                }
+                if (e.getButton() == MouseEvent.BUTTON3) {
+                    selectButton = false;
+                }
+            }
         });
         canvas.addMouseMotionListener(new MouseAdapter() {
             @Override
@@ -261,13 +284,13 @@ public class JqadvPanel extends JPanel {
                     start.setLocation(e.getPoint());
                     canvas.display();
                 }
-				if (selectButton && !usePolygon) {
+                if (selectButton && !usePolygon) {
                     rectangle.setFrameFromDiagonal(
                             origin,
                             new Point2D.Float(p[0], p[1]));
                     session.setSelection(rectangle);
                     getUpdater().selectionChanged(true);
-				}
+                }
                 if (initPolygon && usePolygon) {
                     GeneralPath current = (GeneralPath) polygon.clone();
                     boolean pathClosed = false;

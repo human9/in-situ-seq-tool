@@ -115,6 +115,7 @@ public class VisualPicker extends JDialog implements ChangeListener
         session.setGeneColour(type, colour);
         session.setGeneSymbol(type, symbol);
         session.refreshStyle();
+        panel.getUpdater().changeColour(type, session.getGeneColour(type));
         dispose();
     }
 
