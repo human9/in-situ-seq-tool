@@ -156,6 +156,16 @@ public class SelectionPanel extends JPanel {
                 jqadvpanel.enablePoly();
             }
         });
+        
+        JButton center 
+            = new JButton("CENTER");
+        plotControls.add(center);
+        center.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.center();
+            }
+        });
 
         JCheckBox bigSymbols = new JCheckBox("Big symbols");
         plotControls.add(bigSymbols);

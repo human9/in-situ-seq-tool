@@ -53,6 +53,7 @@ public class JqadvGL {
     private float h;
     private float scale_master = 1;
     private float point_scale = 1f;
+    private boolean makeCenter = true;
 
     private int nPoints;
     private boolean pc;
@@ -95,7 +96,7 @@ public class JqadvGL {
         this.session = s;
         this.transcripts = s.getRaw();
         this.canvas = canvas;
-        
+
         // num = how many types of gene we have
         int num = s.getGenes().size();
 
@@ -251,6 +252,39 @@ public class JqadvGL {
         
     }
 
+    /**
+     * Center and scale the view so that as much of the data as possible is visible.
+     */
+    public void centerView() {
+        
+        // the gl coords of the center
+        float[] center = graphToGL(session.min.width / 2f, session.min.height / 2f);
+        
+        offset_x -= center[0] / scale_master * w;
+        offset_y += center[1] / scale_master * h;
+
+        // the gl coords of the left edge
+        float[] left = graphToGL(0f, 0f);
+        
+        while(left[0] > -1 || left[1] > -1) {
+            // we have more space, scale up
+            if(!scale(-1, 0, 0)) {
+                // reached scale limit
+                break;
+            }
+            left = graphToGL(0f,0f);
+        }
+        
+        while(left[0] < -1 || left[1] < -1) {
+            // it's off the screen. try scaling down
+            if(!scale(1, 0, 0)) {
+                // reached scale limit
+                break;
+            }
+            left = graphToGL(0f,0f);
+        }
+    }
+
     protected void setup(GL2 gl2, int width, int height) {
         
         // Update viewport size to canvas dimensions
@@ -261,6 +295,14 @@ public class JqadvGL {
         
         Util.updateUniform(gl2, st, "width", (float)width);
         Util.updateUniform(gl2, st, "height", (float)height);
+
+
+        // Center the view
+        if (makeCenter) {
+            centerView(); 
+            makeCenter = false;
+        }
+        
     }
 
     protected void render(GL2 gl2, int width, int height) {

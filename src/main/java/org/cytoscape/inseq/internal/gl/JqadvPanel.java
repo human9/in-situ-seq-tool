@@ -72,6 +72,7 @@ public class JqadvPanel extends JPanel {
                                 int width, int height) {
                 jqadvgl.setup(glautodrawable.getGL().getGL2(),
                               width, height);
+                sp.updateZoom(jqadvgl.getScale());
             }
             
             public void init(GLAutoDrawable drawable) {
@@ -235,6 +236,12 @@ public class JqadvPanel extends JPanel {
     public void enableRect() {
         usePolygon = false;
         session.setSelection(null);
+    }
+
+    public void center() {
+        jqadvgl.centerView();
+        sp.updateZoom(jqadvgl.getScale());
+        canvas.display();
     }
 
     /**
