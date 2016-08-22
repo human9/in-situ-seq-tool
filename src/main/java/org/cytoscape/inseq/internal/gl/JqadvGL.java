@@ -229,6 +229,9 @@ public class JqadvGL {
         st.uniform(gl2, uniColours);
 
         initDone = true;
+        
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, 0);
 
     }
     
@@ -309,6 +312,11 @@ public class JqadvGL {
     }
 
     protected void render(GL2 gl2, int width, int height) {
+
+        gl2.glEnable(GL.GL_BLEND);
+        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        gl2.glEnable(GL2.GL_POINT_SPRITE);
+        gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
         engine.makeChanges(gl2);
 
@@ -394,6 +402,9 @@ public class JqadvGL {
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
             gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
         }
+
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, 0);
 
     }
 

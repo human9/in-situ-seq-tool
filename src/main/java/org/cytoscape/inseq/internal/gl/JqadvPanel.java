@@ -11,6 +11,8 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,11 +23,22 @@ import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
 import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
+import com.jogamp.graph.curve.Region;
+import com.jogamp.graph.curve.opengl.RegionRenderer;
+import com.jogamp.graph.curve.opengl.RenderState;
+import com.jogamp.graph.font.Font;
+import com.jogamp.graph.font.FontFactory;
+import com.jogamp.graph.geom.SVertex;
+import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
+import com.jogamp.opengl.util.PMVMatrix;
 
 import edu.wlu.cs.levy.CG.KeySizeException;
 
@@ -54,6 +67,13 @@ public class JqadvPanel extends JPanel {
     private boolean initPolygon;
     private float[] polyOrigin;
 
+
+    public static final int[] SAMPLE_COUNT = new int[]{4};
+    public static final int RENDER_MODES = Region.VBAA_RENDERING_BIT;
+    private RegionRenderer entityTextRenderer;
+    private RegionRenderer guiTextRenderer;
+    private Font font;
+    private Label fpsLabel;
     public JqadvPanel(InseqSession s, SelectionPanel p) {
         
         GLProfile profile = GLProfile.getDefault();
@@ -73,19 +93,61 @@ public class JqadvPanel extends JPanel {
                 jqadvgl.setup(glautodrawable.getGL().getGL2(),
                               width, height);
                 sp.updateZoom(jqadvgl.getScale());
+        entityTextRenderer.reshapeOrtho(width, height, -1, 1);
+        guiTextRenderer.reshapeOrtho(width, height, -1, 1);
             }
             
             public void init(GLAutoDrawable drawable) {
-                jqadvgl.init(drawable.getGL().getGL2());
+                GL gl = drawable.getGL().getGL2();
+                jqadvgl.init((GL2)gl);
+                
+                // load font
+                try {
+                    InputStream fs = JqadvGL.class.getResourceAsStream("/font/DroidSans.ttf");
+                    font = FontFactory.get(fs, true);
+                } catch (IOException e) {
+                    System.out.println("could not create font file");
+                }
+
+                //for font
+                RenderState renderState = RenderState.createRenderState(SVertex.factory());
+                renderState.setColorStatic(1, 1, 1, 1);
+                entityTextRenderer = RegionRenderer.create(renderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
+                entityTextRenderer.init((GL2ES2)gl, RENDER_MODES);
+                entityTextRenderer.enable((GL2ES2)gl, false);
+
+                RenderState guiRenderState = RenderState.createRenderState(SVertex.factory());
+                guiRenderState.setColorStatic(1, 1, 1, 1);
+                guiTextRenderer = RegionRenderer.create(guiRenderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
+                guiTextRenderer.init((GL2ES2)gl, RENDER_MODES);
+                guiTextRenderer.enable((GL2ES2)gl, false);
+                fpsLabel = new Label(guiRenderState.getVertexFactory(), RENDER_MODES, font, 18, "X");
+
             }
             
             public void dispose(GLAutoDrawable drawable) {
             }
             
             public void display(GLAutoDrawable drawable) {
-                jqadvgl.render(drawable.getGL().getGL2(),
+                GL gl = drawable.getGL().getGL2();
+                jqadvgl.render((GL2)gl,
                                drawable.getSurfaceWidth(),
                                drawable.getSurfaceHeight());
+                    
+                
+                entityTextRenderer.enable((GL2ES2)gl, true);
+                guiTextRenderer.enable((GL2ES2)gl, true);
+                PMVMatrix matrix = guiTextRenderer.getMatrix();
+                matrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+                matrix.glLoadIdentity();
+                matrix.glTranslatef(30, 50, 0);
+
+                fpsLabel.setColor(1F, 0.1F, 0.1F, 1);
+                fpsLabel.setText("SHOW ME THE MONEY");
+                fpsLabel.drawShape((GL2ES2)gl, guiTextRenderer, SAMPLE_COUNT);
+                guiTextRenderer.enable((GL2ES2)gl, false);
+
+
             }
         });
 
