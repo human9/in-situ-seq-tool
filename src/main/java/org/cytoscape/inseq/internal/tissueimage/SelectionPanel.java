@@ -3,7 +3,6 @@ package org.cytoscape.inseq.internal.tissueimage;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +52,6 @@ public class SelectionPanel extends JPanel {
     public JPanel externalControls;
     InseqActivator ia;
     boolean showAllSelected = false;
-    public StatusBar statusBar;
     private JButton colourPicker;
     private JFrame parent;
     private InseqSession session;
@@ -75,19 +73,15 @@ public class SelectionPanel extends JPanel {
 
         setLayout(new BorderLayout());
         plotControls = new JPanel();
-        plotControls.setLayout(new WrapLayout(WrapLayout.LEADING));
+
+        WrapLayout wl = new WrapLayout(WrapLayout.LEADING);
+        wl.setVgap(1);
+        plotControls.setLayout(wl);
         
         add(plotControls, BorderLayout.PAGE_START);
 
         jqadvpanel = new JqadvPanel(ia.getSession(), this);
         add(jqadvpanel, BorderLayout.CENTER);
-        //final ImagePane ip = new ImagePane(null, ia.getSession(), 
-          //      new Dimension(300,300));
-        //imagePane = ip;
-        statusBar = new StatusBar();
-        updateZoom(1f);
-        //zp = new ZoomPane(this, ia.getSession());
-        //add(zp, BorderLayout.CENTER);
 
         JButton browse 
             = new JButton(UIManager.getIcon("FileView.directoryIcon"));
@@ -190,14 +184,6 @@ public class SelectionPanel extends JPanel {
         });
         colourPicker.setEnabled(false);
         
-        JPanel statusPanel = new JPanel();
-        BorderLayout layout = new BorderLayout();
-        layout.setVgap(0);
-        statusPanel.setLayout(layout);
-        add(statusPanel, BorderLayout.PAGE_END);
-
-        statusPanel.add(statusBar, BorderLayout.CENTER);
-    
         JSpinner pointScale 
             = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
         JPanel scalePanel = new JPanel();
@@ -206,7 +192,7 @@ public class SelectionPanel extends JPanel {
         scalePanel.setLayout(scaleLayout);
         scalePanel.add(new JLabel("Scaling: "), BorderLayout.LINE_START);
         scalePanel.add(pointScale);
-        statusPanel.add(scalePanel, BorderLayout.LINE_END);
+        plotControls.add(scalePanel, BorderLayout.LINE_END);
         pointScale.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -215,21 +201,12 @@ public class SelectionPanel extends JPanel {
         });
     }
 
-    public void updateZoom(float z) {
-        DecimalFormat df = new DecimalFormat("#.##");
-        statusBar.setZoom(df.format(z*100)+"%");
-    }
-
     public void setSelected(Transcript t) {
         if(t == null) {
-            statusBar.setTranscript(""); 
             colourPicker.setEnabled(false);
         }
         else {
             selected = t;
-            DecimalFormat df = new DecimalFormat("#.##");
-            statusBar.setTranscript(session.name(t.type) + " ("+df.format(t.pos.x)+", "
-                    + df.format(t.pos.y) + ")");
             colourPicker.setEnabled(true);
         }
 
@@ -289,33 +266,6 @@ public class SelectionPanel extends JPanel {
 
         jqadvpanel.getUpdater().changeNetworkComponents();
 
-    }
-
-}
-
-class StatusBar extends JLabel {
-
-    private static final long serialVersionUID = 43852L;
-    private String transcript = "";
-    private String zoom;
-
-    StatusBar() {
-        super();
-        updateText();
-    }
-
-    void setTranscript(String str) {
-        this.transcript = str;
-        updateText();
-    }
-    
-    public void setZoom(String str) {
-        this.zoom = str;
-        updateText();
-    }
-
-    void updateText() {
-        this.setText("Z: " + zoom + " " + transcript);
     }
 
 }

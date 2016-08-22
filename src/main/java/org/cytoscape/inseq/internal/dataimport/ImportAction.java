@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JFileChooser;
@@ -54,6 +55,7 @@ public class ImportAction extends AbstractCyAction {
 			in = new FileReader(raw);
 			if(!ParseUtil.parseXYFile(in, names, transcripts)) return;
 			in.close();
+            Collections.sort(names);
 			ia.constructTree(names, transcripts, ia);
 		} 
 		catch (FileNotFoundException x) {

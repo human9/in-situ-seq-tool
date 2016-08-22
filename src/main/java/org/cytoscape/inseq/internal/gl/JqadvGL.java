@@ -3,7 +3,10 @@ package org.cytoscape.inseq.internal.gl;
 import java.awt.Color;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.FloatBuffer;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -13,11 +16,21 @@ import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
 
+import com.jogamp.graph.curve.Region;
+import com.jogamp.graph.curve.opengl.RegionRenderer;
+import com.jogamp.graph.curve.opengl.RenderState;
+import com.jogamp.graph.curve.opengl.TextRegionUtil;
+import com.jogamp.graph.font.Font;
+import com.jogamp.graph.font.FontFactory;
+import com.jogamp.graph.geom.SVertex;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLUniformData;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
 import com.jogamp.opengl.util.GLBuffers;
+import com.jogamp.opengl.util.PMVMatrix;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
@@ -81,6 +94,12 @@ public class JqadvGL {
     private GLCanvas canvas;
 
     final public UpdateEngine engine = new UpdateEngine();
+
+    public static final int[] SAMPLE_COUNT = new int[]{4};
+    public static final int RENDER_MODES = Region.COLORCHANNEL_RENDERING_BIT + Region.VBAA_RENDERING_BIT;
+    private RegionRenderer renderer;
+    private TextRegionUtil util;
+    private Font font;
 
     public void setPointScale(float value) {
 
@@ -233,6 +252,23 @@ public class JqadvGL {
         uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
         st.uniform(gl2, uniColours);
 
+        try {
+            InputStream fs = JqadvGL.class.getResourceAsStream("/font/DroidSans.ttf");
+            font = FontFactory.get(fs, true);
+        } catch (IOException e) {
+            System.out.println("could not create font file");
+        }
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+
+        RenderState renderState = RenderState.createRenderState(SVertex.factory());
+        renderState.setHintMask(RenderState.BITHINT_GLOBAL_DEPTH_TEST_ENABLED);
+
+        renderState.setColorStatic(1,1,1,1);
+        renderer = RegionRenderer.create(renderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
+        renderer.init((GL2ES2)gl2, RENDER_MODES);
+        
+        util = new TextRegionUtil(RENDER_MODES);
+
         initDone = true;
 
     }
@@ -310,6 +346,8 @@ public class JqadvGL {
             centerView(); 
             makeCenter = false;
         }
+        
+        renderer.reshapeOrtho(width, height, -1, 1);
         
     }
 
@@ -404,6 +442,50 @@ public class JqadvGL {
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
             gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
         }
+
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+        
+        renderer.enable((GL2ES2)gl2, true);
+        
+        PMVMatrix matrix = renderer.getMatrix();
+        matrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+        matrix.glLoadIdentity();
+        matrix.glTranslatef(5, h-15, 0);
+        
+        float fontSize = font.getPixelSize(10, 96);
+        float[] colour = new float[4];
+        for(InseqSession.Gene gene : session.getGenes()) {
+
+            gene.color.getRGBComponents(colour);
+            colour[3] = 1;
+
+            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, gene.name,
+                    colour, SAMPLE_COUNT);
+        
+            matrix.glTranslatef(0, -15, 0);
+        }
+
+        if(selection != null) {
+            float size = font.getPixelSize(10, 96);
+            String display = session.name(selection.type) + selection;
+            matrix.glLoadIdentity();
+            matrix.glTranslatef(w-(size/2)*display.length(), h-15, 0);
+            session.getGeneColour(selection.type).getRGBColorComponents(colour);
+            util.drawString3D((GL2ES2)gl2, renderer, font, size, display,
+                    colour, SAMPLE_COUNT);
+        }
+
+        // Bottom text
+        matrix.glLoadIdentity();
+        matrix.glTranslatef(5, 10, 0);
+        
+        DecimalFormat df = new DecimalFormat("#.##");
+        util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, "Zoom: " + df.format(getScale()*100)+"%",
+                new float[] {1,1,1,1}, SAMPLE_COUNT);
+
+        renderer.enable((GL2ES2)gl2, false);
+
+
 
     }
 
@@ -590,6 +672,7 @@ public class JqadvGL {
                         break;
                     case COLOUR_CHANGED:
                         uniColours.setData(FloatBuffer.wrap(colours));
+                        util.clear(gl2);
                         st.uniform(gl2, uniColours);
                         break;
                     case SYMBOL_CHANGED:
