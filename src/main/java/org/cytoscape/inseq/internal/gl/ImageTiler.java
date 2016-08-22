@@ -13,7 +13,37 @@ import com.jogamp.opengl.util.GLBuffers;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
+/**
+ * Attempts to create an image that will back the points.
+ * If it will not fit within a single texture, it is split into smaller
+ * fragments. 
+ */
 public class ImageTiler {
+        
+    private Texture[] tiles;
+    private Dimension req;
+    int MAX_TEXTURE_SIZE;
+    int MAX_TEXTURE_UNITS;
+    int w;
+    int h;
+    BufferedImage bufferedImage;
+
+    public ImageTiler(GL2 gl2, BufferedImage bufferedImage) {
+        
+        w = bufferedImage.getWidth();
+        h = bufferedImage.getHeight();
+        
+        // Detect texture size limits.
+        int[] limits = detectHardwareLimits(gl2);
+        MAX_TEXTURE_SIZE = limits[0];
+        MAX_TEXTURE_UNITS = limits[1];
+
+        req = getRequiredTiles(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
+
+        this.bufferedImage = bufferedImage;
+
+
+    }
 
     /**
      * Detect how large textures can be, and how many we can have.
@@ -29,33 +59,19 @@ public class ImageTiler {
         return new int[] {tex_size[0], tex_num[0] };
     }
 
-    /**
-     * Attempts to create an image that will back the points.
-     * If it will not fit within a single texture, it is split into smaller
-     * fragments. 
-     */
-    public static int makeBackgroundImage(GL2 gl2, int imageVBO, BufferedImage bufferedImage) {
-
-        int w = bufferedImage.getWidth();
-        int h = bufferedImage.getHeight();
+    public int bindTexture(GL2 gl2) {
         
-        // Detect texture size limits.
-        int[] limits = detectHardwareLimits(gl2);
-        int MAX_TEXTURE_SIZE = limits[0];
-        int MAX_TEXTURE_UNITS = limits[1];
-
-        Dimension req = getRequiredTiles(MAX_TEXTURE_SIZE, MAX_TEXTURE_UNITS, w, h); 
-        float[]img = getVertices(req, w, h);
-
         // make and bind subimage tiles
         int tilew = w / req.width;
         int tileh = h / req.height;
         BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
-        for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS; i++) {
+        tiles = new Texture[req.width * req.height];
+
+        int numTiles = 0;
+        for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS - 2; i++) {
 
             int vl1 = (int) ((i%req.width) * tilew);
             int vu1 = (int) (((i/req.width)%req.height) * tileh);
-            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+1);
             
             // BufferedImage buf = bufferedImage.getSubimage(vl1, vu1, tilew, tileh);
             // BufferedImage.getSubimage sometimes fails for reasons unknown.
@@ -64,10 +80,26 @@ public class ImageTiler {
             g.drawImage(bufferedImage, 0, 0, tilew, tileh, vl1, vu1, vl1+tilew, vu1+tileh, null);
 
             Texture tile = AWTTextureIO.newTexture(GLProfile.getDefault(), sub, true);
-            gl2.glBindTexture(GL.GL_TEXTURE_2D, tile.getTextureObject()); }
+            tiles[i] = tile;
+            numTiles ++;
+        }
+
+        for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS - 2; i++) {
+            gl2.glActiveTexture(GL.GL_TEXTURE0 + i+2);
+            gl2.glBindTexture(GL.GL_TEXTURE_2D, tiles[i].getTextureObject());
+        }
+        
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+
+        return numTiles;
+    }
+
+    public void bindVertices(GL2 gl2, int imageVBO) {
+        
+        float[] img = getVertices(req, w, h);
 
         int num_tiles = img.length / 24;
-        System.out.println("Rendering image with " + num_tiles + " tile(s)");
+        System.out.println("Rendering background with " + num_tiles + " tile(s)");
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
@@ -76,8 +108,6 @@ public class ImageTiler {
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        return num_tiles;
-        
     }
 
     private static Dimension getRequiredTiles(int dim_max, int tile_max, int w, int h) {

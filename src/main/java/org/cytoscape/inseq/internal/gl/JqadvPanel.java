@@ -108,6 +108,7 @@ public class JqadvPanel extends JPanel {
                 } catch (IOException e) {
                     System.out.println("could not create font file");
                 }
+                gl.glActiveTexture(GL.GL_TEXTURE0);
 
                 //for font
                 RenderState renderState = RenderState.createRenderState(SVertex.factory());
@@ -135,6 +136,7 @@ public class JqadvPanel extends JPanel {
                                drawable.getSurfaceHeight());
                     
                 
+                gl.glActiveTexture(GL.GL_TEXTURE0);
                 entityTextRenderer.enable((GL2ES2)gl, true);
                 guiTextRenderer.enable((GL2ES2)gl, true);
                 PMVMatrix matrix = guiTextRenderer.getMatrix();

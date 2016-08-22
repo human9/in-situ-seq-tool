@@ -33,10 +33,10 @@ public class JqadvGL {
     private int imageVBO;
     private int bkgrndVBO;
     private int selectionVBO;
+    
+    private Texture symbols_tex;
 
-    private int num_tiles;
-    private BufferedImage image;
-
+    private ImageTiler imageTiler;
 
     // Shaders
     private ShaderState st;
@@ -54,6 +54,7 @@ public class JqadvGL {
     private float scale_master = 1;
     private float point_scale = 1f;
     private boolean makeCenter = true;
+    private int numTiles = 0;
 
     private int nPoints;
     private boolean pc;
@@ -153,10 +154,9 @@ public class JqadvGL {
         
         // Retrieve and bind the point sprites. These are the symbols that
         // appear on each transcript location.
-        gl2.glActiveTexture(GL.GL_TEXTURE0);
-        Texture symbols_tex = Util.textureFromBufferedImage(pointSprites);
+        gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
+        symbols_tex = Util.textureFromBufferedImage(pointSprites);
         gl2.glBindTexture(GL.GL_TEXTURE_2D, symbols_tex.getTextureObject());
-
         // Disable texture interpolation for point sprites.
         gl2.glTexParameteri(GL.GL_TEXTURE_2D,
                             GL.GL_TEXTURE_MIN_FILTER,
@@ -164,6 +164,9 @@ public class JqadvGL {
         gl2.glTexParameteri(GL.GL_TEXTURE_2D,
                             GL.GL_TEXTURE_MAG_FILTER,
                             GL.GL_NEAREST);
+
+        gl2.glActiveTexture(GL.GL_TEXTURE0);
+
 
         // Create four vertex buffer objects
         // 1. verticesVBO: contains the actual transcript points
@@ -181,10 +184,11 @@ public class JqadvGL {
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         imageVBO = buf[1];
         
-        if(image != null) {
+        if(imageTiler != null) {
             //TODO: Maybe ask if you really want to reload the image
             //(it can take a while if it's huge)
-            num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);
+            imageTiler.bindVertices(gl2, imageVBO);
+            numTiles = imageTiler.bindTexture(gl2);
         }
 
         bkgrndVBO = buf[2];
@@ -211,8 +215,7 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "offset_y", offset_y);
         Util.makeUniform(gl2, st, "mouse_x", mouse_x);
         Util.makeUniform(gl2, st, "mouse_y", mouse_y);
-        Util.makeUniform(gl2, st, "sprite", 0);
-        Util.makeUniform(gl2, st, "background", 1);
+        Util.makeUniform(gl2, st, "background", 2);
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
         Util.makeUniform(gl2, st, "ptscale", point_scale);
         Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
@@ -223,15 +226,14 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "height", 1f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
+        GLUniformData sprite = new GLUniformData("sprite", 1);
+        st.uniform(gl2, sprite);
         uniSymbols = new GLUniformData("symbols", 1, FloatBuffer.wrap(symbols));
         st.uniform(gl2, uniSymbols);
         uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
         st.uniform(gl2, uniColours);
 
         initDone = true;
-        
-        gl2.glActiveTexture(GL.GL_TEXTURE0);
-        gl2.glBindTexture(GL.GL_TEXTURE_2D, 0);
 
     }
     
@@ -340,8 +342,8 @@ public class JqadvGL {
 
         st.attachShaderProgram(gl2, imgsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        for(int i = 0; i < num_tiles; i++) {
-            Util.updateUniform(gl2, st, "background", i+1);
+        for(int i = 0; i < numTiles; i++) {
+            Util.updateUniform(gl2, st, "background", i+2);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
             gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
@@ -402,9 +404,6 @@ public class JqadvGL {
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
             gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
         }
-
-        gl2.glActiveTexture(GL.GL_TEXTURE0);
-        gl2.glBindTexture(GL.GL_TEXTURE_2D, 0);
 
     }
 
@@ -489,6 +488,8 @@ public class JqadvGL {
 
         // An empty set of update type enums
         private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
+
+        private BufferedImage image;
 
         public void changeNetworkComponents() {
 
@@ -582,7 +583,10 @@ public class JqadvGL {
                         }
                         break;
                     case IMAGE_CHANGED:
-                        num_tiles = ImageTiler.makeBackgroundImage(gl2, imageVBO, image);
+                        imageTiler = new ImageTiler(gl2, image);
+                        imageTiler.bindVertices(gl2, imageVBO);
+                        numTiles = imageTiler.bindTexture(gl2);
+                        image = null;
                         break;
                     case COLOUR_CHANGED:
                         uniColours.setData(FloatBuffer.wrap(colours));
