@@ -510,7 +510,7 @@ public class JqadvGL {
 
         if(selection != null) {
             float size = font.getPixelSize(10, 96);
-            String display = session.name(selection.type) + selection;
+            String display = session.name(selection.type) + " " + selection;
             matrix.glLoadIdentity();
             matrix.glTranslatef(w-(size/2)*display.length(), h-15, 0);
             session.getGeneColour(selection.type).getRGBColorComponents(colour);
