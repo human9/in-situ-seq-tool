@@ -58,6 +58,7 @@ public class JqadvPanel extends JPanel {
 
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
+		capabilities.setStencilBits(8);
         canvas = new GLCanvas(capabilities);
         jqadvgl = new JqadvGL(s, canvas);
         setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));

@@ -49,11 +49,11 @@ public class Util
         final ShaderCode vp = 
             ShaderCode.create(gl2,
                     GL2.GL_VERTEX_SHADER, Util.class,
-                    "shader", null, name, false);
+                    "shader", null, name, "vert", null, false);
         final ShaderCode fp = 
             ShaderCode.create(gl2,
                     GL2.GL_FRAGMENT_SHADER, Util.class,
-                    "shader", null, name, false);
+                    "shader", null, name, "frag", null, false);
 
         ShaderProgram p = new ShaderProgram();
         p.add(gl2, vp, System.err);
