@@ -57,6 +57,7 @@ public class JqadvGL {
     private ShaderProgram imgsp;
     private ShaderProgram bgrndsp;
     private ShaderProgram simplesp;
+    private ShaderProgram boxsp;
 
     private float offset_x = 0;
     private float offset_y = 0;
@@ -291,6 +292,9 @@ public class JqadvGL {
         simplesp = Util.compileProgram(gl2, "simple");
         st.attachShaderProgram(gl2, simplesp, false);
 
+        boxsp = Util.compileProgram(gl2, "box");
+        st.attachShaderProgram(gl2, boxsp, false);
+
         bgrndsp = Util.compileProgram(gl2, "bgrnd");
         st.attachShaderProgram(gl2, bgrndsp, true);
         
@@ -368,7 +372,7 @@ public class JqadvGL {
         Util.updateUniform(gl2, st, "mouse_x", mouse_x);
         Util.updateUniform(gl2, st, "mouse_y", mouse_y);
 
-        gl2.glClear(GL.GL_COLOR_BUFFER_BIT);
+        gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
         st.attachShaderProgram(gl2, bgrndsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
@@ -416,7 +420,7 @@ public class JqadvGL {
             gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
             if(pc) {
                 Util.updateUniform(gl2, st, "closed", 1f);
-                gl2.glDrawArrays(GL.GL_LINE_LOOP, 0, selectionShape.capacity() / 2);
+                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, selectionShape.capacity() / 2 - 1);
             } else {
                 Util.updateUniform(gl2, st, "closed", 0f);
                 gl2.glDrawArrays(GL.GL_LINE_STRIP, 0, selectionShape.capacity() / 2);
@@ -426,7 +430,46 @@ public class JqadvGL {
 
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         }
+       
+        if(selectionShape != null && pc && selectionShape.capacity() > 9) {
+        
+            gl2.glEnable(GL.GL_STENCIL_TEST);
 
+            st.attachShaderProgram(gl2, simplesp, true);
+            //fill polygon w/ stencil buffer
+            gl2.glColorMask(false, false, false, false);
+            gl2.glStencilFunc(GL.GL_ALWAYS, 1, 0);
+            gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_INVERT);
+            gl2.glStencilMask(1);
+
+            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+            
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+            gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, selectionShape.capacity() / 2);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+            
+            st.attachShaderProgram(gl2, boxsp, true);
+
+            gl2.glColorMask(true, true, true, true);
+            gl2.glStencilFunc(GL.GL_EQUAL, 0, 1);
+            gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP);
+
+            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+            
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
+            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+            gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+            
+            gl2.glDisable(GL.GL_STENCIL_TEST);
+
+        }
+        
         if(selection != null) {
             
             st.attachShaderProgram(gl2, jqsp, true);
@@ -596,6 +639,11 @@ public class JqadvGL {
                     PathIterator pi = session.getSelection().getPathIterator(null);
                     float[] segment = new float[6];
                     ArrayList<Float> shape = new ArrayList<Float>();
+                    if(pathClosed) {
+                        // For stencil buffer triangle drawing
+                        shape.add(0f);
+                        shape.add(0f);
+                    }
                     while(!pi.isDone()) {
                         pi.currentSegment(segment);
                         shape.add(segment[0]);
@@ -603,6 +651,12 @@ public class JqadvGL {
                         pi.next();
                     }
                     pc = pathClosed;
+                    if(pathClosed) {
+                        // add origin at end
+                        shape.add(shape.get(2));
+                        shape.add(shape.get(3));
+                    }
+
                     selectionShape = FloatBuffer.allocate(shape.size());
                     for(int a = 0; a < shape.size(); a++) {
                         selectionShape.put(a, shape.get(a));
