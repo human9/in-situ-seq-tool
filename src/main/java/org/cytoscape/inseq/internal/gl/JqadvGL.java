@@ -639,7 +639,7 @@ public class JqadvGL {
         }
 
         public void updateScale(float direction, float x, float y) {
-            scaleFiFo.add(new float[] {direction,x,y});
+            scaleFiFo.addLast(new float[] {direction,x,y});
             core.resume();
         }
 
@@ -726,8 +726,14 @@ public class JqadvGL {
             
 
             if(!scaleFiFo.isEmpty()) {
+                int size = scaleFiFo.size();
+                
                 float[] dxy = scaleFiFo.removeFirst();
                 scale((int)dxy[0], dxy[1], dxy[2]);
+                while(scaleFiFo.size() > size * 0.5) {
+                    dxy = scaleFiFo.removeFirst();
+                    scale((int)dxy[0], dxy[1], dxy[2]);
+                }
             }
             if(!moveFiFo.isEmpty()) {
                 // need some kind of algorithm that scales properly
@@ -743,7 +749,7 @@ public class JqadvGL {
                     offset_y += (xy[1] / scale_master);
                 }
             }
-            else {
+            if(scaleFiFo.isEmpty() && moveFiFo.isEmpty()) {
                 core.pause();
             }
 
