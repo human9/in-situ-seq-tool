@@ -616,6 +616,8 @@ public class JqadvGL {
         public UpdateEngine(GLAutoDrawable drawable) {
             core = new Animator(drawable);
             core.setRunAsFastAsPossible(true);
+            core.start();
+            core.pause();
         }
 
         // An empty set of update type enums
@@ -631,7 +633,7 @@ public class JqadvGL {
         public void move(float x, float y) {
             // push event onto fifo
             fifo.addLast(new float[] {x,y});
-            core.start();
+            core.resume();
         }
 
         public void changeNetworkComponents() {
@@ -718,18 +720,20 @@ public class JqadvGL {
 
             if(!fifo.isEmpty()) {
                 // need some kind of algorithm that scales properly
+                int size = fifo.size();
+
                 float[] xy = fifo.removeFirst();
                 offset_x -= (xy[0] / scale_master);
                 offset_y += (xy[1] / scale_master);
-                while(fifo.size() > 10) {
+
+                while(fifo.size() > size * 0.5) {
                     xy = fifo.removeFirst();
                     offset_x -= (xy[0] / scale_master);
                     offset_y += (xy[1] / scale_master);
                 }
-                System.out.println(fifo.size());
-
-            } else {
-                core.stop();
+            }
+            else {
+                core.pause();
             }
 
             for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
