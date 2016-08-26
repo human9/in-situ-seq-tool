@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -26,9 +27,10 @@ import com.jogamp.graph.geom.SVertex;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL2ES2;
+import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLUniformData;
-import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
+import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.GLBuffers;
 import com.jogamp.opengl.util.PMVMatrix;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
@@ -93,9 +95,9 @@ public class JqadvGL {
     private List<Transcript> transcripts;
     private List<InseqSession.Gene> genesAlphabetical;
     private InseqSession session;
-    private GLCanvas canvas;
+    private GLAutoDrawable canvas;
 
-    final public UpdateEngine engine = new UpdateEngine();
+    final public UpdateEngine engine;
 
     public static final int[] SAMPLE_COUNT = new int[]{4};
     public static final int RENDER_MODES = Region.COLORCHANNEL_RENDERING_BIT + Region.VBAA_RENDERING_BIT;
@@ -115,10 +117,11 @@ public class JqadvGL {
             point_scale = 1;
     }
 
-    public JqadvGL(InseqSession s, GLCanvas canvas) {
+    public JqadvGL(InseqSession s, GLAutoDrawable canvas) {
         this.session = s;
         this.transcripts = s.getRaw();
         this.canvas = canvas;
+        this.engine = new UpdateEngine(canvas);
 
         genesAlphabetical = s.getGenes();
         // num = how many types of gene we have
@@ -576,13 +579,7 @@ public class JqadvGL {
         return false; 
     }
 
-    /**
-     * Pans the image.
-     */
-    public void move(float x, float y) {
-        offset_x -= (x / scale_master);
-        offset_y += (y / scale_master);
-    }
+
 
     /**
      * Converts a graph point into gl coordinate space.
@@ -613,10 +610,29 @@ public class JqadvGL {
      */
     public class UpdateEngine {
 
+
+        Animator core;
+
+        public UpdateEngine(GLAutoDrawable drawable) {
+            core = new Animator(drawable);
+            core.setRunAsFastAsPossible(true);
+        }
+
         // An empty set of update type enums
         private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
 
         private BufferedImage image;
+        
+        /**
+         * Pans the image.
+         */
+
+        ArrayDeque<float[]> fifo = new ArrayDeque<float[]>();
+        public void move(float x, float y) {
+            // push event onto fifo
+            fifo.addLast(new float[] {x,y});
+            core.start();
+        }
 
         public void changeNetworkComponents() {
 
@@ -699,6 +715,23 @@ public class JqadvGL {
          */
         public void makeChanges(GL2 gl2) {
             
+
+            if(!fifo.isEmpty()) {
+                // need some kind of algorithm that scales properly
+                float[] xy = fifo.removeFirst();
+                offset_x -= (xy[0] / scale_master);
+                offset_y += (xy[1] / scale_master);
+                while(fifo.size() > 10) {
+                    xy = fifo.removeFirst();
+                    offset_x -= (xy[0] / scale_master);
+                    offset_y += (xy[1] / scale_master);
+                }
+                System.out.println(fifo.size());
+
+            } else {
+                core.stop();
+            }
+
             for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
                 UpdateType update = i.next();
                 switch(update) {
@@ -746,6 +779,6 @@ public class JqadvGL {
         SELECTION_AREA_CHANGED,
         IMAGE_CHANGED,
         COLOUR_CHANGED,
-        SYMBOL_CHANGED
+        SYMBOL_CHANGED,
     }
 }
