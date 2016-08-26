@@ -205,12 +205,9 @@ public class JqadvPanel extends NewtCanvasAWT {
 
         @Override
         public void mouseWheelMoved(MouseEvent e) {
-            if(jqadvgl.scale(-(int)e.getRotation()[1], 
+            jqadvgl.engine.updateScale(-e.getRotation()[1], 
                           glX(e.getX()),
-                          glY(e.getY()))
-                    ) {
-                window.display();
-            }
+                          glY(e.getY()));
         }
 
         @Override

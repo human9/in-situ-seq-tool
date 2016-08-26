@@ -629,10 +629,17 @@ public class JqadvGL {
          * Pans the image.
          */
 
-        ArrayDeque<float[]> fifo = new ArrayDeque<float[]>();
+        ArrayDeque<float[]> moveFiFo = new ArrayDeque<float[]>();
+        ArrayDeque<float[]> scaleFiFo = new ArrayDeque<float[]>();
+
         public void move(float x, float y) {
             // push event onto fifo
-            fifo.addLast(new float[] {x,y});
+            moveFiFo.addLast(new float[] {x,y});
+            core.resume();
+        }
+
+        public void updateScale(float direction, float x, float y) {
+            scaleFiFo.add(new float[] {direction,x,y});
             core.resume();
         }
 
@@ -718,16 +725,20 @@ public class JqadvGL {
         public void makeChanges(GL2 gl2) {
             
 
-            if(!fifo.isEmpty()) {
+            if(!scaleFiFo.isEmpty()) {
+                float[] dxy = scaleFiFo.removeFirst();
+                scale((int)dxy[0], dxy[1], dxy[2]);
+            }
+            if(!moveFiFo.isEmpty()) {
                 // need some kind of algorithm that scales properly
-                int size = fifo.size();
+                int size = moveFiFo.size();
 
-                float[] xy = fifo.removeFirst();
+                float[] xy = moveFiFo.removeFirst();
                 offset_x -= (xy[0] / scale_master);
                 offset_y += (xy[1] / scale_master);
 
-                while(fifo.size() > size * 0.5) {
-                    xy = fifo.removeFirst();
+                while(moveFiFo.size() > size * 0.5) {
+                    xy = moveFiFo.removeFirst();
                     offset_x -= (xy[0] / scale_master);
                     offset_y += (xy[1] / scale_master);
                 }
