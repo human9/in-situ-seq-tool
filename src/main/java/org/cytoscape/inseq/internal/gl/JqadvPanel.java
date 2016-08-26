@@ -2,8 +2,6 @@ package org.cytoscape.inseq.internal.gl;
 
 import java.awt.Cursor;
 import java.awt.Point;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -89,12 +87,6 @@ public class JqadvPanel extends NewtCanvasAWT {
         window.addMouseListener(new JqadvListener());
 
         this.setNEWTChild(window);
-
-        addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent e) {
-                window.display();
-            }
-        });
     }
 
     public void enablePoly() {
@@ -110,7 +102,6 @@ public class JqadvPanel extends NewtCanvasAWT {
 
     public void center() {
         jqadvgl.centerView();
-        window.display();
     }
 
     /**
@@ -138,7 +129,6 @@ public class JqadvPanel extends NewtCanvasAWT {
             }
             jqadvgl.selectTranscript(tr);
             sp.setSelected(tr);
-            window.display();
         }
         catch (KeySizeException exc) {
             exc.printStackTrace();
@@ -188,12 +178,10 @@ public class JqadvPanel extends NewtCanvasAWT {
 
     public void setPointScale(float value) {
         jqadvgl.setPointScale(value);
-        window.display();
     }
 
     public void largePoints(boolean e) {
         jqadvgl.largePoints(e);
-        window.display();
     }
 
     public UpdateEngine getUpdater() {
@@ -218,7 +206,7 @@ public class JqadvPanel extends NewtCanvasAWT {
                 // Left mouse button
                 dragButton = true;
                 start = ePoint;
-                leftClick = ePoint;
+                leftClick = new Point(e.getX(), e.getY());
             }
             else if(e.getButton() == MouseEvent.BUTTON3) {
                 // Right mouse button

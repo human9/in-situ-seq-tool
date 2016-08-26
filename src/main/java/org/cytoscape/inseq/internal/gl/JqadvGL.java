@@ -95,7 +95,6 @@ public class JqadvGL {
     private List<Transcript> transcripts;
     private List<InseqSession.Gene> genesAlphabetical;
     private InseqSession session;
-    private GLAutoDrawable canvas;
 
     final public UpdateEngine engine;
 
@@ -120,7 +119,6 @@ public class JqadvGL {
     public JqadvGL(InseqSession s, GLAutoDrawable canvas) {
         this.session = s;
         this.transcripts = s.getRaw();
-        this.canvas = canvas;
         this.engine = new UpdateEngine(canvas);
 
         genesAlphabetical = s.getGenes();
@@ -542,6 +540,7 @@ public class JqadvGL {
      */
     public void selectTranscript(Transcript t) {
         selection = t;
+        engine.core.resume();
     }
 
     public float getScale() {
@@ -615,7 +614,6 @@ public class JqadvGL {
 
         public UpdateEngine(GLAutoDrawable drawable) {
             core = new Animator(drawable);
-            core.setRunAsFastAsPossible(true);
             core.start();
             core.pause();
         }
@@ -629,17 +627,16 @@ public class JqadvGL {
          * Pans the image.
          */
 
-        ArrayDeque<float[]> moveFiFo = new ArrayDeque<float[]>();
-        ArrayDeque<float[]> scaleFiFo = new ArrayDeque<float[]>();
+        ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
 
         public void move(float x, float y) {
             // push event onto fifo
-            moveFiFo.addLast(new float[] {x,y});
+            eventFiFo.addLast(new float[] {x,y});
             core.resume();
         }
 
         public void updateScale(float direction, float x, float y) {
-            scaleFiFo.addLast(new float[] {direction,x,y});
+            eventFiFo.addLast(new float[] {direction,x,y});
             core.resume();
         }
 
@@ -656,7 +653,7 @@ public class JqadvGL {
             }
             
             updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
-            canvas.display();
+            core.resume();
         }
 
         public void selectionChanged(boolean pathClosed) {
@@ -693,20 +690,20 @@ public class JqadvGL {
                 }
 
                 updates.add(UpdateType.SELECTION_AREA_CHANGED);
-                canvas.display();
+                core.resume();
             }
         }
 
         public void changeImage(BufferedImage i) {
             image = i;
             updates.add(UpdateType.IMAGE_CHANGED);
-            canvas.display();
+            core.resume();
         }
 
         public void changeSymbol(Integer type, Integer symbol) {
             symbols[type] = symbol;
             updates.add(UpdateType.SYMBOL_CHANGED);
-            canvas.display();
+            core.resume();
         }
 
         public void changeColour(Integer type, Color c) {
@@ -715,7 +712,7 @@ public class JqadvGL {
             System.arraycopy(
                     c.getRGBColorComponents(f), 0, colours, a, 3);
             updates.add(UpdateType.COLOUR_CHANGED);
-            canvas.display();
+            core.resume();
         }
 
         /**
@@ -725,33 +722,24 @@ public class JqadvGL {
         public void makeChanges(GL2 gl2) {
             
 
-            if(!scaleFiFo.isEmpty()) {
-                int size = scaleFiFo.size();
-                
-                float[] dxy = scaleFiFo.removeFirst();
-                scale((int)dxy[0], dxy[1], dxy[2]);
-                while(scaleFiFo.size() > size * 0.5) {
-                    dxy = scaleFiFo.removeFirst();
-                    scale((int)dxy[0], dxy[1], dxy[2]);
+            float[] e;
+            while(eventFiFo.size() > 0) {
+                e = eventFiFo.removeFirst();
+                switch(e.length) {
+                    default:
+                        System.out.println("This should never happen");
+                        break;
+                    case 2:
+                        offset_x -= (e[0] / scale_master);
+                        offset_y += (e[1] / scale_master);
+                        break;
+                    case 3:
+                        scale((int)e[0], e[1], e[2]);
+                        break;
                 }
-            }
-            if(!moveFiFo.isEmpty()) {
-                // need some kind of algorithm that scales properly
-                int size = moveFiFo.size();
 
-                float[] xy = moveFiFo.removeFirst();
-                offset_x -= (xy[0] / scale_master);
-                offset_y += (xy[1] / scale_master);
-
-                while(moveFiFo.size() > size * 0.5) {
-                    xy = moveFiFo.removeFirst();
-                    offset_x -= (xy[0] / scale_master);
-                    offset_y += (xy[1] / scale_master);
-                }
             }
-            if(scaleFiFo.isEmpty() && moveFiFo.isEmpty()) {
-                core.pause();
-            }
+            core.pause();
 
             for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
                 UpdateType update = i.next();
