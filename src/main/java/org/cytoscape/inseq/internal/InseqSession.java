@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,13 +45,18 @@ public class InseqSession {
     /**
      * Defines the appearance of a certain gene.
      */
-    public class Gene {
+    public class Gene implements Comparable<Gene>{
         // The name of the gene
         public String name;
         // The colour to be displayed
         public Color  color;
         // The position of the symbol in the symbols array
         public Integer symbol;
+
+        @Override
+        public int compareTo(Gene g) {
+            return(name.compareTo(g.name));
+        }
     }
     private List<Gene> genes;
 
@@ -81,13 +87,15 @@ public class InseqSession {
 
         // Give each gene a unique colour as well spaced as possible.
         genes = new ArrayList<Gene>();
-        int x = 1;
+        List<String> alphabeticalGenes = new ArrayList<String>(names);
+        Collections.sort(alphabeticalGenes);
         for(String name : names) {
+            int x = alphabeticalGenes.indexOf(name);
             Gene g = new Gene();
-            int i = (int)(x++*(360d/names.size()));
+            int i = (int)((x+1)*(360d/names.size()));
             g.name = name;
             g.color = Color.getHSBColor(((i)%360)/360f, 1, 1);
-            g.symbol = (x-2)%symbols.size();
+            g.symbol = x%symbols.size();
             genes.add(g);
         }
 
@@ -107,7 +115,10 @@ public class InseqSession {
     }
 
     public List<Gene> getGenes() {
-        return genes;
+
+        List<Gene> genesAlphabetical = new ArrayList<Gene>(genes);
+        Collections.sort(genesAlphabetical);
+        return genesAlphabetical;
     }
 
     public boolean isActive(Transcript t) {

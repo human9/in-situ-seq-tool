@@ -91,6 +91,7 @@ public class JqadvGL {
     private float extrascale = 1f;
 
     private List<Transcript> transcripts;
+    private List<InseqSession.Gene> genesAlphabetical;
     private InseqSession session;
     private GLCanvas canvas;
 
@@ -119,8 +120,9 @@ public class JqadvGL {
         this.transcripts = s.getRaw();
         this.canvas = canvas;
 
+        genesAlphabetical = s.getGenes();
         // num = how many types of gene we have
-        int num = s.getGenes().size();
+        int num = genesAlphabetical.size();
 
         // vertices required to cover the background
         bkgrnd = new float[] {
@@ -497,7 +499,7 @@ public class JqadvGL {
         
         float fontSize = font.getPixelSize(10, 96);
         float[] colour = new float[4];
-        for(InseqSession.Gene gene : session.getGenes()) {
+        for(InseqSession.Gene gene : genesAlphabetical) {
 
             gene.color.getRGBComponents(colour);
             colour[3] = 1;

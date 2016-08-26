@@ -55,7 +55,7 @@ public class ImportAction extends AbstractCyAction {
 			in = new FileReader(raw);
 			if(!ParseUtil.parseXYFile(in, names, transcripts)) return;
 			in.close();
-            Collections.sort(names);
+            //Collections.sort(names);
 			ia.constructTree(names, transcripts, ia);
 		} 
 		catch (FileNotFoundException x) {
