@@ -723,7 +723,8 @@ public class JqadvGL {
             
 
             float[] e;
-            while(eventFiFo.size() > 0) {
+            int size = (int) Math.floor(eventFiFo.size() * 0.5);
+            while(eventFiFo.size() > size) {
                 e = eventFiFo.removeFirst();
                 switch(e.length) {
                     default:
@@ -739,7 +740,7 @@ public class JqadvGL {
                 }
 
             }
-            core.pause();
+            if(eventFiFo.isEmpty()) core.pause();
 
             for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
                 UpdateType update = i.next();
