@@ -1,10 +1,10 @@
 package org.cytoscape.inseq.internal.gl;
 
-import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,6 +13,9 @@ import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
 import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
+import com.jogamp.common.util.IOUtil;
+import com.jogamp.newt.Display;
+import com.jogamp.newt.Display.PointerIcon;
 import com.jogamp.newt.awt.NewtCanvasAWT;
 import com.jogamp.newt.event.MouseAdapter;
 import com.jogamp.newt.event.MouseEvent;
@@ -49,6 +52,9 @@ public class JqadvPanel extends NewtCanvasAWT {
     private boolean initPolygon;
     private float[] polyOrigin;
 
+    PointerIcon cursor;
+    Display display;
+
     public JqadvPanel(InseqSession s, SelectionPanel p) {
 
         GLProfile profile = GLProfile.getDefault();
@@ -56,7 +62,17 @@ public class JqadvPanel extends NewtCanvasAWT {
         capabilities.setStencilBits(8);
         window = GLWindow.create(capabilities);
         jqadvgl = new JqadvGL(s, window);
-        setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+
+        IOUtil.ClassResources iocr = new IOUtil.ClassResources(new String[] {"/texture/crosshair.png"}, JqadvPanel.class.getClassLoader(), JqadvPanel.class);
+        try {
+            display = window.getScreen().getDisplay();
+            display.createNative();
+            cursor = display.createPointerIcon(iocr, 12, 12);
+            window.setPointerIcon(cursor);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         origin = new Point();
         session = s;
         sp = p;
