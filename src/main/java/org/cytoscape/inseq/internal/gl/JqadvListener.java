@@ -253,25 +253,27 @@ public class JqadvListener extends MouseAdapter {
                          2f*((start.y - e.getY())));
             start.setLocation(ePoint);
         }
-        if (selectButton && !usePolygon) {
-            rectangle.setFrameFromDiagonal(
-                    origin,
-                    new Point2D.Float(p[0], p[1]));
-            session.setSelection(rectangle);
-            getUpdater().selectionChanged(true);
-        }
-        if (initPolygon && usePolygon) {
-            GeneralPath current = (GeneralPath) polygon.clone();
-            boolean pathClosed = false;
-            if(euclideanDistance(toPixel(polyOrigin),
-                        new float[] {e.getX(), e.getY()}) < 20) {
-                current.closePath();
-                pathClosed = true;
-            } else {
-                current.lineTo(p[0], p[1]);
+        else {
+            if (selectButton && !usePolygon) {
+                rectangle.setFrameFromDiagonal(
+                        origin,
+                        new Point2D.Float(p[0], p[1]));
+                session.setSelection(rectangle);
+                getUpdater().selectionChanged(true);
             }
-            session.setSelection(current);
-            getUpdater().selectionChanged(pathClosed);
+            if (initPolygon && usePolygon) {
+                GeneralPath current = (GeneralPath) polygon.clone();
+                boolean pathClosed = false;
+                if(euclideanDistance(toPixel(polyOrigin),
+                            new float[] {e.getX(), e.getY()}) < 20) {
+                    current.closePath();
+                    pathClosed = true;
+                } else {
+                    current.lineTo(p[0], p[1]);
+                }
+                session.setSelection(current);
+                getUpdater().selectionChanged(pathClosed);
+            }
         }
     }
 

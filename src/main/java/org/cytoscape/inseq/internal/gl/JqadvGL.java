@@ -82,6 +82,7 @@ public class JqadvGL {
     float[] bkgrnd;
     float[] symbols;
     FloatBuffer selectionShape;
+    int capacity;
 
     GLUniformData uniColours;
     GLUniformData uniSymbols;
@@ -423,10 +424,10 @@ public class JqadvGL {
             gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
             if(pc) {
                 Util.updateUniform(gl2, st, "closed", 1f);
-                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, selectionShape.capacity() / 2 - 1);
+                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 1);
             } else {
                 Util.updateUniform(gl2, st, "closed", 0f);
-                gl2.glDrawArrays(GL.GL_LINE_STRIP, 0, selectionShape.capacity() / 2);
+                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 2);
             }
             gl2.glLineWidth(1f);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
@@ -434,7 +435,7 @@ public class JqadvGL {
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         }
        
-        if(selectionShape != null && pc && selectionShape.capacity() > 9) {
+        if(selectionShape != null && capacity > 9) {
         
             gl2.glEnable(GL.GL_STENCIL_TEST);
 
@@ -449,7 +450,7 @@ public class JqadvGL {
             
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
             gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-            gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, selectionShape.capacity() / 2);
+            gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, capacity / 2);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
             gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
@@ -663,11 +664,9 @@ public class JqadvGL {
                     PathIterator pi = session.getSelection().getPathIterator(null);
                     float[] segment = new float[6];
                     ArrayList<Float> shape = new ArrayList<Float>();
-                    if(pathClosed) {
-                        // For stencil buffer triangle drawing
-                        shape.add(0f);
-                        shape.add(0f);
-                    }
+                    // For stencil buffer triangle drawing
+                    shape.add(0f);
+                    shape.add(0f);
                     while(!pi.isDone()) {
                         pi.currentSegment(segment);
                         shape.add(segment[0]);
@@ -675,11 +674,9 @@ public class JqadvGL {
                         pi.next();
                     }
                     pc = pathClosed;
-                    if(pathClosed) {
-                        // add origin at end
-                        shape.add(shape.get(2));
-                        shape.add(shape.get(3));
-                    }
+                    // add origin at end
+                    shape.add(shape.get(2));
+                    shape.add(shape.get(3));
 
                     selectionShape = FloatBuffer.allocate(shape.size());
                     for(int a = 0; a < shape.size(); a++) {
@@ -756,6 +753,7 @@ public class JqadvGL {
                     case SELECTION_AREA_CHANGED:
                         if(session.getSelection() != null) {
                             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+                            capacity = selectionShape.capacity();
                             gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                                              selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
                                              selectionShape,
