@@ -141,7 +141,7 @@ public class SelectionPanel extends JPanel {
         showSelection.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jqadvpanel.enableRect();
+                jqadvpanel.getListener().enableRect();
             }
         });
         
@@ -151,7 +151,7 @@ public class SelectionPanel extends JPanel {
         polygonSelect.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jqadvpanel.enablePoly();
+                jqadvpanel.getListener().enablePoly();
             }
         });
         
