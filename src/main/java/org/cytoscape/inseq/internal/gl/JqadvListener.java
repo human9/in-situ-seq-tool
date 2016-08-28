@@ -156,8 +156,8 @@ public class JqadvListener extends MouseAdapter {
     @Override
     public void mouseWheelMoved(MouseEvent e) {
         jqadvgl.engine.updateScale(-e.getRotation()[1], 
-                      glX(e.getX()),
-                      glY(e.getY()));
+                      e.getX(),
+                      e.getY());
     }
 
     @Override
@@ -249,8 +249,8 @@ public class JqadvListener extends MouseAdapter {
         Point ePoint = new Point(e.getX(), e.getY());
         float[] p = toGraph(ePoint);
         if(dragButton) {
-            jqadvgl.engine.move(2f*((start.x - e.getX())),
-                         2f*((start.y - e.getY())));
+            jqadvgl.engine.move(start.x - e.getX(),
+                         start.y - e.getY());
             start.setLocation(ePoint);
         }
         else {

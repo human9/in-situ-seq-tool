@@ -48,6 +48,10 @@ public class JqadvGL {
     private int imageVBO;
     private int bkgrndVBO;
     private int selectionVBO;
+	private int miscVBO;
+
+	float xoff = 0;
+	float yoff = 0;
     
     private Texture symbols_tex;
 
@@ -60,6 +64,7 @@ public class JqadvGL {
     private ShaderProgram bgrndsp;
     private ShaderProgram simplesp;
     private ShaderProgram boxsp;
+    private ShaderProgram matsp;
 
     private float offset_x = 0;
     private float offset_y = 0;
@@ -87,6 +92,10 @@ public class JqadvGL {
     GLUniformData uniColours;
     GLUniformData uniSymbols;
 
+	// Projection Matrix
+	GLUniformData P;
+	GLUniformData Mv;
+
     private BufferedImage pointSprites;
 
     private Transcript selection;
@@ -104,6 +113,8 @@ public class JqadvGL {
     private RegionRenderer renderer;
     private TextRegionUtil util;
     private Font font;
+
+	PMVMatrix pmv;
 
     public void setPointScale(float value) {
 
@@ -127,14 +138,8 @@ public class JqadvGL {
         int num = genesAlphabetical.size();
 
         // vertices required to cover the background
-        bkgrnd = new float[] {
-            -1f,  1f,
-             1f,  1f,
-             1f, -1f,
-             1f, -1f,
-            -1f,  1f,
-            -1f, -1f
-        };
+        bkgrnd = Util.makeQuad(-1, -1, 1, 1);
+
 
         // create array specifying what colour each type uses.
         colours = new float[num * 3];
@@ -162,6 +167,8 @@ public class JqadvGL {
         }
         vertices = FloatBuffer.wrap(coords);
         nPoints = transcripts.size();
+
+
     }
 
 
@@ -172,6 +179,13 @@ public class JqadvGL {
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
+
+		// Set up new pmvmatrix
+		pmv = new PMVMatrix();
+		pmv.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		pmv.glLoadIdentity();
+		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		pmv.glLoadIdentity();
 
         // Create shaders and initialize the program.
         generateShaderProgram(gl2);
@@ -197,8 +211,8 @@ public class JqadvGL {
         // 2. imageVBO: coordinates to stretch an image across
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
-        int buf[] = new int[4];
-        gl2.glGenBuffers(4, buf, 0);
+        int buf[] = new int[5];
+        gl2.glGenBuffers(5, buf, 0);
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -234,6 +248,7 @@ public class JqadvGL {
         }
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
+		miscVBO = buf[4];
 
         Util.makeUniform(gl2, st, "offset_x", offset_x);
         Util.makeUniform(gl2, st, "offset_y", offset_y);
@@ -249,6 +264,11 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "width", 1f);
         Util.makeUniform(gl2, st, "height", 1f);
         Util.makeUniform(gl2, st, "closed", 0f);
+
+		P = new GLUniformData("P", 4, 4, pmv.glGetPMatrixf());
+		st.uniform(gl2, P);
+		Mv = new GLUniformData("Mv", 4, 4, pmv.glGetMvMatrixf());
+		st.uniform(gl2, Mv);
 
         GLUniformData sprite = new GLUniformData("sprite", 1);
         st.uniform(gl2, sprite);
@@ -298,6 +318,9 @@ public class JqadvGL {
 
         boxsp = Util.compileProgram(gl2, "box");
         st.attachShaderProgram(gl2, boxsp, false);
+        
+		matsp = Util.compileProgram(gl2, "mat");
+        st.attachShaderProgram(gl2, matsp, false);
 
         bgrndsp = Util.compileProgram(gl2, "bgrnd");
         st.attachShaderProgram(gl2, bgrndsp, true);
@@ -351,11 +374,17 @@ public class JqadvGL {
 
         // Center the view
         if (makeCenter) {
-            centerView(); 
+            //centerView(); 
             makeCenter = false;
         }
         
         renderer.reshapeOrtho(width, height, -1, 1);
+
+		pmv.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		pmv.glLoadIdentity();
+		pmv.glOrthof(-w/2, w/2, -h/2, h/2, 0.0f, 1.0f);
+		P.setData(pmv.glGetPMatrixf());
+		st.uniform(gl2, P);
         
     }
 
@@ -367,6 +396,7 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
         engine.makeChanges(gl2);
+
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
@@ -533,6 +563,53 @@ public class JqadvGL {
         renderer.enable((GL2ES2)gl2, false);
 
 
+		// BOX
+		st.attachShaderProgram(gl2, matsp, true);
+
+		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		pmv.glLoadIdentity();
+		pmv.glTranslatef(xoff, yoff, 0f);
+		pmv.glScalef(scale_master, scale_master, 0f);
+		pmv.glTranslatef(mouse_x, mouse_y, 0f);
+		
+		Mv.setData(pmv.glGetMvMatrixf());
+		st.uniform(gl2, Mv);
+        
+		gl2.glEnable(GL.GL_BLEND);
+        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+
+		float[] square = Util.makeQuad(-30, -30, 30, 30);
+		gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, miscVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                6 * 2 * GLBuffers.SIZEOF_FLOAT,
+                FloatBuffer.wrap(square),
+                GL.GL_DYNAMIC_DRAW);
+		gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+		gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+		gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+		gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+/*
+		String text = "LOADING IMAGE, PLEASE WAIT";
+		float size = font.getPixelSize(14, 96);
+		float x1 = (w/2 - (size/4)*text.length()) / w - 1;
+		float y1 = (h/2) / h - 1;
+		float[] square = Util.makeQuad(x1, y1, x1 + (size/4 * text.length()) / w, y1 + (size/4) / h);
+		
+
+
+        renderer.enable((GL2ES2)gl2, true);
+		matrix.glLoadIdentity();
+		matrix.glTranslatef(w/2 - (size/4)*text.length(), h/2, 0);
+		
+		util.drawString3D((GL2ES2)gl2, renderer, font, size, text,
+				new float[] {1,0,0,1}, SAMPLE_COUNT);
+
+        renderer.enable((GL2ES2)gl2, false);
+
+*/
+
 
     }
 
@@ -554,12 +631,16 @@ public class JqadvGL {
      */
     public boolean scale(int direction, float x, float y) {
         
+		x = w - x;
+		y = h - y;
+		x -= w/2;
+		y -= h/2;
         // If mouse has moved since last scale, we need to
         // adjust for this (to allow zooming from mouse position).
         if(mouse_x != x || mouse_y != -y) {
 
-            offset_x += (mouse_x - x) / scale_master;
-            offset_y += (mouse_y + y) / scale_master;
+            xoff += (mouse_x - x);
+            yoff += (mouse_y + y);
 
             mouse_x = x;
             mouse_y = -y;
@@ -725,11 +806,14 @@ public class JqadvGL {
                 e = eventFiFo.removeFirst();
                 switch(e.length) {
                     default:
-                        System.out.println("This should never happen");
+                        System.err.println("Invalid event: This should never happen");
                         break;
                     case 2:
                         offset_x -= (e[0] / scale_master);
                         offset_y += (e[1] / scale_master);
+
+						xoff -= e[0];
+						yoff += e[1];
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);
@@ -751,7 +835,7 @@ public class JqadvGL {
                         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
                         break;
                     case SELECTION_AREA_CHANGED:
-                        if(session.getSelection() != null) {
+                        if(selectionShape != null) {
                             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
                             capacity = selectionShape.capacity();
                             gl2.glBufferData(GL.GL_ARRAY_BUFFER,

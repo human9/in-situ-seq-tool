@@ -71,6 +71,22 @@ public class Util
         }
 	}
 
+	/**
+	 * Generates coordinates for an openGL quad.
+	 * Returns an array of 6 floats to be drawn with GL_TRIANGLES.
+	 */
+	public static float[] makeQuad(float x1, float y1, float x2, float y2) {
+		float[] quad = new float[] {
+            x1, y2,
+            x2, y2,
+            x2, y1,
+            x2, y1,
+            x1, y2,
+            x1, y1
+        };
+		return quad;
+	}
+
     public static Texture textureFromBufferedImage(BufferedImage img) {
         return AWTTextureIO.newTexture(GLProfile.getDefault(), img, true);
     }
