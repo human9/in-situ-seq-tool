@@ -52,8 +52,6 @@ public class JqadvGL {
     private int bkgrndVBO;
     private int selectionVBO;
 
-    int z = 0;
-
     float xOffset = 0;
     float yOffset = 0;
 
@@ -407,6 +405,12 @@ public class JqadvGL {
                 .translate(xMouse, yMouse, 0f)
                 .scale(scale, scale, 0f)
                 .translate(xOffset, yOffset, 0f)
+                .get(MvBuffer);
+
+        float[] c = pixelToGraph(new float[]{w/2, h/2});
+        Vector3f center = new Vector3f(c[0], c[1], 0);
+        MvMatrix.translate(center)
+                .translate(center.negate())
                 .get(MvBuffer);
         
         Mv.setData(MvBuffer);
