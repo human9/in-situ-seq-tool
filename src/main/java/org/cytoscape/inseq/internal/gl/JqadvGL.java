@@ -16,7 +16,10 @@ import java.util.List;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
+import com.jogamp.common.nio.Buffers;
 import com.jogamp.graph.curve.Region;
 import com.jogamp.graph.curve.opengl.RegionRenderer;
 import com.jogamp.graph.curve.opengl.RenderState;
@@ -48,7 +51,6 @@ public class JqadvGL {
     private int imageVBO;
     private int bkgrndVBO;
     private int selectionVBO;
-	private int miscVBO;
 
 	float xoff = 0;
 	float yoff = 0;
@@ -69,10 +71,6 @@ public class JqadvGL {
     private ShaderProgram boxsp;
     private ShaderProgram matsp;
 
-    private float offset_x = 0;
-    private float offset_y = 0;
-    private float mouse_x = 0;
-    private float mouse_y = 0;
     private float w;
     private float h;
     private float scale_master = 1;
@@ -98,7 +96,8 @@ public class JqadvGL {
 	// Projection Matrix
 	GLUniformData P;
 	GLUniformData Mv;
-
+    FloatBuffer MvBuffer;
+    FloatBuffer PBuffer;
     private BufferedImage pointSprites;
 
     private Transcript selection;
@@ -117,7 +116,14 @@ public class JqadvGL {
     private TextRegionUtil util;
     private Font font;
 
-	PMVMatrix pmv;
+    // Projection matrix
+    Matrix4f PMatrix;
+
+    // Modelview matrix
+    Matrix4f MvMatrix;
+
+    // The inverse modelview matrix
+    Matrix4f MviMatrix;
 
     public void setPointScale(float value) {
 
@@ -183,12 +189,12 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
-		// Set up new pmvmatrix
-		pmv = new PMVMatrix();
-		pmv.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
-		pmv.glLoadIdentity();
-		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-		pmv.glLoadIdentity();
+
+        MvBuffer = Buffers.newDirectFloatBuffer(16);
+        MvMatrix = new Matrix4f();
+        PBuffer = Buffers.newDirectFloatBuffer(16);
+        PMatrix = new Matrix4f();
+        MviMatrix = new Matrix4f();
 
         // Create shaders and initialize the program.
         generateShaderProgram(gl2);
@@ -214,8 +220,8 @@ public class JqadvGL {
         // 2. imageVBO: coordinates to stretch an image across
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
-        int buf[] = new int[5];
-        gl2.glGenBuffers(5, buf, 0);
+        int buf[] = new int[4];
+        gl2.glGenBuffers(4, buf, 0);
         verticesVBO = buf[0];
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -251,12 +257,6 @@ public class JqadvGL {
         }
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-		miscVBO = buf[4];
-
-        Util.makeUniform(gl2, st, "offset_x", offset_x);
-        Util.makeUniform(gl2, st, "offset_y", offset_y);
-        Util.makeUniform(gl2, st, "mouse_x", mouse_x);
-        Util.makeUniform(gl2, st, "mouse_y", mouse_y);
         Util.makeUniform(gl2, st, "background", 2);
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
         Util.makeUniform(gl2, st, "ptscale", point_scale);
@@ -268,9 +268,9 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "height", 1f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
-		P = new GLUniformData("P", 4, 4, pmv.glGetPMatrixf());
+		P = new GLUniformData("P", 4, 4, PBuffer);
 		st.uniform(gl2, P);
-		Mv = new GLUniformData("Mv", 4, 4, pmv.glGetMvMatrixf());
+		Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
 		st.uniform(gl2, Mv);
 
         GLUniformData sprite = new GLUniformData("sprite", 1);
@@ -334,33 +334,25 @@ public class JqadvGL {
      * Center and scale the view so that as much of the data as possible is visible.
      */
     public void centerView() {
-        
-        // the gl coords of the center
-        float[] center = graphToGL(session.min.width / 2f, session.min.height / 2f);
-        
-        offset_x -= center[0] / scale_master * w;
-        offset_y += center[1] / scale_master * h;
 
-        // the gl coords of the left edge
-        float[] left = graphToGL(0f, 0f);
-        
-        while(left[0] > -1 || left[1] > -1) {
-            // we have more space, scale up
+        mx = 0; my = 0;
+        float wsc = w / session.min.width;
+        float hsc = h / session.min.height;
+        float target = Math.min(wsc, hsc);
+
+        while(scale_master < target) {
             if(!scale(-1, 0, 0)) {
                 // reached scale limit
                 break;
             }
-            left = graphToGL(0f,0f);
         }
-        
-        while(left[0] < -1 || left[1] < -1) {
-            // it's off the screen. try scaling down
+        while(scale_master > target) {
             if(!scale(1, 0, 0)) {
-                // reached scale limit
                 break;
             }
-            left = graphToGL(0f,0f);
         }
+        xoff = ((w - session.min.width * scale_master) / 2) / scale_master;
+        yoff = ((h - session.min.height * scale_master) / 2) / scale_master;
     }
 
     protected void setup(GL2 gl2, int width, int height) {
@@ -377,18 +369,36 @@ public class JqadvGL {
 
         // Center the view
         if (makeCenter) {
-            //centerView(); 
+            centerView(); 
             makeCenter = false;
         }
         
         renderer.reshapeOrtho(width, height, -1, 1);
 
-		pmv.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
-		pmv.glLoadIdentity();
-		pmv.glOrthof(-w/2, w/2, -h/2, h/2, 0.0f, 1.0f);
-		P.setData(pmv.glGetPMatrixf());
+        PMatrix.identity()
+               .ortho2D(0, w, h, 0)
+               .get(PBuffer);
+		P.setData(PBuffer);
 		st.uniform(gl2, P);
         
+    }
+
+    /**
+     * Convert a viewport pixel to a graph coordinate.
+     */
+    public float[] pixelToGraph(float[] p) {
+        Vector3f v = new Vector3f(p[0], p[1], 0);
+        MviMatrix.transformPosition(v);
+        return new float[] {v.x, v.y};
+    }
+    
+    /**
+     * Convert graph coordinate to viewport pixel.
+     */
+    public float[] graphToPixel(float[] p) {
+        Vector3f v = new Vector3f(p[0], p[1], 0);
+        MvMatrix.transformPosition(v);
+        return new float[] {v.x, v.y};
     }
 
     protected void render(GL2 gl2, int width, int height) {
@@ -400,23 +410,25 @@ public class JqadvGL {
 
         engine.makeChanges(gl2);
 
-		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-		pmv.glLoadIdentity();
-		pmv.glTranslatef(mx, my, 0f);
-		pmv.glScalef(scale_master, scale_master, 0f);
-		pmv.glTranslatef(xoff, yoff, 0f);
+        MvMatrix.identity()
+                .translate(mx, my, 0f)
+                .scale(scale_master, scale_master, 0f)
+                .translate(xoff, yoff, 0f)
+                .get(MvBuffer);
 		
-		Mv.setData(pmv.glGetMvMatrixf());
+		Mv.setData(MvBuffer);
 		st.uniform(gl2, Mv);
-
+        
+        // Make inverse matrix by just doing the opposite of above
+        // I dunno it's fast and it works
+        MviMatrix.identity()
+                .translate(-xoff, -yoff, 0f)
+                .scale(1/scale_master, 1/scale_master, 0f)
+                .translate(-mx, -my, 0f);
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
         Util.updateUniform(gl2, st, "scale_master", scale_master);
-        Util.updateUniform(gl2, st, "offset_x", offset_x);
-        Util.updateUniform(gl2, st, "offset_y", offset_y);
-        Util.updateUniform(gl2, st, "mouse_x", mouse_x);
-        Util.updateUniform(gl2, st, "mouse_y", mouse_y);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
@@ -629,24 +641,29 @@ public class JqadvGL {
         return scale_master;
     }
 
+    public float[] getOffset() {
+        return new float[] {xoff, yoff};
+    }
+    
+    public float[] getMouse() {
+        return new float[] {mx, my};
+    }
+
     /**
      * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.
      */
     public boolean scale(int direction, float x, float y) {
         
-		x -= w/2;
-		y -= h/2;
-
         // If mouse has moved since last scale, we need to
         // adjust for this (to allow zooming from mouse position).
-        if(mx != x || my != -y) {
+        if(mx != x || my != y) {
 
             xoff += (mx - x) / scale_master;
-            yoff += (my + y) / scale_master;
+            yoff += (my - y) / scale_master;
 
             mx = x;
-            my = -y;
+            my = y;
 
         }
 
@@ -662,30 +679,6 @@ public class JqadvGL {
             }
         }
         return false; 
-    }
-
-
-
-    /**
-     * Converts a graph point into gl coordinate space.
-     * Use this to find where a graph point will be rendered on the screen.
-     */
-    public float[] graphToGL(float x, float y) {
-        float[] gl = new float[2];
-        gl[0] = ((x * extrascale + offset_x) * scale_master + mouse_x) / w;
-        gl[1] = ((y  * extrascale - offset_y) * scale_master - mouse_y) / h;
-        return gl;
-    }
-    
-    /**
-     * Converts a gl point into graph coordinate space.
-     * The inverse of graphToGL.
-     */
-    public float[] glToGraph(float x, float y) {
-        float[] graph = new float[2];
-        graph[0] = ((x * w - mouse_x) / scale_master - offset_x) / extrascale;
-        graph[1] = ((y * h + mouse_y) / scale_master + offset_y) / extrascale;
-        return graph;
     }
 
     /**
@@ -717,6 +710,11 @@ public class JqadvGL {
 
         public void move(float x, float y) {
             // push event onto fifo
+            //
+            Vector3f v = new Vector3f(0f, 0f, 0f);
+            //PMatrix.transformPosition(v);
+            MvMatrix.transformPosition(v);
+
             eventFiFo.addLast(new float[] {x,y});
             core.resume();
         }
@@ -813,11 +811,8 @@ public class JqadvGL {
                         System.err.println("Invalid event: This should never happen");
                         break;
                     case 2:
-                        offset_x -= (e[0] / scale_master);
-                        offset_y += (e[1] / scale_master);
-
 						xoff -= e[0] / scale_master;
-						yoff += e[1] / scale_master;
+						yoff -= e[1] / scale_master;
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);

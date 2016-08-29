@@ -250,6 +250,13 @@
           <version>2.3.2</version>
         </dependency>
 
+        <!-- JOML: Linear algebra -->
+        <dependency>
+          <groupId>org.joml</groupId>
+          <artifactId>joml</artifactId>
+          <version>1.8.2</version>
+        </dependency>
+
 		<!-- JFreeChart -->
 		<dependency>
 			<groupId>org.jfree</groupId>

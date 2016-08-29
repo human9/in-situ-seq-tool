@@ -80,8 +80,8 @@ public class JqadvListener extends MouseAdapter {
         // This is calculating the distance in graph coordinates that we want
         // to search, required because this distance changes with zoom level.
         double dist = euclideanDistance(
-                jqadvgl.glToGraph(glX(0)/ window.getWidth(), glY(0)/window.getHeight()),
-                jqadvgl.glToGraph(glX(10)/ window.getWidth(), glY(0)/window.getHeight()) );
+                jqadvgl.pixelToGraph(new float[]{0,0}),
+                jqadvgl.pixelToGraph(new float[]{10,0}));
         try {
             list = session.tree.nearestEuclidean(
                     new double[]{p[0], p[1]}, Math.pow(dist, 2));
@@ -107,26 +107,7 @@ public class JqadvListener extends MouseAdapter {
         double sqrdist = Math.pow((a[0] - b[0]) , 2) + Math.pow((a[1] - b[1]), 2);
         return Math.sqrt(sqrdist);
     }
-
-    /**
-     * Get exact pixel coordinates of where a graph point is.
-     */
-    private float[] toPixel(float[] p) {
-        float[] pixel = jqadvgl.graphToGL(p[0], p[1]);
-        pixel[0] = (window.getWidth() * pixel[0] + window.getWidth()) / 2f;
-        pixel[1] = (window.getHeight() * pixel[1] + window.getHeight()) / 2f;
-        return pixel;
-    }
-
-    /**
-     * Get graph coordinates of where a pixel point is.
-     */
-    private float[] toGraph(Point p) {
-        float[] graph = jqadvgl.glToGraph(glX(p.x) / window.getWidth(),
-                glY(p.y) / window.getHeight());
-        return graph;
-    }
-
+    
     /**
      * Convert from AWT x to GL x coordinate.
      */
@@ -163,7 +144,7 @@ public class JqadvListener extends MouseAdapter {
     @Override
     public void mousePressed(MouseEvent e) {
         Point ePoint = new Point(e.getX(), e.getY());
-        float[] p = toGraph(ePoint);
+        float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
         if(e.getButton() == MouseEvent.BUTTON1) {
             // Left mouse button
             dragButton = true;
@@ -190,7 +171,7 @@ public class JqadvListener extends MouseAdapter {
                     session.setSelection(null);
                 }
                 else {
-                    if(euclideanDistance(toPixel(polyOrigin),
+                    if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                         new float[] {e.getX(), e.getY()}) < 20) 
                     {
                         polygon.closePath();
@@ -212,7 +193,7 @@ public class JqadvListener extends MouseAdapter {
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
             Point ePoint = new Point(e.getX(), e.getY());
-            float[] p = toGraph(ePoint);
+            float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
             if(ePoint.equals(leftClick))
             {
                 select(p);
@@ -226,12 +207,11 @@ public class JqadvListener extends MouseAdapter {
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        Point ePoint = new Point(e.getX(), e.getY());
-        float[] p = toGraph(ePoint);
+        float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
         if(initPolygon && usePolygon) {
             GeneralPath current = (GeneralPath) polygon.clone();
             boolean pathClosed = false;
-            if(euclideanDistance(toPixel(polyOrigin),
+            if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                         new float[] {e.getX(), e.getY()}) < 20)
             {
                 current.closePath();
@@ -247,7 +227,7 @@ public class JqadvListener extends MouseAdapter {
     @Override
     public void mouseDragged(MouseEvent e) {
         Point ePoint = new Point(e.getX(), e.getY());
-        float[] p = toGraph(ePoint);
+        float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
         if(dragButton) {
             jqadvgl.engine.move(start.x - e.getX(),
                          start.y - e.getY());
@@ -264,7 +244,7 @@ public class JqadvListener extends MouseAdapter {
             if (initPolygon && usePolygon) {
                 GeneralPath current = (GeneralPath) polygon.clone();
                 boolean pathClosed = false;
-                if(euclideanDistance(toPixel(polyOrigin),
+                if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                             new float[] {e.getX(), e.getY()}) < 20) {
                     current.closePath();
                     pathClosed = true;
