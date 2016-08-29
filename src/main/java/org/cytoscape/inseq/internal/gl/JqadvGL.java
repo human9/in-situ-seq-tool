@@ -357,6 +357,9 @@ public class JqadvGL {
         // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
 
+        xOffset += ((width - w) / 2) / scale_master;
+        yOffset += ((height - h) / 2) / scale_master;
+
         w = width;
         h = height;
         
