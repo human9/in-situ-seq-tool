@@ -87,6 +87,14 @@ public class Util
 		return quad;
 	}
 
+    /**
+     * Calculate a simple euclidean distance between two points.
+     */
+    public static double euclideanDistance(float[] a, float[] b) {
+        double sqrdist = Math.pow((a[0] - b[0]) , 2) + Math.pow((a[1] - b[1]), 2);
+        return Math.sqrt(sqrdist);
+    }
+
     public static Texture textureFromBufferedImage(BufferedImage img) {
         return AWTTextureIO.newTexture(GLProfile.getDefault(), img, true);
     }

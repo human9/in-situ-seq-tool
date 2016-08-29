@@ -1,10 +1,13 @@
 package org.cytoscape.inseq.internal.gl;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
 import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
+import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.common.util.IOUtil;
 import com.jogamp.newt.Display;
@@ -15,6 +18,8 @@ import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
+
+import edu.wlu.cs.levy.CG.KeySizeException;
 
 /**
  * JOGL data viewer.
@@ -29,6 +34,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     private JqadvListener jqadvListener;
     private GLWindow window;
     private InseqSession session;
+    private SelectionPanel panel;
 
     PointerIcon cursor;
     Display display;
@@ -41,6 +47,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
         capabilities.setStencilBits(8);
         window = GLWindow.create(capabilities);
         jqadvgl = new JqadvGL(s, window);
+        panel = p;
 
         // Set GLWindow cursor to crosshair
         IOUtil.ClassResources iocr
@@ -60,7 +67,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
         window.addGLEventListener(this);
 
-        jqadvListener = new JqadvListener(session, jqadvgl, window);
+        jqadvListener = new JqadvListener(session, jqadvgl, this);
         window.addMouseListener(jqadvListener);
 
         this.setNEWTChild(window);
@@ -91,6 +98,36 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
         jqadvgl.centerView();
     }
 
+    /**
+     * Called when user clicks on screen.
+     * If a point is found near to that click it is selected.
+     */
+    public void select(float[] p) {
+        List<Transcript> list;
+
+        // This is calculating the distance in graph coordinates that we want
+        // to search, required because this distance changes with zoom level.
+        double dist = Util.euclideanDistance(
+                jqadvgl.pixelToGraph(new float[]{0,0}),
+                jqadvgl.pixelToGraph(new float[]{10,0}));
+        try {
+            list = session.tree.nearestEuclidean(
+                    new double[]{p[0], p[1]}, Math.pow(dist, 2));
+            Collections.reverse(list);
+            Transcript tr = null;
+            for(Transcript t : list) {
+                if(session.isActive(t)) {
+                    tr = t;
+                    break;
+                }
+            }
+            jqadvgl.selectTranscript(tr);
+            panel.setSelected(tr);
+        }
+        catch (KeySizeException exc) {
+            exc.printStackTrace();
+        }
+    }
     public JqadvListener getListener() {
         return jqadvListener;
 

@@ -4,20 +4,13 @@ import java.awt.Point;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Collections;
-import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
-import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.newt.Display;
 import com.jogamp.newt.Display.PointerIcon;
 import com.jogamp.newt.event.MouseAdapter;
 import com.jogamp.newt.event.MouseEvent;
-import com.jogamp.newt.opengl.GLWindow;
-
-import edu.wlu.cs.levy.CG.KeySizeException;
 
 /**
  * JOGL data viewer.
@@ -29,7 +22,6 @@ public class JqadvListener extends MouseAdapter {
     static final long serialVersionUID = 22l;
     
     private JqadvGL jqadvgl;
-    private GLWindow window;
     private Point origin;
     private Point leftClick;
     private InseqSession session;
@@ -45,13 +37,14 @@ public class JqadvListener extends MouseAdapter {
 
     PointerIcon cursor;
     Display display;
+    private JqadvPanel panel;
 
-    public JqadvListener(InseqSession s, JqadvGL gl, GLWindow w) {
+    public JqadvListener(InseqSession s, JqadvGL gl, JqadvPanel panel) {
         
         origin = new Point();
         jqadvgl = gl;
-        window = w;
         session = s;
+        this.panel = panel;
 
     }
 
@@ -70,70 +63,7 @@ public class JqadvListener extends MouseAdapter {
         jqadvgl.centerView();
     }
 
-    /**
-     * Called when user clicks on screen.
-     * If a point is found near to that click it is selected.
-     */
-    private void select(float[] p) {
-        List<Transcript> list;
-
-        // This is calculating the distance in graph coordinates that we want
-        // to search, required because this distance changes with zoom level.
-        double dist = euclideanDistance(
-                jqadvgl.pixelToGraph(new float[]{0,0}),
-                jqadvgl.pixelToGraph(new float[]{10,0}));
-        try {
-            list = session.tree.nearestEuclidean(
-                    new double[]{p[0], p[1]}, Math.pow(dist, 2));
-            Collections.reverse(list);
-            Transcript tr = null;
-            for(Transcript t : list) {
-                if(session.isActive(t)) {
-                    tr = t;
-                    break;
-                }
-            }
-            jqadvgl.selectTranscript(tr);
-        }
-        catch (KeySizeException exc) {
-            exc.printStackTrace();
-        }
-    }
     
-    /**
-     * Calculate a simple euclidean distance between two points.
-     */
-    public static double euclideanDistance(float[] a, float[] b) {
-        double sqrdist = Math.pow((a[0] - b[0]) , 2) + Math.pow((a[1] - b[1]), 2);
-        return Math.sqrt(sqrdist);
-    }
-    
-    /**
-     * Convert from AWT x to GL x coordinate.
-     */
-    public float glX(int x) {
-        return 2f * x - window.getWidth();
-    }
-    
-    /**
-     * Convert from AWT y to GL y coordinate.
-     */
-    public float glY(int y) {
-        return 2f * y - window.getHeight();
-    }
-
-    public void setPointScale(float value) {
-        jqadvgl.setPointScale(value);
-    }
-
-    public void largePoints(boolean e) {
-        jqadvgl.largePoints(e);
-    }
-
-    public UpdateEngine getUpdater() {
-        return jqadvgl.engine;
-    }
-
     @Override
     public void mouseWheelMoved(MouseEvent e) {
         jqadvgl.engine.updateScale(-e.getRotation()[1], 
@@ -171,7 +101,7 @@ public class JqadvListener extends MouseAdapter {
                     session.setSelection(null);
                 }
                 else {
-                    if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
+                    if(Util.euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                         new float[] {e.getX(), e.getY()}) < 20) 
                     {
                         polygon.closePath();
@@ -185,7 +115,7 @@ public class JqadvListener extends MouseAdapter {
                     }
                 }
             }
-            getUpdater().selectionChanged(pathClosed);
+            jqadvgl.engine.selectionChanged(pathClosed);
         }
     }
 
@@ -196,7 +126,7 @@ public class JqadvListener extends MouseAdapter {
             float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
             if(ePoint.equals(leftClick))
             {
-                select(p);
+                panel.select(p);
             }
             dragButton = false;
         }
@@ -211,7 +141,7 @@ public class JqadvListener extends MouseAdapter {
         if(initPolygon && usePolygon) {
             GeneralPath current = (GeneralPath) polygon.clone();
             boolean pathClosed = false;
-            if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
+            if(Util.euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                         new float[] {e.getX(), e.getY()}) < 20)
             {
                 current.closePath();
@@ -220,7 +150,7 @@ public class JqadvListener extends MouseAdapter {
                 current.lineTo(p[0], p[1]);
             }
             session.setSelection(current);
-            getUpdater().selectionChanged(pathClosed);
+            jqadvgl.engine.selectionChanged(pathClosed);
         }
     }
 
@@ -239,12 +169,12 @@ public class JqadvListener extends MouseAdapter {
                         origin,
                         new Point2D.Float(p[0], p[1]));
                 session.setSelection(rectangle);
-                getUpdater().selectionChanged(true);
+                jqadvgl.engine.selectionChanged(true);
             }
             if (initPolygon && usePolygon) {
                 GeneralPath current = (GeneralPath) polygon.clone();
                 boolean pathClosed = false;
-                if(euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
+                if(Util.euclideanDistance(jqadvgl.graphToPixel(polyOrigin),
                             new float[] {e.getX(), e.getY()}) < 20) {
                     current.closePath();
                     pathClosed = true;
@@ -252,7 +182,7 @@ public class JqadvListener extends MouseAdapter {
                     current.lineTo(p[0], p[1]);
                 }
                 session.setSelection(current);
-                getUpdater().selectionChanged(pathClosed);
+                jqadvgl.engine.selectionChanged(pathClosed);
             }
         }
     }

@@ -128,6 +128,7 @@ public class JqadvGL {
     public void setPointScale(float value) {
 
         extrascale = value;
+        engine.core.resume();
     }
 
     public void largePoints(boolean e) {
@@ -135,6 +136,8 @@ public class JqadvGL {
             point_scale = 2;
         else
             point_scale = 1;
+
+        engine.core.resume();
     }
 
     public JqadvGL(InseqSession s, GLAutoDrawable canvas) {
