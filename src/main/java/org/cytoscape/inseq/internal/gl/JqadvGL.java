@@ -400,6 +400,15 @@ public class JqadvGL {
 
         engine.makeChanges(gl2);
 
+		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		pmv.glLoadIdentity();
+		pmv.glTranslatef(mx, my, 0f);
+		pmv.glScalef(scale_master, scale_master, 0f);
+		pmv.glTranslatef(xoff, yoff, 0f);
+		
+		Mv.setData(pmv.glGetMvMatrixf());
+		st.uniform(gl2, Mv);
+
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
@@ -566,17 +575,10 @@ public class JqadvGL {
         renderer.enable((GL2ES2)gl2, false);
 
 
+/*
 		// BOX
 		st.attachShaderProgram(gl2, matsp, true);
 
-		pmv.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-		pmv.glLoadIdentity();
-		pmv.glTranslatef(xoff, yoff, 0f);
-		pmv.glScalef(scale_master, scale_master, 0f);
-		pmv.glTranslatef(mx, my, 0f);
-		
-		Mv.setData(pmv.glGetMvMatrixf());
-		st.uniform(gl2, Mv);
         
 		gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -593,7 +595,6 @@ public class JqadvGL {
 		gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
 		gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-/*
 		String text = "LOADING IMAGE, PLEASE WAIT";
 		float size = font.getPixelSize(14, 96);
 		float x1 = (w/2 - (size/4)*text.length()) / w - 1;
@@ -634,8 +635,6 @@ public class JqadvGL {
      */
     public boolean scale(int direction, float x, float y) {
         
-		x = w - x;
-		y = h - y;
 		x -= w/2;
 		y -= h/2;
 
@@ -643,8 +642,8 @@ public class JqadvGL {
         // adjust for this (to allow zooming from mouse position).
         if(mx != x || my != -y) {
 
-            xoff += (mx - x) * scale_master;
-            yoff += (my + y) * scale_master;
+            xoff += (mx - x) / scale_master;
+            yoff += (my + y) / scale_master;
 
             mx = x;
             my = -y;
@@ -817,8 +816,8 @@ public class JqadvGL {
                         offset_x -= (e[0] / scale_master);
                         offset_y += (e[1] / scale_master);
 
-						xoff -= e[0];
-						yoff += e[1];
+						xoff -= e[0] / scale_master;
+						yoff += e[1] / scale_master;
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);
