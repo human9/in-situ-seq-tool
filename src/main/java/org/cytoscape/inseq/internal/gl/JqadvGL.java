@@ -382,6 +382,12 @@ public class JqadvGL {
         MviMatrix.transformPosition(v);
         return new float[] {v.x, v.y};
     }
+
+    public float[] pixelToGraphInternal(float[] p) {
+        Vector3f v = new Vector3f(p[0], p[1], 0);
+        TESTMATRIX.transformPosition(v);
+        return new float[] {v.x, v.y};
+    }
     
     /**
      * Convert graph coordinate to viewport pixel.
@@ -392,7 +398,13 @@ public class JqadvGL {
         return new float[] {v.x, v.y};
     }
 
+    Matrix4f TESTMATRIX = new Matrix4f();
+    long z;
+    Vector3f center;
     protected void render(GL2 gl2, int width, int height) {
+
+        z++;
+        float angle = z / 180f;
 
         gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -400,25 +412,34 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
         engine.makeChanges(gl2);
+        float[] c = pixelToGraphInternal(new float[]{w/2, h/2});
+        center = new Vector3f(c[0], c[1], 0);
 
         MvMatrix.identity()
                 .translate(xMouse, yMouse, 0f)
                 .scale(scale, scale, 0f)
                 .translate(xOffset, yOffset, 0f)
-                .get(MvBuffer);
-
-        float[] c = pixelToGraph(new float[]{w/2, h/2});
-        Vector3f center = new Vector3f(c[0], c[1], 0);
-        MvMatrix.translate(center)
+                .translate(center)
+                .rotate(angle, 0, 0, 1)
                 .translate(center.negate())
                 .get(MvBuffer);
         
         Mv.setData(MvBuffer);
         st.uniform(gl2, Mv);
         
+        c = pixelToGraphInternal(new float[]{w/2, h/2});
+        center = new Vector3f(c[0], c[1], 0);
+        
         // Make inverse matrix by just doing the opposite of above
         // I dunno it's fast and it works
         MviMatrix.identity()
+                .translate(center)
+                .rotate(-angle, 0, 0, 1)
+                .translate(center.negate())
+                .translate(-xOffset, -yOffset, 0f)
+                .scale(1/scale, 1/scale, 0f)
+                .translate(-xMouse, -yMouse, 0f);
+        TESTMATRIX.identity()
                 .translate(-xOffset, -yOffset, 0f)
                 .scale(1/scale, 1/scale, 0f)
                 .translate(-xMouse, -yMouse, 0f);
