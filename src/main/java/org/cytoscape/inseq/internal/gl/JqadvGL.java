@@ -52,11 +52,11 @@ public class JqadvGL {
     private int bkgrndVBO;
     private int selectionVBO;
 
-	float xoff = 0;
-	float yoff = 0;
+    float xOffset = 0;
+    float yOffset = 0;
 
-    float mx = 0;
-    float my = 0;
+    float xMouse = 0;
+    float yMouse = 0;
     
     private Texture symbols_tex;
 
@@ -74,7 +74,7 @@ public class JqadvGL {
     private float w;
     private float h;
     private float scale_master = 1;
-    private float point_scale = 1f;
+    private float point_scale = 1;
     private boolean makeCenter = true;
     private int numTiles = 0;
 
@@ -93,11 +93,6 @@ public class JqadvGL {
     GLUniformData uniColours;
     GLUniformData uniSymbols;
 
-	// Projection Matrix
-	GLUniformData P;
-	GLUniformData Mv;
-    FloatBuffer MvBuffer;
-    FloatBuffer PBuffer;
     private BufferedImage pointSprites;
 
     private Transcript selection;
@@ -117,13 +112,18 @@ public class JqadvGL {
     private Font font;
 
     // Projection matrix
-    Matrix4f PMatrix;
+    Matrix4f PMatrix = new Matrix4f();
+    FloatBuffer PBuffer = Buffers.newDirectFloatBuffer(16);
+    GLUniformData P;
 
     // Modelview matrix
-    Matrix4f MvMatrix;
+    Matrix4f MvMatrix = new Matrix4f();
+    FloatBuffer MvBuffer = Buffers.newDirectFloatBuffer(16);
+    GLUniformData Mv;
 
     // The inverse modelview matrix
-    Matrix4f MviMatrix;
+    // Has no uniform or buffer as it isn't used in any shaders
+    Matrix4f MviMatrix = new Matrix4f();
 
     public void setPointScale(float value) {
 
@@ -177,7 +177,6 @@ public class JqadvGL {
         vertices = FloatBuffer.wrap(coords);
         nPoints = transcripts.size();
 
-
     }
 
 
@@ -188,13 +187,6 @@ public class JqadvGL {
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
-
-
-        MvBuffer = Buffers.newDirectFloatBuffer(16);
-        MvMatrix = new Matrix4f();
-        PBuffer = Buffers.newDirectFloatBuffer(16);
-        PMatrix = new Matrix4f();
-        MviMatrix = new Matrix4f();
 
         // Create shaders and initialize the program.
         generateShaderProgram(gl2);
@@ -268,10 +260,10 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "height", 1f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
-		P = new GLUniformData("P", 4, 4, PBuffer);
-		st.uniform(gl2, P);
-		Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
-		st.uniform(gl2, Mv);
+        P = new GLUniformData("P", 4, 4, PBuffer);
+        st.uniform(gl2, P);
+        Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
+        st.uniform(gl2, Mv);
 
         GLUniformData sprite = new GLUniformData("sprite", 1);
         st.uniform(gl2, sprite);
@@ -322,7 +314,7 @@ public class JqadvGL {
         boxsp = Util.compileProgram(gl2, "box");
         st.attachShaderProgram(gl2, boxsp, false);
         
-		matsp = Util.compileProgram(gl2, "mat");
+        matsp = Util.compileProgram(gl2, "mat");
         st.attachShaderProgram(gl2, matsp, false);
 
         bgrndsp = Util.compileProgram(gl2, "bgrnd");
@@ -335,7 +327,7 @@ public class JqadvGL {
      */
     public void centerView() {
 
-        mx = 0; my = 0;
+        xMouse = 0; yMouse = 0;
         float wsc = w / session.min.width;
         float hsc = h / session.min.height;
         float target = Math.min(wsc, hsc);
@@ -351,8 +343,10 @@ public class JqadvGL {
                 break;
             }
         }
-        xoff = ((w - session.min.width * scale_master) / 2) / scale_master;
-        yoff = ((h - session.min.height * scale_master) / 2) / scale_master;
+        xOffset = ((w - session.min.width * scale_master) / 2) / scale_master;
+        yOffset = ((h - session.min.height * scale_master) / 2) / scale_master;
+
+        engine.core.resume();
     }
 
     protected void setup(GL2 gl2, int width, int height) {
@@ -378,8 +372,8 @@ public class JqadvGL {
         PMatrix.identity()
                .ortho2D(0, w, h, 0)
                .get(PBuffer);
-		P.setData(PBuffer);
-		st.uniform(gl2, P);
+        P.setData(PBuffer);
+        st.uniform(gl2, P);
         
     }
 
@@ -411,20 +405,20 @@ public class JqadvGL {
         engine.makeChanges(gl2);
 
         MvMatrix.identity()
-                .translate(mx, my, 0f)
+                .translate(xMouse, yMouse, 0f)
                 .scale(scale_master, scale_master, 0f)
-                .translate(xoff, yoff, 0f)
+                .translate(xOffset, yOffset, 0f)
                 .get(MvBuffer);
-		
-		Mv.setData(MvBuffer);
-		st.uniform(gl2, Mv);
+        
+        Mv.setData(MvBuffer);
+        st.uniform(gl2, Mv);
         
         // Make inverse matrix by just doing the opposite of above
         // I dunno it's fast and it works
         MviMatrix.identity()
-                .translate(-xoff, -yoff, 0f)
+                .translate(-xOffset, -yOffset, 0f)
                 .scale(1/scale_master, 1/scale_master, 0f)
-                .translate(-mx, -my, 0f);
+                .translate(-xMouse, -yMouse, 0f);
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
@@ -588,39 +582,39 @@ public class JqadvGL {
 
 
 /*
-		// BOX
-		st.attachShaderProgram(gl2, matsp, true);
+        // BOX
+        st.attachShaderProgram(gl2, matsp, true);
 
         
-		gl2.glEnable(GL.GL_BLEND);
+        gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
-		float[] square = Util.makeQuad(-30, -30, 30, 30);
-		gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        float[] square = Util.makeQuad(-30, -30, 30, 30);
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, miscVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                 6 * 2 * GLBuffers.SIZEOF_FLOAT,
                 FloatBuffer.wrap(square),
                 GL.GL_DYNAMIC_DRAW);
-		gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-		gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
-		gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-		gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-		String text = "LOADING IMAGE, PLEASE WAIT";
-		float size = font.getPixelSize(14, 96);
-		float x1 = (w/2 - (size/4)*text.length()) / w - 1;
-		float y1 = (h/2) / h - 1;
-		float[] square = Util.makeQuad(x1, y1, x1 + (size/4 * text.length()) / w, y1 + (size/4) / h);
-		
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        String text = "LOADING IMAGE, PLEASE WAIT";
+        float size = font.getPixelSize(14, 96);
+        float x1 = (w/2 - (size/4)*text.length()) / w - 1;
+        float y1 = (h/2) / h - 1;
+        float[] square = Util.makeQuad(x1, y1, x1 + (size/4 * text.length()) / w, y1 + (size/4) / h);
+        
 
 
         renderer.enable((GL2ES2)gl2, true);
-		matrix.glLoadIdentity();
-		matrix.glTranslatef(w/2 - (size/4)*text.length(), h/2, 0);
-		
-		util.drawString3D((GL2ES2)gl2, renderer, font, size, text,
-				new float[] {1,0,0,1}, SAMPLE_COUNT);
+        matrix.glLoadIdentity();
+        matrix.glTranslatef(w/2 - (size/4)*text.length(), h/2, 0);
+        
+        util.drawString3D((GL2ES2)gl2, renderer, font, size, text,
+                new float[] {1,0,0,1}, SAMPLE_COUNT);
 
         renderer.enable((GL2ES2)gl2, false);
 
@@ -642,11 +636,11 @@ public class JqadvGL {
     }
 
     public float[] getOffset() {
-        return new float[] {xoff, yoff};
+        return new float[] {xOffset, yOffset};
     }
     
     public float[] getMouse() {
-        return new float[] {mx, my};
+        return new float[] {xMouse, yMouse};
     }
 
     /**
@@ -657,13 +651,13 @@ public class JqadvGL {
         
         // If mouse has moved since last scale, we need to
         // adjust for this (to allow zooming from mouse position).
-        if(mx != x || my != y) {
+        if(xMouse != x || yMouse != y) {
 
-            xoff += (mx - x) / scale_master;
-            yoff += (my - y) / scale_master;
+            xOffset += (xMouse - x) / scale_master;
+            yOffset += (yMouse - y) / scale_master;
 
-            mx = x;
-            my = y;
+            xMouse = x;
+            yMouse = y;
 
         }
 
@@ -811,8 +805,8 @@ public class JqadvGL {
                         System.err.println("Invalid event: This should never happen");
                         break;
                     case 2:
-						xoff -= e[0] / scale_master;
-						yoff -= e[1] / scale_master;
+                        xOffset -= e[0] / scale_master;
+                        yOffset -= e[1] / scale_master;
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);
