@@ -52,6 +52,8 @@ public class JqadvGL {
     private int bkgrndVBO;
     private int selectionVBO;
 
+    int z = 0;
+
     float xOffset = 0;
     float yOffset = 0;
 
@@ -73,7 +75,7 @@ public class JqadvGL {
 
     private float w;
     private float h;
-    private float scale_master = 1;
+    private float scale = 1;
     private float point_scale = 1;
     private boolean makeCenter = true;
     private int numTiles = 0;
@@ -256,11 +258,8 @@ public class JqadvGL {
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
         Util.makeUniform(gl2, st, "ptscale", point_scale);
         Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
-        Util.makeUniform(gl2, st, "scale_master", scale_master);
         Util.makeUniform(gl2, st, "extrascale", extrascale);
         Util.makeUniform(gl2, st, "sel", 0f);
-        Util.makeUniform(gl2, st, "width", 1f);
-        Util.makeUniform(gl2, st, "height", 1f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
         P = new GLUniformData("P", 4, 4, PBuffer);
@@ -335,21 +334,19 @@ public class JqadvGL {
         float hsc = h / session.min.height;
         float target = Math.min(wsc, hsc);
 
-        while(scale_master < target) {
+        while(scale < target) {
             if(!scale(-1, 0, 0)) {
                 // reached scale limit
                 break;
             }
         }
-        while(scale_master > target) {
+        while(scale > target) {
             if(!scale(1, 0, 0)) {
                 break;
             }
         }
-        xOffset = ((w - session.min.width * scale_master) / 2) / scale_master;
-        yOffset = ((h - session.min.height * scale_master) / 2) / scale_master;
-
-        engine.core.resume();
+        xOffset = ((w - session.min.width * scale) / 2) / scale;
+        yOffset = ((h - session.min.height * scale) / 2) / scale;
     }
 
     protected void setup(GL2 gl2, int width, int height) {
@@ -357,16 +354,12 @@ public class JqadvGL {
         // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
 
-        xOffset += ((width - w) / 2) / scale_master;
-        yOffset += ((height - h) / 2) / scale_master;
+        xOffset += ((width - w) / 2) / scale;
+        yOffset += ((height - h) / 2) / scale;
 
         w = width;
         h = height;
         
-        Util.updateUniform(gl2, st, "width", (float)width);
-        Util.updateUniform(gl2, st, "height", (float)height);
-
-
         // Center the view
         if (makeCenter) {
             centerView(); 
@@ -412,7 +405,7 @@ public class JqadvGL {
 
         MvMatrix.identity()
                 .translate(xMouse, yMouse, 0f)
-                .scale(scale_master, scale_master, 0f)
+                .scale(scale, scale, 0f)
                 .translate(xOffset, yOffset, 0f)
                 .get(MvBuffer);
         
@@ -423,12 +416,11 @@ public class JqadvGL {
         // I dunno it's fast and it works
         MviMatrix.identity()
                 .translate(-xOffset, -yOffset, 0f)
-                .scale(1/scale_master, 1/scale_master, 0f)
+                .scale(1/scale, 1/scale, 0f)
                 .translate(-xMouse, -yMouse, 0f);
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
-        Util.updateUniform(gl2, st, "scale_master", scale_master);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
@@ -638,15 +630,7 @@ public class JqadvGL {
     }
 
     public float getScale() {
-        return scale_master;
-    }
-
-    public float[] getOffset() {
-        return new float[] {xOffset, yOffset};
-    }
-    
-    public float[] getMouse() {
-        return new float[] {xMouse, yMouse};
+        return scale;
     }
 
     /**
@@ -659,8 +643,8 @@ public class JqadvGL {
         // adjust for this (to allow zooming from mouse position).
         if(xMouse != x || yMouse != y) {
 
-            xOffset += (xMouse - x) / scale_master;
-            yOffset += (yMouse - y) / scale_master;
+            xOffset += (xMouse - x) / scale;
+            yOffset += (yMouse - y) / scale;
 
             xMouse = x;
             yMouse = y;
@@ -668,13 +652,13 @@ public class JqadvGL {
         }
 
         if(direction < 0) {
-            if(scale_master < 100f) {
-                scale_master *= 1.1f;
+            if(scale < 100f) {
+                scale *= 1.1f;
                 return true;
             }
         } else {
-            if(scale_master > 0.01f) {
-                scale_master /= 1.1f;
+            if(scale > 0.01f) {
+                scale /= 1.1f;
                 return true;
             }
         }
@@ -709,11 +693,6 @@ public class JqadvGL {
         ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
 
         public void move(float x, float y) {
-            // push event onto fifo
-            //
-            Vector3f v = new Vector3f(0f, 0f, 0f);
-            //PMatrix.transformPosition(v);
-            MvMatrix.transformPosition(v);
 
             eventFiFo.addLast(new float[] {x,y});
             core.resume();
@@ -811,8 +790,8 @@ public class JqadvGL {
                         System.err.println("Invalid event: This should never happen");
                         break;
                     case 2:
-                        xOffset -= e[0] / scale_master;
-                        yOffset -= e[1] / scale_master;
+                        xOffset -= e[0] / scale;
+                        yOffset -= e[1] / scale;
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);
