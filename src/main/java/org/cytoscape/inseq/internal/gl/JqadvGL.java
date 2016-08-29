@@ -52,6 +52,9 @@ public class JqadvGL {
 
 	float xoff = 0;
 	float yoff = 0;
+
+    float mx = 0;
+    float my = 0;
     
     private Texture symbols_tex;
 
@@ -570,7 +573,7 @@ public class JqadvGL {
 		pmv.glLoadIdentity();
 		pmv.glTranslatef(xoff, yoff, 0f);
 		pmv.glScalef(scale_master, scale_master, 0f);
-		pmv.glTranslatef(mouse_x, mouse_y, 0f);
+		pmv.glTranslatef(mx, my, 0f);
 		
 		Mv.setData(pmv.glGetMvMatrixf());
 		st.uniform(gl2, Mv);
@@ -635,15 +638,17 @@ public class JqadvGL {
 		y = h - y;
 		x -= w/2;
 		y -= h/2;
+
         // If mouse has moved since last scale, we need to
         // adjust for this (to allow zooming from mouse position).
-        if(mouse_x != x || mouse_y != -y) {
+        if(mx != x || my != -y) {
 
-            xoff += (mouse_x - x);
-            yoff += (mouse_y + y);
+            xoff += (mx - x) * scale_master;
+            yoff += (my + y) * scale_master;
 
-            mouse_x = x;
-            mouse_y = -y;
+            mx = x;
+            my = -y;
+
         }
 
         if(direction < 0) {
