@@ -1,4 +1,4 @@
-package org.cytoscape.inseq.internal.tissueimage;
+package org.cytoscape.inseq.internal.panel;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -115,7 +115,7 @@ public class SelectionPanel extends JPanel {
         //node selection shows all points checkbox
         
         JButton showAll 
-            = new JButton(NetworkUtil.iconFromResource("/notshowall.png"));
+            = new JButton(NetworkUtil.iconFromResource("/texture/notshowall.png"));
         plotControls.add(showAll);
         showAll.addActionListener(new ActionListener() {
             @Override
@@ -123,11 +123,11 @@ public class SelectionPanel extends JPanel {
                 showAllSelected = !showAllSelected;
                 if(showAllSelected) {
                     showAll.setIcon(NetworkUtil
-                            .iconFromResource("/showall.png"));
+                            .iconFromResource("/texture/showall.png"));
                 }
                 else {
                     showAll.setIcon(NetworkUtil
-                            .iconFromResource("/notshowall.png"));
+                            .iconFromResource("/texture/notshowall.png"));
                 }
                 //imagePane.setShowNodes(showAllSelected);
                 //imagePane.forceRepaint();

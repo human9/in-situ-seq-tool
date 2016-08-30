@@ -42,7 +42,6 @@ public class ImageTiler {
 
         this.bufferedImage = bufferedImage;
 
-
     }
 
     /**

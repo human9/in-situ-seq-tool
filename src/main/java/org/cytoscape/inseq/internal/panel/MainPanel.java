@@ -49,7 +49,6 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.ViewStyler;
-import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
@@ -317,7 +316,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         panel.add(small, smallCons);
         
         
-        ImageIcon icon = NetworkUtil.iconFromResource("/pop.png");
+        ImageIcon icon = NetworkUtil.iconFromResource("/texture/pop.png");
         pop = new JButton(icon);
         pop.addActionListener(new ActionListener() {
             @Override
@@ -430,6 +429,8 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
 
     class AutoselectorSetupDialog extends JDialog
                                   implements PropertyChangeListener {
+
+        static final long serialVersionUID = 453l;
 
         JOptionPane op;
         JSpinner x, y;

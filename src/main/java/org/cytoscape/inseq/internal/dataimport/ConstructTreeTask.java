@@ -123,7 +123,7 @@ outer:
             return false;
         }
         catch (KeySizeException e) {
-            System.out.println("Array is wrong size: Programmer error");
+            System.err.println("Invalid array size");
             return false;
         }
     }

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
-import org.cytoscape.inseq.internal.tissueimage.SelectionPanel;
+import org.cytoscape.inseq.internal.panel.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
 import com.jogamp.common.util.IOUtil;
