@@ -186,13 +186,8 @@ public class SelectionPanel extends JPanel {
         
         JSpinner pointScale 
             = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
-        JPanel scalePanel = new JPanel();
-        BorderLayout scaleLayout = new BorderLayout();
-        scaleLayout.setVgap(0);
-        scalePanel.setLayout(scaleLayout);
-        scalePanel.add(new JLabel("Scaling: "), BorderLayout.LINE_START);
-        scalePanel.add(pointScale);
-        plotControls.add(scalePanel, BorderLayout.LINE_END);
+        plotControls.add(new JLabel("Scaling: "), BorderLayout.LINE_START);
+        plotControls.add(pointScale);
         pointScale.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
