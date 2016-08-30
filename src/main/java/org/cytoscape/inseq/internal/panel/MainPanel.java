@@ -16,6 +16,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Vector;
@@ -361,8 +362,22 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
     public void makeNetwork(TypeNetwork network) {
         
         // Create and execute a task to find distances.
-        Shape selection = null;
-        if(useSubset) selection = session.getSelection();
+        Shape selection = session.getSelection();
+        char type;
+        int x = 0; int y = 0; int w = 0; int h = 0;
+        if(useSubset && selection != null) {
+            Rectangle2D bounds = selection.getBounds2D();
+            type = selection.contains(bounds) ? 'R' : 'P';
+            x = (int)bounds.getX();
+            y = (int)bounds.getY();
+            w = (int)bounds.getWidth();
+            h = (int)bounds.getHeight();
+        }
+        else {
+            type = 'E';
+        }
+        String networkName 
+            = String.format("%c%.2f X%d Y%d W%d H%d", type, network.getDistance(),x,y,w,h);
         Task neighboursTask = new FindNeighboursTask(selection, session.tree, network, distance, useSubset);
         
         itr.append(neighboursTask);
@@ -376,7 +391,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         };
 
         // Construct and display the new network.
-        Task networkTask = new ShuffleTask(network, interaction, session, ia.getCAA());
+        Task networkTask = new ShuffleTask(network, interaction, session, networkName);
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 

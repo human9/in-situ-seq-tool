@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.model.CyEdge;
@@ -27,11 +26,13 @@ public class ShuffleTask extends AbstractTask {
     private CyNetwork network;
     private CyTable nodeTable;
     private CyTable edgeTable;
+    private String genName;
 
-    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, CyAppAdapter a) {
+    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName) {
         this.net = n;
         this.session = s;
         this.interaction = interaction;
+        this.genName = genName;
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -113,8 +114,8 @@ public class ShuffleTask extends AbstractTask {
             network.getRow(network).set(CyNetwork.NAME, name);
         }
         else {
-            network.getRow(network).set(CyNetwork.NAME,
-                    String.format("%.2f-unit TypeNetwork", net.getDistance()));
+            System.out.println(genName);
+            network.getRow(network).set(CyNetwork.NAME, genName);
         }
 
         // Get the node table and add columns
