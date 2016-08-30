@@ -121,12 +121,18 @@ public class InseqSession {
         return genesAlphabetical;
     }
 
+    private boolean showAllSelected;
+    public void setShowAll(boolean b) {
+        showAllSelected = b;
+    }
+
     public boolean isActive(Transcript t) {
         TypeNetwork sel = getSelectedNetwork();
         if(sel == null) return true;
 
         if(nodeSelection != null 
-                && nodeSelection.contains(t.type)) return true;
+                && nodeSelection.contains(t.type)
+                && showAllSelected) return true;
 
         if(t.getNeighboursForNetwork(sel) == null 
                 || t.getNeighboursForNetwork(sel).size() < 1

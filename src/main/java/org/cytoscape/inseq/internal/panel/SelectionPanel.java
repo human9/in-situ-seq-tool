@@ -129,8 +129,8 @@ public class SelectionPanel extends JPanel {
                     showAll.setIcon(NetworkUtil
                             .iconFromResource("/texture/notshowall.png"));
                 }
-                //imagePane.setShowNodes(showAllSelected);
-                //imagePane.forceRepaint();
+                session.setShowAll(showAllSelected);
+                updateSelection();
             }
         });
         
