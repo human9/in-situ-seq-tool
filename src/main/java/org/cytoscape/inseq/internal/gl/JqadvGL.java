@@ -75,7 +75,7 @@ public class JqadvGL {
     private float h;
     private float scale = 1;
     private float point_scale = 1;
-    private boolean makeCenter = true;
+    private boolean makeCenter;
     private int numTiles = 0;
 
     private int nPoints;
@@ -352,8 +352,8 @@ public class JqadvGL {
         // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
 
-        xOffset += ((width - w) / 2) / scale;
-        yOffset += ((height - h) / 2) / scale;
+        //xOffset += ((width - w) / 2) / scale;
+        //yOffset += ((height - h) / 2) / scale;
 
         w = width;
         h = height;
@@ -402,9 +402,8 @@ public class JqadvGL {
         engine.makeChanges(gl2);
 
         MvMatrix.identity()
-                .translate(xMouse, yMouse, 0f)
+                .translate(-xOffset, -yOffset, 0f)
                 .scale(scale, scale, 0f)
-                .translate(xOffset, yOffset, 0f)
                 .get(MvBuffer);
         
         Mv.setData(MvBuffer);
@@ -637,29 +636,22 @@ public class JqadvGL {
      */
     public boolean scale(int direction, float x, float y) {
         
-        // If mouse has moved since last scale, we need to
-        // adjust for this (to allow zooming from mouse position).
-        if(xMouse != x || yMouse != y) {
-
-            xOffset += (xMouse - x) / scale;
-            yOffset += (yMouse - y) / scale;
-
-            xMouse = x;
-            yMouse = y;
-
-        }
-
         if(direction < 0) {
             if(scale < 100f) {
+                xOffset -= (x+xOffset) - (x+xOffset)*1.1; 
+                yOffset -= (y+yOffset) - (y+yOffset)*1.1; 
                 scale *= 1.1f;
                 return true;
             }
         } else {
             if(scale > 0.01f) {
+                xOffset -= (x+xOffset) - (x+xOffset)*0.9; 
+                yOffset -= (y+yOffset) - (y+yOffset)*0.9; 
                 scale /= 1.1f;
                 return true;
             }
         }
+        
         return false; 
     }
 
@@ -788,8 +780,8 @@ public class JqadvGL {
                         System.err.println("Invalid event: This should never happen");
                         break;
                     case 2:
-                        xOffset -= e[0] / scale;
-                        yOffset -= e[1] / scale;
+                        xOffset += e[0];
+                        yOffset += e[1];
                         break;
                     case 3:
                         scale((int)e[0], e[1], e[2]);
