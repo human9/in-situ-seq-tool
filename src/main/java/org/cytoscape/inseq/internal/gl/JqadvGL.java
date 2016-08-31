@@ -75,7 +75,7 @@ public class JqadvGL {
     private float h;
     private float scale = 1;
     private float point_scale = 1;
-    private boolean makeCenter;
+    private boolean makeCenter = true;
     private int numTiles = 0;
 
     private int nPoints;
@@ -326,25 +326,26 @@ public class JqadvGL {
      * Center and scale the view so that as much of the data as possible is visible.
      */
     public void centerView() {
+        
+        xOffset = session.min.width  / 2;
+        yOffset = session.min.height / 2;
+        scale = 1;
 
-        xMouse = 0; yMouse = 0;
         float wsc = w / session.min.width;
         float hsc = h / session.min.height;
         float target = Math.min(wsc, hsc);
 
         while(scale < target) {
-            if(!scale(-1, 0, 0)) {
+            if(!scale(-1, w/2, h/2)) {
                 // reached scale limit
                 break;
             }
         }
         while(scale > target) {
-            if(!scale(1, 0, 0)) {
+            if(!scale(1, w/2, h/2)) {
                 break;
             }
         }
-        xOffset = ((w - session.min.width * scale) / 2) / scale;
-        yOffset = ((h - session.min.height * scale) / 2) / scale;
     }
 
     protected void setup(GL2 gl2, int width, int height) {
@@ -352,8 +353,9 @@ public class JqadvGL {
         // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
 
-        //xOffset += ((width - w) / 2) / scale;
-        //yOffset += ((height - h) / 2) / scale;
+        // Keep view centered
+        xOffset += (w-width)/2;
+        yOffset += (h-height)/2;
 
         w = width;
         h = height;
@@ -644,14 +646,13 @@ public class JqadvGL {
                 return true;
             }
         } else {
-            if(scale > 0.01f) {
-                xOffset -= (x+xOffset) - (x+xOffset)*0.9; 
-                yOffset -= (y+yOffset) - (y+yOffset)*0.9; 
+            if(scale > 0.005f) {
+                xOffset -= (x+xOffset) - (x+xOffset)/1.1; 
+                yOffset -= (y+yOffset) - (y+yOffset)/1.1; 
                 scale /= 1.1f;
                 return true;
             }
         }
-        
         return false; 
     }
 
