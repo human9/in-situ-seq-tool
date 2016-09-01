@@ -18,6 +18,7 @@ import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.graph.curve.Region;
@@ -327,8 +328,8 @@ public class JqadvGL {
      */
     public void centerView() {
         
-        xOffset = session.min.width  / 2;
-        yOffset = session.min.height / 2;
+        xOffset = -(w/2 - session.min.width  / 2);
+        yOffset = -(h/2 - session.min.height / 2);
         scale = 1;
 
         float wsc = w / session.min.width;
@@ -369,7 +370,7 @@ public class JqadvGL {
         renderer.reshapeOrtho(width, height, -1, 1);
 
         PMatrix.identity()
-               .ortho2D(0, w, h, 0)
+               .ortho(0, w, h, 0, -1000, 1000)
                .get(PBuffer);
         P.setData(PBuffer);
         st.uniform(gl2, P);
@@ -380,9 +381,14 @@ public class JqadvGL {
      * Convert a viewport pixel to a graph coordinate.
      */
     public float[] pixelToGraph(float[] p) {
-        Vector3f v = new Vector3f(p[0], p[1], 0);
+        float xZ = (float)( (p[1] + yOffset) * Math.tan(xRotate) );
+        //float yZ = (float)( (p[0] + xOffset) * Math.tan(yRotate) );
+        float z = xZ;// + yZ;
+        Vector3f v = new Vector3f(p[0], p[1], z);
+
         MviMatrix.transformPosition(v);
         return new float[] {v.x, v.y};
+        //return new float[] {p[0], p[1]/(float)Math.cos(angle)};
     }
 
     /**
@@ -394,7 +400,12 @@ public class JqadvGL {
         return new float[] {v.x, v.y};
     }
 
+    int z = 0;
+    float xRotate = (float) Math.toRadians(0);
+    float yRotate = (float) Math.toRadians(0);
     protected void render(GL2 gl2, int width, int height) {
+    
+        xRotate = (float) Math.toRadians(z++);
 
         gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -405,6 +416,8 @@ public class JqadvGL {
 
         MvMatrix.identity()
                 .translate(-xOffset, -yOffset, 0f)
+                .rotateX(xRotate)
+                //.rotateY(yRotate)
                 .scale(scale, scale, 0f)
                 .get(MvBuffer);
         
@@ -414,9 +427,11 @@ public class JqadvGL {
         // Make inverse matrix by just doing the opposite of above
         // I dunno it's fast and it works
         MviMatrix.identity()
-                .translate(-xOffset, -yOffset, 0f)
                 .scale(1/scale, 1/scale, 0f)
-                .translate(-xMouse, -yMouse, 0f);
+                //.rotateY(-yRotate)
+                .rotateX(-xRotate)
+                .translate(xOffset, yOffset, 0f);
+        
 
         Util.updateUniform(gl2, st, "extrascale", extrascale);
         Util.updateUniform(gl2, st, "ptscale", point_scale);
