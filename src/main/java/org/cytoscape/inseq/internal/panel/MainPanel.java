@@ -298,7 +298,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
                 else { 
                     session.setSelection(selected.getSelection());
                 }
-                selectionPanel.getJqadvPanel().getUpdater().selectionChanged(true);
+                selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
             }
         });
         small.add(netBox, netBoxCons);

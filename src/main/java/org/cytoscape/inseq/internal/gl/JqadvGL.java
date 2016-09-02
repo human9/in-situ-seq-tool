@@ -42,8 +42,6 @@ public class JqadvGL {
     float xOffset = 0;
     float yOffset = 0;
 
-
-
     // Shaders
     private ShaderState st;
     private ShaderProgram jqsp;
@@ -60,15 +58,14 @@ public class JqadvGL {
     private int numTiles = 0;
 
     private int nPoints;
-    private boolean pc;
-    private boolean initDone = false;
 
-    private float[] coords;
-    private float[] colours;
-    private float[] bkgrnd;
-    private float[] symbols;
-    private FloatBuffer selectionShape;
-    private int capacity;
+    protected boolean pc;
+    protected float[] coords;
+    protected float[] colours;
+    protected float[] bkgrnd;
+    protected float[] symbols;
+    protected FloatBuffer selectionShape;
+    protected int capacity;
 
     private GLUniformData uniColours;
     private GLUniformData uniSymbols;
@@ -78,7 +75,6 @@ public class JqadvGL {
     private List<Transcript> transcripts;
     private InseqSession session;
 
-    final UpdateEngine engine;
     private ImageTiler imageTiler;
 
     TextRenderer textRenderer;
@@ -97,16 +93,24 @@ public class JqadvGL {
     // Has no uniform or buffer as it isn't used in any shaders
     Matrix4f MviMatrix = new Matrix4f();
 
-    public JqadvGL(InseqSession s, GLAutoDrawable canvas) {
+    // An empty set of update type enums
+    protected EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
+    // Events can build up here before being applied
+    protected ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
+    protected Animator core;
+    private boolean initDone;
+    private float point_scale = 1f;
+    private float extrascale = 1f;
+    private BufferedImage image;
+
+    public JqadvGL(InseqSession s, GLAutoDrawable drawable) {
         this.session = s;
         this.transcripts = s.getRaw();
-        this.engine = new UpdateEngine(canvas);
         this.textRenderer = new TextRenderer(session);
 
 
         // vertices required to cover the background
         bkgrnd = Util.makeQuad(-1, -1, 1, 1);
-
 
         // create array specifying what colour each type uses.
         int num = session.getNumGenes();
@@ -128,6 +132,8 @@ public class JqadvGL {
         }
         vertices = FloatBuffer.wrap(coords);
         nPoints = transcripts.size();
+
+        core = new Animator(drawable);
 
     }
 
@@ -234,8 +240,134 @@ public class JqadvGL {
 
         textRenderer.initRender(gl2);
 
+        core.start();
+        core.pause();
+
         initDone = true;
 
+    }
+
+    /**
+     * Add a translation event into the queue.
+     */
+    public void move(float x, float y) {
+        eventFiFo.addLast(new float[] {x,y});
+        core.resume();
+    }
+
+    /**
+     * Add a scaling event into the queue.
+     */
+    public void updateScale(float direction, float x, float y) {
+        eventFiFo.addLast(new float[] {direction,x,y});
+        core.resume();
+    }
+
+    /**
+     * Set a new scale and signal that it should be updated.
+     */
+    public void setImageScale(float value) {
+        extrascale = value;
+        updates.add(UpdateType.IMAGE_SCALE_CHANGED);
+        core.resume();
+    }
+
+    /**
+     * Indicate whether initialisation is complete.
+     */
+    public void setInitDone(boolean d) {
+        initDone = d;
+    }
+
+    public void largePoints(boolean e) {
+        if(e)
+            point_scale = 2;
+        else
+            point_scale = 1;
+
+        updates.add(UpdateType.POINT_SCALE_CHANGED);
+        core.resume();
+    }
+
+    public void changeNetworkComponents() {
+
+        List<Transcript> transcripts = session.getRaw();
+
+        for(int i = 0; i < transcripts.size(); i++) {
+            // set it to negative to make it not appear
+            Transcript t = transcripts.get(i);
+            if(session.isActive(t)) {
+                coords[i*3+2] = t.type;
+            } else {
+                coords[i*3+2] = -t.type-1;
+            }
+        }
+        
+        updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
+        core.resume();
+    }
+
+    public void selectionChanged(boolean pathClosed) {
+
+        if(initDone) {
+            if(session.getSelection() != null) {
+                PathIterator pi = session.getSelection().getPathIterator(null);
+                float[] segment = new float[6];
+                ArrayList<Float> shape = new ArrayList<Float>();
+                // For stencil buffer triangle drawing
+                shape.add(0f);
+                shape.add(0f);
+                while(!pi.isDone()) {
+                    pi.currentSegment(segment);
+                    shape.add(segment[0]);
+                    shape.add(segment[1]);
+                    pi.next();
+                }
+                pc = pathClosed;
+                // add origin at end
+                shape.add(shape.get(2));
+                shape.add(shape.get(3));
+
+                selectionShape = FloatBuffer.allocate(shape.size());
+                for(int a = 0; a < shape.size(); a++) {
+                    selectionShape.put(a, shape.get(a));
+                }
+            } else {
+                selectionShape = null;
+            }
+
+            updates.add(UpdateType.SELECTION_AREA_CHANGED);
+            core.resume();
+        }
+    }
+
+    public void changeImage(BufferedImage i) {
+        image = i;
+        updates.add(UpdateType.IMAGE_CHANGED);
+        core.resume();
+    }
+
+    public void changeSymbol(Integer type, Integer symbol) {
+        symbols[type] = symbol;
+        updates.add(UpdateType.SYMBOL_CHANGED);
+        core.resume();
+    }
+
+    public void changeColour(Integer type, Color c) {
+        int a = type*3;
+        float[] f = new float[3];
+        System.arraycopy(
+                c.getRGBColorComponents(f), 0, colours, a, 3);
+        updates.add(UpdateType.COLOUR_CHANGED);
+        core.resume();
+    }
+
+    /**
+     * Marks the selected point.
+     */
+    public void selectTranscript(Transcript t) {
+        selectedTranscript = t;
+        core.resume();
     }
     
     /**
@@ -494,7 +626,7 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
-        engine.makeChanges(gl2);
+        fetchUpdates(gl2); 
         constructMatrices(gl2);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
@@ -519,14 +651,6 @@ public class JqadvGL {
         }
         
         textRenderer.renderText(gl2, scale, selectedTranscript);
-    }
-
-    /**
-     * Marks the selected point.
-     */
-    public void selectTranscript(Transcript t) {
-        selectedTranscript = t;
-        engine.core.resume();
     }
 
     public float getScale() {
@@ -557,211 +681,6 @@ public class JqadvGL {
         return false; 
     }
 
-    /**
-     * Queried during rendering for any changes that need to be uploaded to the
-     * GPU.
-     * Other classes that need to modify the GLWindow can just be given access
-     * to this internal class.
-     */
-    public class UpdateEngine {
-
-
-        Animator core;
-        private float point_scale = 1f;
-        private float extrascale = 1f;
-
-        public UpdateEngine(GLAutoDrawable drawable) {
-            core = new Animator(drawable);
-            core.start();
-            core.pause();
-        }
-
-        // An empty set of update type enums
-        private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
-
-        private BufferedImage image;
-        
-        /**
-         * Pans the image.
-         */
-
-        ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
-
-        public void move(float x, float y) {
-
-            eventFiFo.addLast(new float[] {x,y});
-            core.resume();
-        }
-
-        public void updateScale(float direction, float x, float y) {
-            eventFiFo.addLast(new float[] {direction,x,y});
-            core.resume();
-        }
-
-        public void setImageScale(float value) {
-
-            extrascale = value;
-            updates.add(UpdateType.IMAGE_SCALE_CHANGED);
-            core.resume();
-        }
-
-        public void largePoints(boolean e) {
-            if(e)
-                point_scale = 2;
-            else
-                point_scale = 1;
-
-            updates.add(UpdateType.POINT_SCALE_CHANGED);
-            core.resume();
-        }
-
-        public void changeNetworkComponents() {
-
-            for(int i = 0; i < transcripts.size(); i++) {
-                // set it to negative to make it not appear
-                Transcript t = transcripts.get(i);
-                if(session.isActive(t)) {
-                    coords[i*3+2] = t.type;
-                } else {
-                    coords[i*3+2] = -t.type-1;
-                }
-            }
-            
-            updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
-            core.resume();
-        }
-
-        public void selectionChanged(boolean pathClosed) {
-
-            if(initDone) {
-                if(session.getSelection() != null) {
-                    PathIterator pi = session.getSelection().getPathIterator(null);
-                    float[] segment = new float[6];
-                    ArrayList<Float> shape = new ArrayList<Float>();
-                    // For stencil buffer triangle drawing
-                    shape.add(0f);
-                    shape.add(0f);
-                    while(!pi.isDone()) {
-                        pi.currentSegment(segment);
-                        shape.add(segment[0]);
-                        shape.add(segment[1]);
-                        pi.next();
-                    }
-                    pc = pathClosed;
-                    // add origin at end
-                    shape.add(shape.get(2));
-                    shape.add(shape.get(3));
-
-                    selectionShape = FloatBuffer.allocate(shape.size());
-                    for(int a = 0; a < shape.size(); a++) {
-                        selectionShape.put(a, shape.get(a));
-                    }
-                } else {
-                    selectionShape = null;
-                }
-
-                updates.add(UpdateType.SELECTION_AREA_CHANGED);
-                core.resume();
-            }
-        }
-
-        public void changeImage(BufferedImage i) {
-            image = i;
-            updates.add(UpdateType.IMAGE_CHANGED);
-            core.resume();
-        }
-
-        public void changeSymbol(Integer type, Integer symbol) {
-            symbols[type] = symbol;
-            updates.add(UpdateType.SYMBOL_CHANGED);
-            core.resume();
-        }
-
-        public void changeColour(Integer type, Color c) {
-            int a = type*3;
-            float[] f = new float[3];
-            System.arraycopy(
-                    c.getRGBColorComponents(f), 0, colours, a, 3);
-            updates.add(UpdateType.COLOUR_CHANGED);
-            core.resume();
-        }
-
-        /**
-         * Allows changes that require access to the main OpenGL thread to
-         * run later.
-         */
-        public void makeChanges(GL2 gl2) {
-            
-
-            float[] e;
-            int size = (int) Math.floor(eventFiFo.size() * 0.5);
-            while(eventFiFo.size() > size) {
-                e = eventFiFo.removeFirst();
-                switch(e.length) {
-                    default:
-                        System.err.println("Invalid event: This should never happen");
-                        break;
-                    case 2:
-                        xOffset += e[0];
-                        yOffset += e[1];
-                        break;
-                    case 3:
-                        scale((int)e[0], e[1], e[2]);
-                        break;
-                }
-
-            }
-            if(eventFiFo.isEmpty()) core.pause();
-
-            for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
-                UpdateType update = i.next();
-                switch(update) {
-                    case NETWORK_COMPONENT_SELECTED:
-                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-                        gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
-                                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
-                                         vertices,
-                                         GL.GL_STATIC_DRAW);
-                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-                        break;
-                    case SELECTION_AREA_CHANGED:
-                        if(selectionShape != null) {
-                            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
-                            capacity = selectionShape.capacity();
-                            gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                                             selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
-                                             selectionShape,
-                                             GL.GL_DYNAMIC_DRAW);
-                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-                        }
-                        break;
-                    case IMAGE_CHANGED:
-                        imageTiler = new ImageTiler(gl2, image);
-                        imageTiler.bindVertices(gl2, imageVBO);
-                        numTiles = imageTiler.bindTexture(gl2);
-                        image = null;
-                        break;
-                    case COLOUR_CHANGED:
-                        uniColours.setData(FloatBuffer.wrap(colours));
-                        textRenderer.clearRegion(gl2);
-                        st.uniform(gl2, uniColours);
-                        break;
-                    case SYMBOL_CHANGED:
-                        uniSymbols.setData(FloatBuffer.wrap(symbols));
-                        st.uniform(gl2, uniSymbols);
-                        break;
-                    case POINT_SCALE_CHANGED:
-                        Util.updateUniform(gl2, st, "ptscale", point_scale);
-                        break;
-                    case IMAGE_SCALE_CHANGED:
-                        Util.updateUniform(gl2, st, "extrascale", extrascale);
-                        break;
-                }
-                i.remove();
-            }
-        }
-    }
-    
     private enum UpdateType {
         NETWORK_COMPONENT_SELECTED,
         SELECTION_AREA_CHANGED,
@@ -770,5 +689,76 @@ public class JqadvGL {
         SYMBOL_CHANGED,
         POINT_SCALE_CHANGED,
         IMAGE_SCALE_CHANGED
+    } 
+
+    public void fetchUpdates(GL2 gl2) {
+        
+        float[] e;
+        int size = (int) Math.floor(eventFiFo.size() * 0.5);
+        while(eventFiFo.size() > size) {
+            e = eventFiFo.removeFirst();
+            switch(e.length) {
+                default:
+                    System.err.println("Invalid event: This should never happen");
+                    break;
+                case 2:
+                    xOffset += e[0];
+                    yOffset += e[1];
+                    break;
+                case 3:
+                    scale((int)e[0], e[1], e[2]);
+                    break;
+            }
+
+        }
+        if(eventFiFo.isEmpty()) core.pause();
+
+        for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
+            UpdateType update = i.next();
+            switch(update) {
+                case NETWORK_COMPONENT_SELECTED:
+                    gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+                    gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
+                                     nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
+                                     vertices,
+                                     GL.GL_STATIC_DRAW);
+                    gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+                    break;
+                case SELECTION_AREA_CHANGED:
+                    if(selectionShape != null) {
+                        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+                        capacity = selectionShape.capacity();
+                        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                                         selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
+                                         selectionShape,
+                                         GL.GL_DYNAMIC_DRAW);
+                    gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+                    }
+                    break;
+                case IMAGE_CHANGED:
+                    imageTiler = new ImageTiler(gl2, image);
+                    imageTiler.bindVertices(gl2, imageVBO);
+                    numTiles = imageTiler.bindTexture(gl2);
+                    image = null;
+                    break;
+                case COLOUR_CHANGED:
+                    uniColours.setData(FloatBuffer.wrap(colours));
+                    textRenderer.clearRegion(gl2);
+                    st.uniform(gl2, uniColours);
+                    break;
+                case SYMBOL_CHANGED:
+                    uniSymbols.setData(FloatBuffer.wrap(symbols));
+                    st.uniform(gl2, uniSymbols);
+                    break;
+                case POINT_SCALE_CHANGED:
+                    Util.updateUniform(gl2, st, "ptscale", point_scale);
+                    break;
+                case IMAGE_SCALE_CHANGED:
+                    Util.updateUniform(gl2, st, "extrascale", extrascale);
+                    break;
+            }
+            i.remove();
+        }
     }
+
 }

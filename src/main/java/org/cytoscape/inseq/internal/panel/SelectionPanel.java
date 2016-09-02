@@ -106,7 +106,7 @@ public class SelectionPanel extends JPanel {
                     = fc.showOpenDialog(parent);
                 if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
-                jqadvpanel.getUpdater().changeImage(
+                jqadvpanel.getGL().changeImage(
                         ParseUtil.getImageFile(fc.getSelectedFile().getAbsolutePath()));
             }
 
@@ -170,7 +170,7 @@ public class SelectionPanel extends JPanel {
         bigSymbols.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getUpdater().largePoints(bigSymbols.isSelected());
+                jqadvpanel.getGL().largePoints(bigSymbols.isSelected());
             }
         });
 
@@ -191,7 +191,7 @@ public class SelectionPanel extends JPanel {
         pointScale.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                jqadvpanel.getUpdater().setImageScale(((Double)pointScale.getValue()).floatValue());   
+                jqadvpanel.getGL().setImageScale(((Double)pointScale.getValue()).floatValue());   
             }
         });
     }
@@ -259,7 +259,7 @@ public class SelectionPanel extends JPanel {
             }
         }
 
-        jqadvpanel.getUpdater().changeNetworkComponents();
+        jqadvpanel.getGL().changeNetworkComponents();
 
     }
 

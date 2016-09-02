@@ -34,6 +34,8 @@ import org.cytoscape.inseq.internal.gl.JqadvPanel;
 public class VisualPicker extends JDialog implements ChangeListener
 {
 
+    private static final long serialVersionUID = 8374L;
+
     private InseqSession session;
     private JColorChooser chooser;
     private JqadvPanel panel;
@@ -115,13 +117,13 @@ public class VisualPicker extends JDialog implements ChangeListener
         session.setGeneColour(type, colour);
         session.setGeneSymbol(type, symbol);
         session.refreshStyle();
-        panel.getUpdater().changeColour(type, session.getGeneColour(type));
+        panel.getGL().changeColour(type, session.getGeneColour(type));
         dispose();
     }
 
     private void responseCancel() {
-        panel.getUpdater().changeColour(type, session.getGeneColour(type));
-        panel.getUpdater().changeSymbol(type, session.getGeneSymbol(type));
+        panel.getGL().changeColour(type, session.getGeneColour(type));
+        panel.getGL().changeSymbol(type, session.getGeneSymbol(type));
         dispose();
     }
 
@@ -135,15 +137,17 @@ public class VisualPicker extends JDialog implements ChangeListener
         clearTiles();
         symbol = index;
         tiles.get(symbol).select();
-        panel.getUpdater().changeSymbol(type, symbol);
+        panel.getGL().changeSymbol(type, symbol);
     }
 
     public void stateChanged(ChangeEvent e) {
         colour = chooser.getColor();
-        panel.getUpdater().changeColour(type, colour);
+        panel.getGL().changeColour(type, colour);
     }
 
     private class SymbolTile extends JPanel {
+
+        private static final long serialVersionUID = -2023035L;
 
         private int index;
 

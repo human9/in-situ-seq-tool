@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.inseq.internal.gl.JqadvGL.UpdateEngine;
 import org.cytoscape.inseq.internal.panel.SelectionPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 
@@ -85,7 +84,9 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     }
     
     public void dispose(GLAutoDrawable drawable) {
-        jqadvgl.engine.core.stop();
+        System.out.println("I'm being disposed? Such is life in soviet JVM");
+        jqadvgl.core.stop();
+        window.destroy();
     }
     
     public void display(GLAutoDrawable drawable) {
@@ -96,7 +97,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
     public void center() {
         jqadvgl.centerView();
-        jqadvgl.engine.core.resume();
+        jqadvgl.core.resume();
     }
 
     /**
@@ -133,8 +134,8 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
         return jqadvListener;
     }
 
-    public UpdateEngine getUpdater() {
-        return jqadvgl.engine;
+    public JqadvGL getGL() {
+        return jqadvgl;
     }
 
 }

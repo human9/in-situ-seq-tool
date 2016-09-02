@@ -66,7 +66,7 @@ public class JqadvListener extends MouseAdapter {
     
     @Override
     public void mouseWheelMoved(MouseEvent e) {
-        jqadvgl.engine.updateScale(-e.getRotation()[1], 
+        jqadvgl.updateScale(-e.getRotation()[1], 
                       e.getX(),
                       e.getY());
     }
@@ -115,7 +115,7 @@ public class JqadvListener extends MouseAdapter {
                     }
                 }
             }
-            jqadvgl.engine.selectionChanged(pathClosed);
+            jqadvgl.selectionChanged(pathClosed);
         }
     }
 
@@ -150,7 +150,7 @@ public class JqadvListener extends MouseAdapter {
                 current.lineTo(p[0], p[1]);
             }
             session.setSelection(current);
-            jqadvgl.engine.selectionChanged(pathClosed);
+            jqadvgl.selectionChanged(pathClosed);
         }
     }
 
@@ -159,7 +159,7 @@ public class JqadvListener extends MouseAdapter {
         Point ePoint = new Point(e.getX(), e.getY());
         float[] p = jqadvgl.pixelToGraph(new float[]{e.getX(), e.getY()});
         if(dragButton) {
-            jqadvgl.engine.move(start.x - e.getX(),
+            jqadvgl.move(start.x - e.getX(),
                          start.y - e.getY());
             start.setLocation(ePoint);
         }
@@ -169,7 +169,7 @@ public class JqadvListener extends MouseAdapter {
                         origin,
                         new Point2D.Float(p[0], p[1]));
                 session.setSelection(rectangle);
-                jqadvgl.engine.selectionChanged(true);
+                jqadvgl.selectionChanged(true);
             }
             if (initPolygon && usePolygon) {
                 GeneralPath current = (GeneralPath) polygon.clone();
@@ -182,7 +182,7 @@ public class JqadvListener extends MouseAdapter {
                     current.lineTo(p[0], p[1]);
                 }
                 session.setSelection(current);
-                jqadvgl.engine.selectionChanged(pathClosed);
+                jqadvgl.selectionChanged(pathClosed);
             }
         }
     }
