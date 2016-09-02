@@ -68,7 +68,6 @@ public class ParseUtil {
             return null;
         }
         
-        System.out.println("Resource load success.");
         return bimg;
     }
 

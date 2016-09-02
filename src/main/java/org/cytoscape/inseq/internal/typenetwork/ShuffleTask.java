@@ -114,7 +114,7 @@ public class ShuffleTask extends AbstractTask {
             network.getRow(network).set(CyNetwork.NAME, name);
         }
         else {
-            System.out.println(genName);
+            //System.out.println(genName);
             network.getRow(network).set(CyNetwork.NAME, genName);
         }
 

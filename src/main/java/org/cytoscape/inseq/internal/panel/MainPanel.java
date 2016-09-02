@@ -440,6 +440,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         if(frame != null) {
             frame.dispose();
         }
+        selectionPanel.getJqadvPanel().destroy();
     }
 
     class AutoselectorSetupDialog extends JDialog

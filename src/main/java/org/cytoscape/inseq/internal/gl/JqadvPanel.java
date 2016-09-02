@@ -84,9 +84,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     }
     
     public void dispose(GLAutoDrawable drawable) {
-        System.out.println("I'm being disposed? Such is life in soviet JVM");
         jqadvgl.core.stop();
-        window.destroy();
     }
     
     public void display(GLAutoDrawable drawable) {

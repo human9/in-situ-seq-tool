@@ -134,6 +134,7 @@ public class JqadvGL {
         nPoints = transcripts.size();
 
         core = new Animator(drawable);
+        core.start();
 
     }
 
@@ -239,9 +240,6 @@ public class JqadvGL {
         gl2.glActiveTexture(GL.GL_TEXTURE0);
 
         textRenderer.initRender(gl2);
-
-        core.start();
-        core.pause();
 
         initDone = true;
 

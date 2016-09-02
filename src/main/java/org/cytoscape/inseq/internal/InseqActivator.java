@@ -37,6 +37,7 @@ public class InseqActivator extends AbstractCyActivator {
      */
     @Override
     public void start(BundleContext c) throws Exception {
+        
         properties = new Properties();
         context = c;
         JoglInitializer.unpackNativeLibrariesForJOGL(c);
