@@ -3,10 +3,7 @@ package org.cytoscape.inseq.internal.gl;
 import java.awt.Color;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.FloatBuffer;
-import java.text.DecimalFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -20,22 +17,12 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.graph.curve.Region;
-import com.jogamp.graph.curve.opengl.RegionRenderer;
-import com.jogamp.graph.curve.opengl.RenderState;
-import com.jogamp.graph.curve.opengl.TextRegionUtil;
-import com.jogamp.graph.font.Font;
-import com.jogamp.graph.font.FontFactory;
-import com.jogamp.graph.geom.SVertex;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLUniformData;
-import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
 import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.GLBuffers;
-import com.jogamp.opengl.util.PMVMatrix;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
@@ -55,9 +42,7 @@ public class JqadvGL {
     float xOffset = 0;
     float yOffset = 0;
 
-    private Texture symbols_tex;
 
-    private ImageTiler imageTiler;
 
     // Shaders
     private ShaderState st;
@@ -71,7 +56,6 @@ public class JqadvGL {
     private float w;
     private float h;
     private float scale = 1;
-    private float point_scale = 1;
     private boolean makeCenter = true;
     private int numTiles = 0;
 
@@ -80,33 +64,24 @@ public class JqadvGL {
     private boolean initDone = false;
 
     private float[] coords;
-    float[] img;
-    float[] colours;
-    float[] bkgrnd;
-    float[] symbols;
-    FloatBuffer selectionShape;
-    int capacity;
+    private float[] colours;
+    private float[] bkgrnd;
+    private float[] symbols;
+    private FloatBuffer selectionShape;
+    private int capacity;
 
-    GLUniformData uniColours;
-    GLUniformData uniSymbols;
+    private GLUniformData uniColours;
+    private GLUniformData uniSymbols;
 
-    private BufferedImage pointSprites;
-
-    private Transcript selection;
-
-    private float extrascale = 1f;
+    private Transcript selectedTranscript;
 
     private List<Transcript> transcripts;
-    private List<InseqSession.Gene> genesAlphabetical;
     private InseqSession session;
 
-    final public UpdateEngine engine;
+    final UpdateEngine engine;
+    private ImageTiler imageTiler;
 
-    public static final int[] SAMPLE_COUNT = new int[]{4};
-    public static final int RENDER_MODES = Region.COLORCHANNEL_RENDERING_BIT + Region.VBAA_RENDERING_BIT;
-    private RegionRenderer renderer;
-    private TextRegionUtil util;
-    private Font font;
+    TextRenderer textRenderer;
 
     // Projection matrix
     Matrix4f PMatrix = new Matrix4f();
@@ -126,16 +101,15 @@ public class JqadvGL {
         this.session = s;
         this.transcripts = s.getRaw();
         this.engine = new UpdateEngine(canvas);
+        this.textRenderer = new TextRenderer(session);
 
-        genesAlphabetical = s.getGenes();
-        // num = how many types of gene we have
-        int num = genesAlphabetical.size();
 
         // vertices required to cover the background
         bkgrnd = Util.makeQuad(-1, -1, 1, 1);
 
 
         // create array specifying what colour each type uses.
+        int num = session.getNumGenes();
         colours = new float[num * 3];
         for(int i = 0; i < num; i++) {
             Color c = s.getGeneColour(i);
@@ -144,13 +118,6 @@ public class JqadvGL {
             System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
         }
         
-        pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
-        // create the array specifying which symbol each type uses.
-        symbols = new float[num];
-        for(int i = 0; i < num; i++) {
-            symbols[i] = s.getGeneSymbol(i);
-        }
-
         // create array of our transcript locations
         coords = new float[transcripts.size() * 3];
         int i = 0;
@@ -178,9 +145,18 @@ public class JqadvGL {
         
         // Retrieve and bind the point sprites. These are the symbols that
         // appear on each transcript location.
+
+        BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
+        // create the array specifying which symbol each type uses.
+        int num = session.getNumGenes();
+        symbols = new float[num];
+        for(int i = 0; i < num; i++) {
+            symbols[i] = session.getGeneSymbol(i);
+        }
+
         gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
-        symbols_tex = Util.textureFromBufferedImage(pointSprites);
-        gl2.glBindTexture(GL.GL_TEXTURE_2D, symbols_tex.getTextureObject());
+        Texture pointSpritesTexture = Util.textureFromBufferedImage(pointSprites);
+        gl2.glBindTexture(GL.GL_TEXTURE_2D, pointSpritesTexture.getTextureObject());
         // Disable texture interpolation for point sprites.
         gl2.glTexParameteri(GL.GL_TEXTURE_2D,
                             GL.GL_TEXTURE_MIN_FILTER,
@@ -236,9 +212,9 @@ public class JqadvGL {
 
         Util.makeUniform(gl2, st, "background", 2);
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
-        Util.makeUniform(gl2, st, "ptscale", point_scale);
+        Util.makeUniform(gl2, st, "ptscale", 1f);
         Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
-        Util.makeUniform(gl2, st, "extrascale", extrascale);
+        Util.makeUniform(gl2, st, "extrascale", 1f);
         Util.makeUniform(gl2, st, "sel", 0f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
@@ -254,22 +230,9 @@ public class JqadvGL {
         uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
         st.uniform(gl2, uniColours);
 
-        try {
-            InputStream fs = JqadvGL.class.getResourceAsStream("/font/DroidSans.ttf");
-            font = FontFactory.get(fs, true);
-        } catch (IOException e) {
-            System.out.println("could not create font file");
-        }
         gl2.glActiveTexture(GL.GL_TEXTURE0);
 
-        RenderState renderState = RenderState.createRenderState(SVertex.factory());
-        renderState.setHintMask(RenderState.BITHINT_GLOBAL_DEPTH_TEST_ENABLED);
-
-        renderState.setColorStatic(1,1,1,1);
-        renderer = RegionRenderer.create(renderState, RegionRenderer.defaultBlendEnable, RegionRenderer.defaultBlendDisable);
-        renderer.init((GL2ES2)gl2, RENDER_MODES);
-        
-        util = new TextRegionUtil(RENDER_MODES);
+        textRenderer.initRender(gl2);
 
         initDone = true;
 
@@ -347,8 +310,8 @@ public class JqadvGL {
             centerView(); 
             makeCenter = false;
         }
-        
-        renderer.reshapeOrtho(width, height, -1, 1);
+
+        textRenderer.reshapeRegion(width, height);
 
         PMatrix.identity()
                .ortho(0, w, h, 0, -1000, 1000)
@@ -514,7 +477,7 @@ public class JqadvGL {
         
         Util.updateUniform(gl2, st, "sel", 1f);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
+        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selectedTranscript.index * 3 * GLBuffers.SIZEOF_FLOAT);
         gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
         Util.updateUniform(gl2, st, "sel", 0f);
 
@@ -522,88 +485,6 @@ public class JqadvGL {
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
     }
 
-    private void renderText(GL2 gl2) {
-
-        gl2.glActiveTexture(GL.GL_TEXTURE0);
-        renderer.enable((GL2ES2)gl2, true);
-        
-        PMVMatrix matrix = renderer.getMatrix();
-        matrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-        matrix.glLoadIdentity();
-        matrix.glTranslatef(5, h-15, 0);
-        
-        float fontSize = font.getPixelSize(10, 96);
-        float[] colour = new float[4];
-        for(InseqSession.Gene gene : genesAlphabetical) {
-
-            gene.color.getRGBComponents(colour);
-            colour[3] = 1;
-
-            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, gene.name,
-                    colour, SAMPLE_COUNT);
-        
-            matrix.glTranslatef(0, -15, 0);
-        }
-
-        if(selection != null) {
-            float size = font.getPixelSize(10, 96);
-            String display = session.name(selection.type) + " " + selection;
-            matrix.glLoadIdentity();
-            matrix.glTranslatef(w-(size/2)*display.length(), h-15, 0);
-            session.getGeneColour(selection.type).getRGBColorComponents(colour);
-            util.drawString3D((GL2ES2)gl2, renderer, font, size, display,
-                    colour, SAMPLE_COUNT);
-        }
-
-        // Bottom text
-        matrix.glLoadIdentity();
-        matrix.glTranslatef(5, 10, 0);
-        
-        DecimalFormat df = new DecimalFormat("#.##");
-        util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, "Zoom: " + df.format(getScale()*100)+"%",
-                new float[] {1,1,1,1}, SAMPLE_COUNT);
-
-        renderer.enable((GL2ES2)gl2, false);
-
-/*
-        // BOX
-        st.attachShaderProgram(gl2, matsp, true);
-
-        
-        gl2.glEnable(GL.GL_BLEND);
-        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-
-        float[] square = Util.makeQuad(-30, -30, 30, 30);
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, miscVBO);
-        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                6 * 2 * GLBuffers.SIZEOF_FLOAT,
-                FloatBuffer.wrap(square),
-                GL.GL_DYNAMIC_DRAW);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        String text = "LOADING IMAGE, PLEASE WAIT";
-        float size = font.getPixelSize(14, 96);
-        float x1 = (w/2 - (size/4)*text.length()) / w - 1;
-        float y1 = (h/2) / h - 1;
-        float[] square = Util.makeQuad(x1, y1, x1 + (size/4 * text.length()) / w, y1 + (size/4) / h);
-        
-
-
-        renderer.enable((GL2ES2)gl2, true);
-        matrix.glLoadIdentity();
-        matrix.glTranslatef(w/2 - (size/4)*text.length(), h/2, 0);
-        
-        util.drawString3D((GL2ES2)gl2, renderer, font, size, text,
-                new float[] {1,0,0,1}, SAMPLE_COUNT);
-
-        renderer.enable((GL2ES2)gl2, false);
-
-*/
-    }
 
     protected void render(GL2 gl2, int width, int height) {
     
@@ -633,18 +514,18 @@ public class JqadvGL {
             }
         }
         
-        if(selection != null) {
+        if(selectedTranscript != null) {
             drawSelectedPointBubble(gl2);    
         }
         
-        renderText(gl2);
+        textRenderer.renderText(gl2, scale, selectedTranscript);
     }
 
     /**
      * Marks the selected point.
      */
     public void selectTranscript(Transcript t) {
-        selection = t;
+        selectedTranscript = t;
         engine.core.resume();
     }
 
@@ -679,12 +560,15 @@ public class JqadvGL {
     /**
      * Queried during rendering for any changes that need to be uploaded to the
      * GPU.
-     * Keeps multiple variable updating contained and orderly.
+     * Other classes that need to modify the GLWindow can just be given access
+     * to this internal class.
      */
     public class UpdateEngine {
 
 
         Animator core;
+        private float point_scale = 1f;
+        private float extrascale = 1f;
 
         public UpdateEngine(GLAutoDrawable drawable) {
             core = new Animator(drawable);
@@ -718,7 +602,7 @@ public class JqadvGL {
 
             extrascale = value;
             updates.add(UpdateType.IMAGE_SCALE_CHANGED);
-            engine.core.resume();
+            core.resume();
         }
 
         public void largePoints(boolean e) {
@@ -728,7 +612,7 @@ public class JqadvGL {
                 point_scale = 1;
 
             updates.add(UpdateType.POINT_SCALE_CHANGED);
-            engine.core.resume();
+            core.resume();
         }
 
         public void changeNetworkComponents() {
@@ -859,7 +743,7 @@ public class JqadvGL {
                         break;
                     case COLOUR_CHANGED:
                         uniColours.setData(FloatBuffer.wrap(colours));
-                        util.clear(gl2);
+                        textRenderer.clearRegion(gl2);
                         st.uniform(gl2, uniColours);
                         break;
                     case SYMBOL_CHANGED:

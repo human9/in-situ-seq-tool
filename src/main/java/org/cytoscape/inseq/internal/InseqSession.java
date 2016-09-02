@@ -121,6 +121,10 @@ public class InseqSession {
         return genesAlphabetical;
     }
 
+    public int getNumGenes() {
+        return genes.size();
+    }
+
     private boolean showAllSelected;
     public void setShowAll(boolean b) {
         showAllSelected = b;
