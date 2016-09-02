@@ -131,15 +131,6 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     }
     public JqadvListener getListener() {
         return jqadvListener;
-
-    }
-
-    public void setPointScale(float value) {
-        jqadvgl.setPointScale(value);
-    }
-
-    public void largePoints(boolean e) {
-        jqadvgl.largePoints(e);
     }
 
     public UpdateEngine getUpdater() {

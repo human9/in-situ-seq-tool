@@ -156,7 +156,7 @@ public class SelectionPanel extends JPanel {
         });
         
         JButton center 
-            = new JButton("CENTER");
+            = new JButton("RESET");
         plotControls.add(center);
         center.addActionListener(new ActionListener() {
             @Override
@@ -170,7 +170,7 @@ public class SelectionPanel extends JPanel {
         bigSymbols.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jqadvpanel.largePoints(bigSymbols.isSelected());
+                jqadvpanel.getUpdater().largePoints(bigSymbols.isSelected());
             }
         });
 
@@ -191,7 +191,7 @@ public class SelectionPanel extends JPanel {
         pointScale.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                jqadvpanel.setPointScale(((Double)pointScale.getValue()).floatValue());   
+                jqadvpanel.getUpdater().setImageScale(((Double)pointScale.getValue()).floatValue());   
             }
         });
     }

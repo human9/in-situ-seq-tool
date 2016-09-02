@@ -18,7 +18,6 @@ import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.graph.curve.Region;
@@ -56,9 +55,6 @@ public class JqadvGL {
     float xOffset = 0;
     float yOffset = 0;
 
-    float xMouse = 0;
-    float yMouse = 0;
-    
     private Texture symbols_tex;
 
     private ImageTiler imageTiler;
@@ -125,21 +121,6 @@ public class JqadvGL {
     // The inverse modelview matrix
     // Has no uniform or buffer as it isn't used in any shaders
     Matrix4f MviMatrix = new Matrix4f();
-
-    public void setPointScale(float value) {
-
-        extrascale = value;
-        engine.core.resume();
-    }
-
-    public void largePoints(boolean e) {
-        if(e)
-            point_scale = 2;
-        else
-            point_scale = 1;
-
-        engine.core.resume();
-    }
 
     public JqadvGL(InseqSession s, GLAutoDrawable canvas) {
         this.session = s;
@@ -381,9 +362,9 @@ public class JqadvGL {
      * Convert a viewport pixel to a graph coordinate.
      */
     public float[] pixelToGraph(float[] p) {
-        float xZ = (float)( (p[1] + yOffset) * Math.tan(xRotate) );
+        //float xZ = (float)( (p[1] + yOffset) * Math.tan(xRotate) );
         //float yZ = (float)( (p[0] + xOffset) * Math.tan(yRotate) );
-        float z = xZ;// + yZ;
+        float z = 0;//xZ + yZ;
         Vector3f v = new Vector3f(p[0], p[1], z);
 
         MviMatrix.transformPosition(v);
@@ -400,12 +381,32 @@ public class JqadvGL {
         return new float[] {v.x, v.y};
     }
 
+    /*
     int z = 0;
     float xRotate = (float) Math.toRadians(0);
     float yRotate = (float) Math.toRadians(0);
+    */
+
+    private void constructMatrices(GL2 gl2) {
+
+        //xRotate = (float) Math.toRadians(z++);
+        MvMatrix.identity()
+                .translate(-xOffset, -yOffset, 0f)
+                //.rotateX(xRotate)
+                //.rotateY(yRotate)
+                .scale(scale, scale, 0f)
+                .get(MvBuffer);
+        
+          MviMatrix.identity()
+                .scale(1/scale, 1/scale, 0f)
+                //.rotateY(-yRotate)
+                //.rotateX(-xRotate)
+                .translate(xOffset, yOffset, 0f);
+
+    }
+
     protected void render(GL2 gl2, int width, int height) {
     
-        xRotate = (float) Math.toRadians(z++);
 
         gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -413,28 +414,8 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
         engine.makeChanges(gl2);
-
-        MvMatrix.identity()
-                .translate(-xOffset, -yOffset, 0f)
-                .rotateX(xRotate)
-                //.rotateY(yRotate)
-                .scale(scale, scale, 0f)
-                .get(MvBuffer);
         
-        Mv.setData(MvBuffer);
-        st.uniform(gl2, Mv);
-        
-        // Make inverse matrix by just doing the opposite of above
-        // I dunno it's fast and it works
-        MviMatrix.identity()
-                .scale(1/scale, 1/scale, 0f)
-                //.rotateY(-yRotate)
-                .rotateX(-xRotate)
-                .translate(xOffset, yOffset, 0f);
-        
-
-        Util.updateUniform(gl2, st, "extrascale", extrascale);
-        Util.updateUniform(gl2, st, "ptscale", point_scale);
+        constructMatrices(gl2);
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
@@ -709,6 +690,23 @@ public class JqadvGL {
             core.resume();
         }
 
+        public void setImageScale(float value) {
+
+            extrascale = value;
+            updates.add(UpdateType.IMAGE_SCALE_CHANGED);
+            engine.core.resume();
+        }
+
+        public void largePoints(boolean e) {
+            if(e)
+                point_scale = 2;
+            else
+                point_scale = 1;
+
+            updates.add(UpdateType.POINT_SCALE_CHANGED);
+            engine.core.resume();
+        }
+
         public void changeNetworkComponents() {
 
             for(int i = 0; i < transcripts.size(); i++) {
@@ -844,6 +842,12 @@ public class JqadvGL {
                         uniSymbols.setData(FloatBuffer.wrap(symbols));
                         st.uniform(gl2, uniSymbols);
                         break;
+                    case POINT_SCALE_CHANGED:
+                        Util.updateUniform(gl2, st, "ptscale", point_scale);
+                        break;
+                    case IMAGE_SCALE_CHANGED:
+                        Util.updateUniform(gl2, st, "extrascale", extrascale);
+                        break;
                 }
                 i.remove();
             }
@@ -856,5 +860,7 @@ public class JqadvGL {
         IMAGE_CHANGED,
         COLOUR_CHANGED,
         SYMBOL_CHANGED,
+        POINT_SCALE_CHANGED,
+        IMAGE_SCALE_CHANGED
     }
 }
