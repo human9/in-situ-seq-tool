@@ -15,8 +15,9 @@ import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
 /**
  * Attempts to create an image that will back the points.
- * If it will not fit within a single texture, it is split into smaller
- * fragments. 
+ * Huge images may be selected that are larger than the largest possible
+ * texture. If that is the case, this class can split the image up into
+ * multiple textures.
  */
 public class ImageTiler {
         

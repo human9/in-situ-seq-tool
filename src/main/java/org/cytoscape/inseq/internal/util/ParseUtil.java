@@ -84,7 +84,7 @@ public class ParseUtil {
             return null;
         }
         
-        System.out.println("File load success.");
+        //System.out.println("File load success.");
         return bimg;
     }
 
