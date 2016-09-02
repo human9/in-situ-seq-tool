@@ -405,20 +405,7 @@ public class JqadvGL {
 
     }
 
-    protected void render(GL2 gl2, int width, int height) {
-    
-
-        gl2.glEnable(GL.GL_BLEND);
-        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-        gl2.glEnable(GL2.GL_POINT_SPRITE);
-        gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
-
-        engine.makeChanges(gl2);
-        
-        constructMatrices(gl2);
-
-        gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
-
+    private void drawBackground(GL2 gl2) {
         st.attachShaderProgram(gl2, bgrndsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
@@ -426,7 +413,9 @@ public class JqadvGL {
         gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+    }
 
+    private void drawImage(GL2 gl2) {
         st.attachShaderProgram(gl2, imgsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         for(int i = 0; i < numTiles; i++) {
@@ -437,8 +426,9 @@ public class JqadvGL {
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         }
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+    }
 
-
+    private void drawPoints(GL2 gl2) {
         st.attachShaderProgram(gl2, jqsp, true);
 
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
@@ -453,86 +443,88 @@ public class JqadvGL {
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
 
+    }
 
-        if(selectionShape != null) {
-            
-            st.attachShaderProgram(gl2, simplesp, true);
-            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-            
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
-            gl2.glLineWidth(3f);
-            gl2.glEnable(GL.GL_LINE_SMOOTH);
-            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-            if(pc) {
-                Util.updateUniform(gl2, st, "closed", 1f);
-                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 1);
-            } else {
-                Util.updateUniform(gl2, st, "closed", 0f);
-                gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 2);
-            }
-            gl2.glLineWidth(1f);
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+    private void drawSelectionLine(GL2 gl2) {
 
-            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        }
-       
-        if(selectionShape != null && capacity > 9) {
+        st.attachShaderProgram(gl2, simplesp, true);
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         
-            gl2.glEnable(GL.GL_STENCIL_TEST);
-
-            st.attachShaderProgram(gl2, simplesp, true);
-            //fill polygon w/ stencil buffer
-            gl2.glColorMask(false, false, false, false);
-            gl2.glStencilFunc(GL.GL_ALWAYS, 1, 0);
-            gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_INVERT);
-            gl2.glStencilMask(1);
-
-            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-            
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
-            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-            gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, capacity / 2);
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-            
-            st.attachShaderProgram(gl2, boxsp, true);
-
-            gl2.glColorMask(true, true, true, true);
-            gl2.glStencilFunc(GL.GL_EQUAL, 0, 1);
-            gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP);
-
-            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-            
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
-            gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-            gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-            
-            gl2.glDisable(GL.GL_STENCIL_TEST);
-
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+        gl2.glLineWidth(3f);
+        gl2.glEnable(GL.GL_LINE_SMOOTH);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        if(pc) {
+            Util.updateUniform(gl2, st, "closed", 1f);
+            gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 1);
+        } else {
+            Util.updateUniform(gl2, st, "closed", 0f);
+            gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 2);
         }
+        gl2.glLineWidth(1f);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+
+    }
+
+    private void drawSelectionMask(GL2 gl2) {
+
+        gl2.glEnable(GL.GL_STENCIL_TEST);
+
+        st.attachShaderProgram(gl2, simplesp, true);
+        //fill polygon w/ stencil buffer
+        gl2.glColorMask(false, false, false, false);
+        gl2.glStencilFunc(GL.GL_ALWAYS, 1, 0);
+        gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_INVERT);
+        gl2.glStencilMask(1);
+
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         
-        if(selection != null) {
-            
-            st.attachShaderProgram(gl2, jqsp, true);
-            gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-            gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
-            
-            Util.updateUniform(gl2, st, "sel", 1f);
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
-            gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
-            gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
-            Util.updateUniform(gl2, st, "sel", 0f);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, capacity / 2);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-            gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-            gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
-        }
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        
+        st.attachShaderProgram(gl2, boxsp, true);
+
+        gl2.glColorMask(true, true, true, true);
+        gl2.glStencilFunc(GL.GL_EQUAL, 0, 1);
+        gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP);
+
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
+        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        
+        gl2.glDisable(GL.GL_STENCIL_TEST);
+
+    }
+
+    private void drawSelectedPointBubble(GL2 gl2) {
+        st.attachShaderProgram(gl2, jqsp, true);
+        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
+        
+        Util.updateUniform(gl2, st, "sel", 1f);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selection.index * 3 * GLBuffers.SIZEOF_FLOAT);
+        gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
+        Util.updateUniform(gl2, st, "sel", 0f);
+
+        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+    }
+
+    private void renderText(GL2 gl2) {
 
         gl2.glActiveTexture(GL.GL_TEXTURE0);
-        
         renderer.enable((GL2ES2)gl2, true);
         
         PMVMatrix matrix = renderer.getMatrix();
@@ -573,7 +565,6 @@ public class JqadvGL {
 
         renderer.enable((GL2ES2)gl2, false);
 
-
 /*
         // BOX
         st.attachShaderProgram(gl2, matsp, true);
@@ -612,8 +603,41 @@ public class JqadvGL {
         renderer.enable((GL2ES2)gl2, false);
 
 */
+    }
 
+    protected void render(GL2 gl2, int width, int height) {
+    
 
+        gl2.glEnable(GL.GL_BLEND);
+        gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        gl2.glEnable(GL2.GL_POINT_SPRITE);
+        gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
+
+        engine.makeChanges(gl2);
+        constructMatrices(gl2);
+
+        gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
+
+        drawBackground(gl2);
+        drawImage(gl2);
+        drawPoints(gl2);
+
+        if(selectionShape != null) {
+            
+            drawSelectionLine(gl2); 
+
+            // capacity will be at least 10 if a valid shape is drawn
+            if(capacity > 9) {
+            
+                drawSelectionMask(gl2);
+            }
+        }
+        
+        if(selection != null) {
+            drawSelectedPointBubble(gl2);    
+        }
+        
+        renderText(gl2);
     }
 
     /**
