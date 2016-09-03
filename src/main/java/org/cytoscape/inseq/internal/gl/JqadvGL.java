@@ -473,7 +473,7 @@ public class JqadvGL {
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
 
         gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
-        gl2.glDrawArrays(GL.GL_POINTS, 0, coords.length);
+        gl2.glDrawArrays(GL.GL_POINTS, 0, coords.length / 3);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
