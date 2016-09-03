@@ -27,7 +27,12 @@ public class ImageTiler {
     int MAX_TEXTURE_UNITS;
     int w;
     int h;
+    int numTiles;
     BufferedImage bufferedImage;
+
+    public ImageTiler() {
+        numTiles = 0;
+    }
 
     public ImageTiler(GL2 gl2, BufferedImage bufferedImage) {
         
@@ -59,7 +64,7 @@ public class ImageTiler {
         return new int[] {tex_size[0], tex_num[0] };
     }
 
-    public int bindTexture(GL2 gl2) {
+    public void bindTexture(GL2 gl2) {
         
         // make and bind subimage tiles
         int tilew = w / req.width;
@@ -67,7 +72,7 @@ public class ImageTiler {
         BufferedImage sub = new BufferedImage(tilew, tileh, BufferedImage.TYPE_INT_ARGB);
         tiles = new Texture[req.width * req.height];
 
-        int numTiles = 0;
+        numTiles = 0;
         for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS - 2; i++) {
 
             int vl1 = (int) ((i%req.width) * tilew);
@@ -88,10 +93,7 @@ public class ImageTiler {
             gl2.glActiveTexture(GL.GL_TEXTURE0 + i+2);
             gl2.glBindTexture(GL.GL_TEXTURE_2D, tiles[i].getTextureObject());
         }
-        
         gl2.glActiveTexture(GL.GL_TEXTURE0);
-
-        return numTiles;
     }
 
     public void bindVertices(GL2 gl2, int imageVBO) {
@@ -177,6 +179,10 @@ public class ImageTiler {
 
         return v;
 
+    }
+
+    public int getNumTiles() {
+        return numTiles;
     }
 
 }

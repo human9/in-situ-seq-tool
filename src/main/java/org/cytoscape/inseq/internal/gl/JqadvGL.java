@@ -33,17 +33,16 @@ import com.jogamp.opengl.util.texture.Texture;
  */
 public class JqadvGL {
     
-    private FloatBuffer vertices;
-    private int verticesVBO;
+    // Vertex Buffor Objects
+    private int pointsVBO;
     private int imageVBO;
     private int bkgrndVBO;
     private int selectionVBO;
 
-    float xOffset = 0;
-    float yOffset = 0;
-
-    // Shaders
+    // Shader control
     private ShaderState st;
+
+    // Shader programs
     private ShaderProgram jqsp;
     private ShaderProgram imgsp;
     private ShaderProgram bgrndsp;
@@ -51,66 +50,56 @@ public class JqadvGL {
     private ShaderProgram boxsp;
     private ShaderProgram matsp;
 
+    private float xOffset = 0;
+    private float yOffset = 0;
     private float w;
     private float h;
     private float scale = 1;
+
+    private boolean initDone;
+    private boolean pathClosed;
     private boolean makeCenter = true;
-    private int numTiles = 0;
-
-    private int nPoints;
-
-    protected boolean pc;
-    protected float[] coords;
-    protected float[] colours;
-    protected float[] bkgrnd;
-    protected float[] symbols;
-    protected FloatBuffer selectionShape;
-    protected int capacity;
-
-    private GLUniformData uniColours;
-    private GLUniformData uniSymbols;
+    private float[] coords;
+    private float[] colours;
+    private float[] symbols;
+    private float[] point_scale = {1f};
+    private float[] extrascale = {1f};
+    private FloatBuffer selectionShape;
+    private BufferedImage image;
+    private int capacity;
 
     private Transcript selectedTranscript;
-
-    private List<Transcript> transcripts;
     private InseqSession session;
 
-    private ImageTiler imageTiler;
-
+    ImageTiler imageTiler = new ImageTiler();
     TextRenderer textRenderer;
 
     // Projection matrix
     Matrix4f PMatrix = new Matrix4f();
     FloatBuffer PBuffer = Buffers.newDirectFloatBuffer(16);
-    GLUniformData P;
 
     // Modelview matrix
     Matrix4f MvMatrix = new Matrix4f();
     FloatBuffer MvBuffer = Buffers.newDirectFloatBuffer(16);
-    GLUniformData Mv;
 
     // The inverse modelview matrix
-    // Has no uniform or buffer as it isn't used in any shaders
     Matrix4f MviMatrix = new Matrix4f();
 
     // An empty set of update type enums
-    protected EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
+    private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
+
     // Events can build up here before being applied
-    protected ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
+    private ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
+
+    // To redraw if more events pending
     protected Animator core;
-    private boolean initDone;
-    private float point_scale = 1f;
-    private float extrascale = 1f;
-    private BufferedImage image;
 
     public JqadvGL(InseqSession s, GLAutoDrawable drawable) {
         this.session = s;
-        this.transcripts = s.getRaw();
         this.textRenderer = new TextRenderer(session);
 
 
         // vertices required to cover the background
-        bkgrnd = Util.makeQuad(-1, -1, 1, 1);
 
         // create array specifying what colour each type uses.
         int num = session.getNumGenes();
@@ -122,16 +111,16 @@ public class JqadvGL {
             System.arraycopy(c.getRGBColorComponents(f), 0, colours, a, 3);
         }
         
-        // create array of our transcript locations
-        coords = new float[transcripts.size() * 3];
+        // Create an array of our transcript locations.
+        // This array has 3 floats per point, X, Y, and type.
+        // Setting the type to a negative value will stop it being displayed.
+        coords = new float[s.getRaw().size() * 3];
         int i = 0;
-        for(Transcript t : transcripts) {
+        for(Transcript t : s.getRaw()) {
             coords[i++] = (float) t.pos.x;
             coords[i++] = (float) t.pos.y;
             coords[i++] = t.type;
         }
-        vertices = FloatBuffer.wrap(coords);
-        nPoints = transcripts.size();
 
         core = new Animator(drawable);
         core.start();
@@ -147,58 +136,47 @@ public class JqadvGL {
         gl2.glEnable(GL2.GL_POINT_SPRITE);
         gl2.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
 
-        // Create shaders and initialize the program.
+        // Create vertex and fragment shader programs.
         generateShaderProgram(gl2);
         
-        // Retrieve and bind the point sprites. These are the symbols that
-        // appear on each transcript location.
-
+        // Retrieve the point sprites.
+        // These are the symbols that are shown on each transcript location.
         BufferedImage pointSprites = ParseUtil.getImageResource("/texture/sprite_sheet.png");
-        // create the array specifying which symbol each type uses.
-        int num = session.getNumGenes();
-        symbols = new float[num];
-        for(int i = 0; i < num; i++) {
+        // create an array specifying which symbol each type uses.
+        symbols = new float[session.getNumGenes()];
+        for(int i = 0; i < session.getNumGenes(); i++) {
             symbols[i] = session.getGeneSymbol(i);
         }
 
+        // Bind point sprites to GL_TEXTURE0 + 1.
         gl2.glActiveTexture(GL.GL_TEXTURE0 + 1);
         Texture pointSpritesTexture = Util.textureFromBufferedImage(pointSprites);
         gl2.glBindTexture(GL.GL_TEXTURE_2D, pointSpritesTexture.getTextureObject());
         // Disable texture interpolation for point sprites.
-        gl2.glTexParameteri(GL.GL_TEXTURE_2D,
-                            GL.GL_TEXTURE_MIN_FILTER,
-                            GL.GL_NEAREST);
-        gl2.glTexParameteri(GL.GL_TEXTURE_2D,
-                            GL.GL_TEXTURE_MAG_FILTER,
-                            GL.GL_NEAREST);
-
+        gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+        gl2.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
         gl2.glActiveTexture(GL.GL_TEXTURE0);
-
 
         // Create four vertex buffer objects
         // 1. verticesVBO: contains the actual transcript points
         // 2. imageVBO: coordinates to stretch an image across
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
-        int buf[] = new int[4];
-        gl2.glGenBuffers(4, buf, 0);
-        verticesVBO = buf[0];
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+        int vbo[] = new int[4];
+        gl2.glGenBuffers(4, vbo, 0);
+        pointsVBO  = vbo[0];
+        imageVBO     = vbo[1];
+        bkgrndVBO    = vbo[2];
+        selectionVBO = vbo[3];
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
-                         nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
-                         vertices,
+                         coords.length * GLBuffers.SIZEOF_FLOAT,
+                         FloatBuffer.wrap(coords),
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-        imageVBO = buf[1];
         
-        if(imageTiler != null) {
-            //TODO: Maybe ask if you really want to reload the image
-            //(it can take a while if it's huge)
-            imageTiler.bindVertices(gl2, imageVBO);
-            numTiles = imageTiler.bindTexture(gl2);
-        }
-
-        bkgrndVBO = buf[2];
+        float[] bkgrnd = Util.makeQuad(-1, -1, 1, 1);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                 6 * 2 * GLBuffers.SIZEOF_FLOAT,
@@ -206,35 +184,27 @@ public class JqadvGL {
                 GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         
-        selectionVBO = buf[3];
-        if(selectionShape != null) {
-
-            gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
-            gl2.glBufferData(GL.GL_ARRAY_BUFFER,
-                             selectionShape.capacity() * GLBuffers.SIZEOF_FLOAT,
-                             selectionShape,
-                             GL.GL_STATIC_DRAW);
-        }
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         Util.makeUniform(gl2, st, "background", 2);
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
-        Util.makeUniform(gl2, st, "ptscale", 1f);
         Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
-        Util.makeUniform(gl2, st, "extrascale", 1f);
         Util.makeUniform(gl2, st, "sel", 0f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
-        P = new GLUniformData("P", 4, 4, PBuffer);
+        GLUniformData P = new GLUniformData("P", 4, 4, PBuffer);
         st.uniform(gl2, P);
-        Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
+        GLUniformData Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
         st.uniform(gl2, Mv);
+        GLUniformData uniPtScale = new GLUniformData("ptscale", 1, FloatBuffer.wrap(point_scale));
+        st.uniform(gl2, uniPtScale);
+        GLUniformData uniExtraScale = new GLUniformData("extrascale", 1, FloatBuffer.wrap(extrascale));
+        st.uniform(gl2, uniExtraScale);
 
         GLUniformData sprite = new GLUniformData("sprite", 1);
         st.uniform(gl2, sprite);
-        uniSymbols = new GLUniformData("symbols", 1, FloatBuffer.wrap(symbols));
+        GLUniformData uniSymbols = new GLUniformData("symbols", 1, FloatBuffer.wrap(symbols));
         st.uniform(gl2, uniSymbols);
-        uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
+        GLUniformData uniColours = new GLUniformData("colours", 3, FloatBuffer.wrap(colours));
         st.uniform(gl2, uniColours);
 
         gl2.glActiveTexture(GL.GL_TEXTURE0);
@@ -265,25 +235,13 @@ public class JqadvGL {
      * Set a new scale and signal that it should be updated.
      */
     public void setImageScale(float value) {
-        extrascale = value;
-        updates.add(UpdateType.IMAGE_SCALE_CHANGED);
+        extrascale[0] = value;
         core.resume();
     }
 
-    /**
-     * Indicate whether initialisation is complete.
-     */
-    public void setInitDone(boolean d) {
-        initDone = d;
-    }
-
     public void largePoints(boolean e) {
-        if(e)
-            point_scale = 2;
-        else
-            point_scale = 1;
-
-        updates.add(UpdateType.POINT_SCALE_CHANGED);
+        if(e) point_scale[0] = 2;
+        else  point_scale[0] = 1;
         core.resume();
     }
 
@@ -321,7 +279,7 @@ public class JqadvGL {
                     shape.add(segment[1]);
                     pi.next();
                 }
-                pc = pathClosed;
+                this.pathClosed = pathClosed;
                 // add origin at end
                 shape.add(shape.get(2));
                 shape.add(shape.get(3));
@@ -347,7 +305,6 @@ public class JqadvGL {
 
     public void changeSymbol(Integer type, Integer symbol) {
         symbols[type] = symbol;
-        updates.add(UpdateType.SYMBOL_CHANGED);
         core.resume();
     }
 
@@ -411,13 +368,13 @@ public class JqadvGL {
         float target = Math.min(wsc, hsc);
 
         while(scale < target) {
-            if(!scale(-1, w/2, h/2)) {
+            if(!changeScale(-1, w/2, h/2)) {
                 // reached scale limit
                 break;
             }
         }
         while(scale > target) {
-            if(!scale(1, w/2, h/2)) {
+            if(!changeScale(1, w/2, h/2)) {
                 break;
             }
         }
@@ -444,10 +401,8 @@ public class JqadvGL {
         textRenderer.reshapeRegion(width, height);
 
         PMatrix.identity()
-               .ortho(0, w, h, 0, -1000, 1000)
+               .ortho(0, w, h, 0, -1, 1)
                .get(PBuffer);
-        P.setData(PBuffer);
-        st.uniform(gl2, P);
         
     }
 
@@ -474,28 +429,16 @@ public class JqadvGL {
         return new float[] {v.x, v.y};
     }
 
-    /*
-    int z = 0;
-    float xRotate = (float) Math.toRadians(0);
-    float yRotate = (float) Math.toRadians(0);
-    */
-
     private void constructMatrices(GL2 gl2) {
 
-        //xRotate = (float) Math.toRadians(z++);
         MvMatrix.identity()
                 .translate(-xOffset, -yOffset, 0f)
-                //.rotateX(xRotate)
-                //.rotateY(yRotate)
                 .scale(scale, scale, 0f)
                 .get(MvBuffer);
         
           MviMatrix.identity()
                 .scale(1/scale, 1/scale, 0f)
-                //.rotateY(-yRotate)
-                //.rotateX(-xRotate)
                 .translate(xOffset, yOffset, 0f);
-
     }
 
     private void drawBackground(GL2 gl2) {
@@ -511,7 +454,7 @@ public class JqadvGL {
     private void drawImage(GL2 gl2) {
         st.attachShaderProgram(gl2, imgsp, true);
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        for(int i = 0; i < numTiles; i++) {
+        for(int i = 0; i < imageTiler.getNumTiles(); i++) {
             Util.updateUniform(gl2, st, "background", i+2);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
             gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);
@@ -527,10 +470,10 @@ public class JqadvGL {
         gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
 
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
 
         gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
-        gl2.glDrawArrays(GL.GL_POINTS, 0, nPoints);
+        gl2.glDrawArrays(GL.GL_POINTS, 0, coords.length);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
@@ -547,7 +490,7 @@ public class JqadvGL {
         gl2.glLineWidth(3f);
         gl2.glEnable(GL.GL_LINE_SMOOTH);
         gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
-        if(pc) {
+        if(pathClosed) {
             Util.updateUniform(gl2, st, "closed", 1f);
             gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 1);
         } else {
@@ -606,7 +549,7 @@ public class JqadvGL {
         gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
         
         Util.updateUniform(gl2, st, "sel", 1f);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
         gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selectedTranscript.index * 3 * GLBuffers.SIZEOF_FLOAT);
         gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
         Util.updateUniform(gl2, st, "sel", 0f);
@@ -659,20 +602,22 @@ public class JqadvGL {
      * Adjusts the master scale.
      * Returns false if unchaged, true otherwise.
      */
-    public boolean scale(int direction, float x, float y) {
+    protected boolean changeScale(int direction, float x, float y) {
         
+        double SCALE_FACTOR = 1.09;
+
         if(direction < 0) {
             if(scale < 100f) {
-                xOffset -= (x+xOffset) - (x+xOffset)*1.1; 
-                yOffset -= (y+yOffset) - (y+yOffset)*1.1; 
-                scale *= 1.1f;
+                xOffset -= (x+xOffset) - (x+xOffset)*SCALE_FACTOR; 
+                yOffset -= (y+yOffset) - (y+yOffset)*SCALE_FACTOR; 
+                scale *= SCALE_FACTOR;
                 return true;
             }
         } else {
             if(scale > 0.005f) {
-                xOffset -= (x+xOffset) - (x+xOffset)/1.1; 
-                yOffset -= (y+yOffset) - (y+yOffset)/1.1; 
-                scale /= 1.1f;
+                xOffset -= (x+xOffset) - (x+xOffset)/SCALE_FACTOR; 
+                yOffset -= (y+yOffset) - (y+yOffset)/SCALE_FACTOR; 
+                scale /= SCALE_FACTOR;
                 return true;
             }
         }
@@ -684,9 +629,6 @@ public class JqadvGL {
         SELECTION_AREA_CHANGED,
         IMAGE_CHANGED,
         COLOUR_CHANGED,
-        SYMBOL_CHANGED,
-        POINT_SCALE_CHANGED,
-        IMAGE_SCALE_CHANGED
     } 
 
     public void fetchUpdates(GL2 gl2) {
@@ -704,21 +646,23 @@ public class JqadvGL {
                     yOffset += e[1];
                     break;
                 case 3:
-                    scale((int)e[0], e[1], e[2]);
+                    changeScale((int)e[0], e[1], e[2]);
                     break;
             }
 
         }
         if(eventFiFo.isEmpty()) core.pause();
 
+        // These are specific things we probably don't want to do every time
+        // we render, but will need to do if things change.
         for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {
             UpdateType update = i.next();
             switch(update) {
                 case NETWORK_COMPONENT_SELECTED:
-                    gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, verticesVBO);
+                    gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
                     gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
-                                     nPoints * 3 * GLBuffers.SIZEOF_FLOAT,
-                                     vertices,
+                                     coords.length * GLBuffers.SIZEOF_FLOAT,
+                                     FloatBuffer.wrap(coords),
                                      GL.GL_STATIC_DRAW);
                     gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
                     break;
@@ -736,23 +680,11 @@ public class JqadvGL {
                 case IMAGE_CHANGED:
                     imageTiler = new ImageTiler(gl2, image);
                     imageTiler.bindVertices(gl2, imageVBO);
-                    numTiles = imageTiler.bindTexture(gl2);
+                    imageTiler.bindTexture(gl2);
                     image = null;
                     break;
                 case COLOUR_CHANGED:
-                    uniColours.setData(FloatBuffer.wrap(colours));
                     textRenderer.clearRegion(gl2);
-                    st.uniform(gl2, uniColours);
-                    break;
-                case SYMBOL_CHANGED:
-                    uniSymbols.setData(FloatBuffer.wrap(symbols));
-                    st.uniform(gl2, uniSymbols);
-                    break;
-                case POINT_SCALE_CHANGED:
-                    Util.updateUniform(gl2, st, "ptscale", point_scale);
-                    break;
-                case IMAGE_SCALE_CHANGED:
-                    Util.updateUniform(gl2, st, "extrascale", extrascale);
                     break;
             }
             i.remove();

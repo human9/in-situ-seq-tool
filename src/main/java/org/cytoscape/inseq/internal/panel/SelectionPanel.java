@@ -194,6 +194,24 @@ public class SelectionPanel extends JPanel {
                 jqadvpanel.getGL().setImageScale(((Double)pointScale.getValue()).floatValue());   
             }
         });
+        
+        JButton out = new JButton("-");
+        plotControls.add(out);
+        out.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.getGL().updateScale(1, jqadvpanel.getWidth()/2, jqadvpanel.getHeight()/2);
+            }
+        });
+        
+        JButton in = new JButton("+");
+        plotControls.add(in);
+        in.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.getGL().updateScale(-1, jqadvpanel.getWidth()/2, jqadvpanel.getHeight()/2);
+            }
+        });
     }
 
     public void setSelected(Transcript t) {
