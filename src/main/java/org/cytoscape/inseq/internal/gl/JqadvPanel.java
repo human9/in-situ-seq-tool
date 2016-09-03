@@ -95,7 +95,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
     public void center() {
         jqadvgl.centerView();
-        jqadvgl.core.resume();
+        jqadvgl.core.start();
     }
 
     /**

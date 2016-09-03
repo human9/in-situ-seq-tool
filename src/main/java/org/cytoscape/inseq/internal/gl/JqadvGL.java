@@ -220,7 +220,7 @@ public class JqadvGL {
      */
     public void move(float x, float y) {
         eventFiFo.addLast(new float[] {x,y});
-        core.resume();
+        core.start();
     }
 
     /**
@@ -228,7 +228,7 @@ public class JqadvGL {
      */
     public void updateScale(float direction, float x, float y) {
         eventFiFo.addLast(new float[] {direction,x,y});
-        core.resume();
+        core.start();
     }
 
     /**
@@ -236,13 +236,13 @@ public class JqadvGL {
      */
     public void setImageScale(float value) {
         extrascale[0] = value;
-        core.resume();
+        core.start();
     }
 
     public void largePoints(boolean e) {
         if(e) point_scale[0] = 2;
         else  point_scale[0] = 1;
-        core.resume();
+        core.start();
     }
 
     public void changeNetworkComponents() {
@@ -260,7 +260,7 @@ public class JqadvGL {
         }
         
         updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
-        core.resume();
+        core.start();
     }
 
     public void selectionChanged(boolean pathClosed) {
@@ -293,19 +293,19 @@ public class JqadvGL {
             }
 
             updates.add(UpdateType.SELECTION_AREA_CHANGED);
-            core.resume();
+            core.start();
         }
     }
 
     public void changeImage(BufferedImage i) {
         image = i;
         updates.add(UpdateType.IMAGE_CHANGED);
-        core.resume();
+        core.start();
     }
 
     public void changeSymbol(Integer type, Integer symbol) {
         symbols[type] = symbol;
-        core.resume();
+        core.start();
     }
 
     public void changeColour(Integer type, Color c) {
@@ -314,7 +314,7 @@ public class JqadvGL {
         System.arraycopy(
                 c.getRGBColorComponents(f), 0, colours, a, 3);
         updates.add(UpdateType.COLOUR_CHANGED);
-        core.resume();
+        core.start();
     }
 
     /**
@@ -322,7 +322,7 @@ public class JqadvGL {
      */
     public void selectTranscript(Transcript t) {
         selectedTranscript = t;
-        core.resume();
+        core.start();
     }
     
     /**
@@ -604,7 +604,7 @@ public class JqadvGL {
      */
     protected boolean changeScale(int direction, float x, float y) {
         
-        double SCALE_FACTOR = 1.09;
+        double SCALE_FACTOR = 1.01;
 
         if(direction < 0) {
             if(scale < 100f) {
@@ -651,7 +651,7 @@ public class JqadvGL {
             }
 
         }
-        if(eventFiFo.isEmpty()) core.pause();
+        if(eventFiFo.isEmpty()) core.stop();
 
         // These are specific things we probably don't want to do every time
         // we render, but will need to do if things change.
