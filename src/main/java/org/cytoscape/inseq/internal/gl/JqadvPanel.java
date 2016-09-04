@@ -84,7 +84,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     }
     
     public void dispose(GLAutoDrawable drawable) {
-        jqadvgl.core.stop();
+        jqadvgl.animator.stop();
     }
     
     public void display(GLAutoDrawable drawable) {
@@ -95,7 +95,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
     public void center() {
         jqadvgl.centerView();
-        jqadvgl.core.start();
+        jqadvgl.animator.go();
     }
 
     /**

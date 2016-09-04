@@ -21,7 +21,6 @@ import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLUniformData;
-import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.GLBuffers;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 import com.jogamp.opengl.util.glsl.ShaderState;
@@ -92,7 +91,7 @@ public class JqadvGL {
     private ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
 
     // To redraw if more events pending
-    protected Animator core;
+    protected Animator animator;
 
     public JqadvGL(InseqSession s, GLAutoDrawable drawable) {
         this.session = s;
@@ -122,8 +121,8 @@ public class JqadvGL {
             coords[i++] = t.type;
         }
 
-        core = new Animator(drawable);
-        core.start();
+        animator = new Animator(drawable);
+        animator.start();
 
     }
 
@@ -220,7 +219,7 @@ public class JqadvGL {
      */
     public void move(float x, float y) {
         eventFiFo.addLast(new float[] {x,y});
-        core.start();
+        animator.go();
     }
 
     /**
@@ -228,7 +227,7 @@ public class JqadvGL {
      */
     public void updateScale(float direction, float x, float y) {
         eventFiFo.addLast(new float[] {direction,x,y});
-        core.start();
+        animator.go();
     }
 
     /**
@@ -236,13 +235,13 @@ public class JqadvGL {
      */
     public void setImageScale(float value) {
         extrascale[0] = value;
-        core.start();
+        animator.go();
     }
 
     public void largePoints(boolean e) {
         if(e) point_scale[0] = 2;
         else  point_scale[0] = 1;
-        core.start();
+        animator.go();
     }
 
     public void changeNetworkComponents() {
@@ -260,7 +259,7 @@ public class JqadvGL {
         }
         
         updates.add(UpdateType.NETWORK_COMPONENT_SELECTED);
-        core.start();
+        animator.go();
     }
 
     public void selectionChanged(boolean pathClosed) {
@@ -293,19 +292,19 @@ public class JqadvGL {
             }
 
             updates.add(UpdateType.SELECTION_AREA_CHANGED);
-            core.start();
+            animator.go();
         }
     }
 
     public void changeImage(BufferedImage i) {
         image = i;
         updates.add(UpdateType.IMAGE_CHANGED);
-        core.start();
+        animator.go();
     }
 
     public void changeSymbol(Integer type, Integer symbol) {
         symbols[type] = symbol;
-        core.start();
+        animator.go();
     }
 
     public void changeColour(Integer type, Color c) {
@@ -314,7 +313,7 @@ public class JqadvGL {
         System.arraycopy(
                 c.getRGBColorComponents(f), 0, colours, a, 3);
         updates.add(UpdateType.COLOUR_CHANGED);
-        core.start();
+        animator.go();
     }
 
     /**
@@ -322,7 +321,7 @@ public class JqadvGL {
      */
     public void selectTranscript(Transcript t) {
         selectedTranscript = t;
-        core.start();
+        animator.go();
     }
     
     /**
@@ -357,7 +356,7 @@ public class JqadvGL {
     /**
      * Center and scale the view so that as much of the data as possible is visible.
      */
-    public void centerView() {
+    protected void centerView() {
         
         xOffset = -(w/2 - session.min.width  / 2);
         yOffset = -(h/2 - session.min.height / 2);
@@ -592,6 +591,8 @@ public class JqadvGL {
         }
         
         textRenderer.renderText(gl2, scale, selectedTranscript);
+        
+        if(!eventFiFo.isEmpty()) animator.go();
     }
 
     public float getScale() {
@@ -651,8 +652,6 @@ public class JqadvGL {
             }
 
         }
-        if(eventFiFo.isEmpty()) core.stop();
-
         // These are specific things we probably don't want to do every time
         // we render, but will need to do if things change.
         for(Iterator<UpdateType> i = updates.iterator(); i.hasNext();) {

@@ -22,6 +22,7 @@ import edu.wlu.cs.levy.CG.KDTree;
 
 /** Activation and session control class.
  *  It also provides other classes with access to Cytoscape APIs.
+ *
  *  @author John Salamon
  */
 public class InseqActivator extends AbstractCyActivator {
