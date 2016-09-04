@@ -88,6 +88,7 @@ public class ImageTiler {
             tiles[i] = tile;
             numTiles ++;
         }
+        bufferedImage = null;
 
         for(int i = 0; i < req.width*req.height && i < MAX_TEXTURE_UNITS - 2; i++) {
             gl2.glActiveTexture(GL.GL_TEXTURE0 + i+2);

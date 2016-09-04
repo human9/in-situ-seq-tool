@@ -226,7 +226,9 @@ public class JqadvGL {
      * Add a scaling event into the queue.
      */
     public void updateScale(float direction, float x, float y) {
-        eventFiFo.addLast(new float[] {direction,x,y});
+        for(int i = 0; i < 10; i++) {
+            eventFiFo.addLast(new float[] {direction,x,y});
+        }
         animator.go();
     }
 
