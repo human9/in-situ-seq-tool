@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal.panel;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvPanel;
-import org.cytoscape.inseq.internal.panel.VisualPicker;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.inseq.internal.util.ParseUtil;
@@ -225,6 +225,9 @@ public class SelectionPanel extends JPanel {
 
     }
 
+    protected void dispatchCloseEvent() {
+        parent.dispatchEvent(new WindowEvent(parent, WindowEvent.WINDOW_CLOSING));
+    }
 
     public void updateSelection() {
 
