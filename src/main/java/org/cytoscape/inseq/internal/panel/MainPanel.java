@@ -21,7 +21,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Vector;
 
-import javax.swing.Box;
+import javax.swing.AbstractAction;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
@@ -49,6 +49,7 @@ import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
+import org.cytoscape.util.swing.DropDownMenuButton;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -105,7 +106,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         cons.weightx = 1;
         cons.anchor = GridBagConstraints.NORTHWEST;
         cons.fill = GridBagConstraints.HORIZONTAL;
-        cons.insets = new Insets(4,4,4,4);
+        cons.insets = new Insets(4,8,4,8);
         return cons;
     }
 
@@ -115,82 +116,14 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         this.session = session;
         this.setLayout(new GridBagLayout());
 
+        //use JTable for TypeNetworks
+        //use combobox for sessions
 
         JPanel header = new JPanel();
         header.setLayout(new GridBagLayout());
-        GridBagConstraints dlabelCons = new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        JLabel dlabel = new JLabel("Distance cutoff:");
-        header.add(dlabel, dlabelCons);
-
-        GridBagConstraints distanceCons = new GridBagConstraints(1, 1, 1, 1, 1, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
-        header.add(distanceCutoff, distanceCons);
-        distanceCutoff.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                distance = (Double)(distanceCutoff.getValue());
-            }
-        });
-
-        GridBagConstraints consTypes = new GridBagConstraints(0, 6, 2, 1, 1, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        JButton types = new JButton("Generate co-occurence network");
-        header.add(types, consTypes);
-        itr = new TaskIterator();
-        types.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
-                //
-                itr = new TaskIterator();
-                if(autoSlider.isSelected()) {
-                   
-                    // Get user input
-                    AutoselectorSetupDialog dialog = new AutoselectorSetupDialog(ia.getCSAA().getCySwingApplication().getJFrame());
-                    Dimension d = dialog.getInput();
-                    Dimension total = session.min;
-
-                    int numHorizontal = (int) Math.ceil(total.width / d.width);
-                    int numVertical = (int) Math.ceil(total.height / d.height);
-
-                    int width = (int) Math.ceil(total.width / numHorizontal);
-                    int height = (int) Math.ceil(total.height / numVertical);
-
-                    for(int h = 0; h < numVertical; h++) {
-                        for(int w = 0; w < numHorizontal; w++) {
-                            Rectangle r = new Rectangle(w*width, h*height, width, height);
-                            session.setSelection(r);
-                            // Makes new network be created
-                            netBox.setSelectedItem(null);
-                            makeNetwork(getTN());
-                        }
-                    }
-                }
-                else {
-                
-                    if(itr.hasNext()) return;
-                    makeNetwork(getTN());
-                }
         
-                ia.getCSAA().getDialogTaskManager().execute(itr);
-
-            }
-        });
-
-
-        GridBagConstraints sep = new GridBagConstraints(0, 5, 2, 1, 1, 1, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        header.add(Box.createHorizontalStrut(0), sep);
-        
-
-        GridBagConstraints smallCons = new GridBagConstraints(0, 0, 2, 1, 1, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        JPanel small = new JPanel();
-        small.setLayout(new GridBagLayout());
         GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
+                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 0), 1, 1);
         networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
         netBox = new JComboBox<TypeNetwork>(networkVector);
 
@@ -208,20 +141,12 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
                 selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
             }
         });
-        small.add(netBox, netBoxCons);
+        header.add(netBox, netBoxCons);
 
-        GridBagConstraints newNetCons = new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-                GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 1, 1);
-        JButton newNet = new JButton("New");
-        newNet.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                netBox.setSelectedItem(null);
-            }
-        });
-        small.add(newNet, newNetCons);
-
-        header.add(small, smallCons);
+        GridBagConstraints newNetCons = new GridBagConstraints(1, 0, 1, 1, 0.1, 0, GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH, new Insets(4, 0, 4, 4), 1, 1);
+        DropDownMenuButton newNet = new DropDownMenuButton(new MenuAction("Menu"));
+        header.add(newNet, newNetCons);
 
         add(header, makeCons());
         
@@ -248,7 +173,20 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         });
 
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Distance control"), makeCons());
+
+        JPanel distancePanel = new JPanel();
+        distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.LINE_AXIS));
+        JLabel dlabel = new JLabel("Distance cutoff:");
+        distancePanel.add(dlabel);
+        JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
+        distancePanel.add(distanceCutoff);
+        distanceCutoff.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                distance = (Double)(distanceCutoff.getValue());
+            }
+        });
+        add(ExpandableOptionsFactory.makeOptionsPanel("Distance control", distancePanel), makeCons());
 
         JRadioButton entire = new JRadioButton("Entire dataset");
         entire.setSelected(true);
@@ -319,6 +257,49 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
                 interaction = false;
             }
         });
+
+        JButton types = new JButton("Generate co-occurence network(s)");
+        itr = new TaskIterator();
+        types.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
+                //
+                itr = new TaskIterator();
+                if(autoSlider.isSelected()) {
+                   
+                    // Get user input
+                    AutoselectorSetupDialog dialog = new AutoselectorSetupDialog(ia.getCSAA().getCySwingApplication().getJFrame());
+                    Dimension d = dialog.getInput();
+                    Dimension total = session.min;
+
+                    int numHorizontal = (int) Math.ceil(total.width / d.width);
+                    int numVertical = (int) Math.ceil(total.height / d.height);
+
+                    int width = (int) Math.ceil(total.width / numHorizontal);
+                    int height = (int) Math.ceil(total.height / numVertical);
+
+                    for(int h = 0; h < numVertical; h++) {
+                        for(int w = 0; w < numHorizontal; w++) {
+                            Rectangle r = new Rectangle(w*width, h*height, width, height);
+                            session.setSelection(r);
+                            // Makes new network be created
+                            netBox.setSelectedItem(null);
+                            makeNetwork(getTN());
+                        }
+                    }
+                }
+                else {
+                
+                    if(itr.hasNext()) return;
+                    makeNetwork(getTN());
+                }
+        
+                ia.getCSAA().getDialogTaskManager().execute(itr);
+
+            }
+        });
+        add(types, makeCons());
         
 
         selectionPanel = new SelectionPanel(ia);

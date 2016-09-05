@@ -21,7 +21,7 @@ public class ExpandableOptionsFactory {
             bcp.add(c, cons);
         }
 
-        bcp.setCollapsed(false); // Start fully expanded
+        bcp.setCollapsed(true); // Start fully collapsed
 
         return bcp;
     }
