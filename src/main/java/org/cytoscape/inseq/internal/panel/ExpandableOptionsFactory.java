@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal.panel;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 
 import org.cytoscape.util.swing.BasicCollapsiblePanel;
 
@@ -18,6 +19,8 @@ public class ExpandableOptionsFactory {
             cons.gridy = i++;
             cons.weightx = 1;
             cons.anchor = GridBagConstraints.NORTHWEST;
+            cons.fill = GridBagConstraints.BOTH;
+            cons.insets = new Insets(4,4,4,4);
             bcp.add(c, cons);
         }
 

@@ -15,7 +15,9 @@ public class MenuAction extends AbstractAction {
     public MenuAction(String text) {
         super(text);
         popup = new JPopupMenu();
-        popup.add(new JMenuItem("FDSFD"));
+        popup.add(new JMenuItem("Import new..."));
+        popup.add(new JMenuItem("Rename"));
+        popup.add(new JMenuItem("Delete"));
 
     }
 

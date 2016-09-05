@@ -21,9 +21,9 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Vector;
 
-import javax.swing.AbstractAction;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -32,10 +32,13 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -69,8 +72,9 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
     private JButton pop;
     private boolean useSubset;
     private boolean interaction = true;
-    private Vector<TypeNetwork> networkVector;
-    private JComboBox<TypeNetwork> netBox; 
+    private JComboBox<InseqSession> netBox; 
+    JList<TypeNetwork> networkList;
+    DefaultListModel<TypeNetwork> model;
     private InseqSession session;
     private JCheckBox autoSlider;
 
@@ -124,8 +128,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
         
         GridBagConstraints netBoxCons = new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.CENTER,
                 GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 0), 1, 1);
-        networkVector = new Vector<TypeNetwork>(ia.getSession().getNetworkList());
-        netBox = new JComboBox<TypeNetwork>(networkVector);
+        netBox = new JComboBox<InseqSession>();
 
         netBox.addItemListener(new ItemListener() {
             @Override
@@ -172,11 +175,17 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
             }
         });
 
-
+        model = new DefaultListModel<TypeNetwork>();
+        networkList = new JList<TypeNetwork>(model);
+        networkList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        networkList.setLayoutOrientation(JList.VERTICAL);
+        JScrollPane listScroller = new JScrollPane(networkList);
+        listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
+        add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller), makeCons());
 
         JPanel distancePanel = new JPanel();
         distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.LINE_AXIS));
-        JLabel dlabel = new JLabel("Distance cutoff:");
+        JLabel dlabel = new JLabel("Distance cutoff: ");
         distancePanel.add(dlabel);
         JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
         distancePanel.add(distanceCutoff);
@@ -373,10 +382,10 @@ public class MainPanel extends JPanel implements CytoPanelComponent {
     }
     
     public void refreshNetworks(TypeNetwork selected) {
-        networkVector.clear();
-        networkVector.addAll(ia.getSession().getNetworkList());
-        netBox.setSelectedItem(selected);
-        netBox.repaint();
+        if(!model.contains(selected)) {
+            model.addElement(selected);
+        }
+        networkList.setSelectedValue(selected, true);
     }
 
     public void updateSelectionPanel() {
