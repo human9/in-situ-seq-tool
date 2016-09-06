@@ -1,6 +1,5 @@
 package org.cytoscape.inseq.internal.dataimport;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -22,11 +21,10 @@ public class ConstructTreeTask extends AbstractTask {
     
     InseqActivator ia;
 
-    public ConstructTreeTask(List<String> names, List<Transcript> transcripts, InseqActivator ia) {
+    public ConstructTreeTask(List<String> names, List<Transcript> transcripts) {
     
         this.names = names;
         this.transcripts = transcripts;
-        this.ia = ia;
     }
 
     public KDTree<Transcript> getTree() {
@@ -91,10 +89,6 @@ outer:
         }
 
         output = kdTree;
-        if(ia != null)
-        {
-            ia.initSession(names, transcripts, output);
-        }
     }
 
         

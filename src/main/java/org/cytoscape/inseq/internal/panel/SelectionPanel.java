@@ -66,9 +66,9 @@ public class SelectionPanel extends JPanel {
         return jqadvpanel;
     }
     
-    public SelectionPanel(final InseqActivator ia) {
+    public SelectionPanel(final InseqActivator ia, InseqSession session) {
         this.ia = ia;
-        this.session = ia.getSession();
+        this.session = session;
         this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
 
         setLayout(new BorderLayout());
@@ -80,7 +80,7 @@ public class SelectionPanel extends JPanel {
         
         add(plotControls, BorderLayout.PAGE_START);
 
-        jqadvpanel = new JqadvPanel(ia.getSession(), this);
+        jqadvpanel = new JqadvPanel(session, this);
         add(jqadvpanel, BorderLayout.CENTER);
 
         JButton browse 
@@ -232,7 +232,7 @@ public class SelectionPanel extends JPanel {
     public void updateSelection() {
 
         CyNetwork network 
-            = ia.getSession().getSelectedNetwork().getNetwork();
+            = session.getSelectedNetwork().getNetwork();
         List<CyNode> nodes 
             = CyTableUtil.getNodesInState(network, "selected", true);
         List<CyEdge> edges 
@@ -241,16 +241,16 @@ public class SelectionPanel extends JPanel {
         // Nothing is selected, don't bother doing anything more
         if(nodes.size() < 1 && edges.size() < 1) return;
 
-        ia.getSession().nodeSelection = new ArrayList<Integer>();
+        session.nodeSelection = new ArrayList<Integer>();
         for(CyNode node : nodes) {
             Integer type 
                 = session.names.indexOf(network.getDefaultNodeTable().getRow(node.getSUID())
                 .get(CyNetwork.NAME, String.class));
-            ia.getSession().nodeSelection.add(type);
+            session.nodeSelection.add(type);
         }
-        ia.getSession().edgeSelection = new HashMap<Integer, List<Integer>>();
+        session.edgeSelection = new HashMap<Integer, List<Integer>>();
         Map<Integer, List<Integer>> edgeSelection 
-            = ia.getSession().edgeSelection;
+            = session.edgeSelection;
         for(CyEdge edge : edges)
         {
 
@@ -273,7 +273,7 @@ public class SelectionPanel extends JPanel {
             {
                 List<Integer> n = new ArrayList<Integer>();
                 n.add(source);
-                ia.getSession().edgeSelection.put(target, n);
+                session.edgeSelection.put(target, n);
             }
             else {
                 edgeSelection.get(target).add(source);

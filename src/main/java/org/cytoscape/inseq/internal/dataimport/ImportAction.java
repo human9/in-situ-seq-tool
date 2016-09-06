@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JFileChooser;
@@ -18,6 +17,7 @@ import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.ParseUtil;
+import org.cytoscape.work.TaskIterator;
 
 /**
  * Creates a new menu item under Apps menu section.
@@ -47,6 +47,7 @@ public class ImportAction extends AbstractCyAction {
 		if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
 		File raw = new File(fc.getSelectedFile().getAbsolutePath());
+        String filename = fc.getSelectedFile().getName();
 
         List<String> names = new ArrayList<String>();
         List<Transcript> transcripts = new ArrayList<Transcript>();
@@ -56,7 +57,6 @@ public class ImportAction extends AbstractCyAction {
 			if(!ParseUtil.parseXYFile(in, names, transcripts)) return;
 			in.close();
             //Collections.sort(names);
-			ia.constructTree(names, transcripts, ia);
 		} 
 		catch (FileNotFoundException x) {
 			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.WARNING_MESSAGE);
@@ -67,5 +67,11 @@ public class ImportAction extends AbstractCyAction {
 			x.printStackTrace();	
 			return;
 		}
+
+        ConstructTreeTask ctt = new ConstructTreeTask(names, transcripts);
+        TaskIterator itr = new TaskIterator(ctt);     
+        ia.getCSAA().getDialogTaskManager().execute(itr);
+        
+        ia.initSession(filename, names, transcripts, ctt.getTree());
 	}
 }
