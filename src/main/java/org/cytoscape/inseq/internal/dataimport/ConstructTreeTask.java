@@ -3,6 +3,7 @@ package org.cytoscape.inseq.internal.dataimport;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
@@ -18,6 +19,7 @@ public class ConstructTreeTask extends AbstractTask {
     List<String> names;
     List<Transcript> transcripts;
     KDTree<Transcript> output;
+    ArrayBlockingQueue<Integer> blocker = new ArrayBlockingQueue<Integer>(1);
     
     InseqActivator ia;
 
@@ -28,6 +30,10 @@ public class ConstructTreeTask extends AbstractTask {
     }
 
     public KDTree<Transcript> getTree() {
+        try {
+            blocker.take();
+        } catch (InterruptedException e) {
+        }
         return output;
     }
 
@@ -89,6 +95,7 @@ outer:
         }
 
         output = kdTree;
+        blocker.add(1);
     }
 
         

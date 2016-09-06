@@ -27,6 +27,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
 
     private DefaultComboBoxModel<SessionPanel> sessionPanels;
     private JComboBox<SessionPanel> sessionSelectionBox;
+    private SessionPanel currentPanel;
     private InseqActivator ia;
     private CardLayout deck;
     private JPanel table;
@@ -66,9 +67,10 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
     }
     
     public void itemStateChanged(ItemEvent e) {
-        SessionPanel sp = (SessionPanel) sessionSelectionBox.getSelectedItem();
+        currentPanel = (SessionPanel) sessionSelectionBox.getSelectedItem();
 
-        deck.show(table, sp.name);
+        deck.show(table, currentPanel.name);
+
         revalidate();
         repaint();
     }
@@ -80,6 +82,10 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
         deck.addLayoutComponent(card, card.name);
         sessionPanels.addElement(card);
         sessionSelectionBox.setSelectedItem(card);
+    }
+
+    public void updateSelectionPanel() {
+        currentPanel.updateSelectionPanel();
     }
 
     @Override

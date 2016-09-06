@@ -1,6 +1,5 @@
 package org.cytoscape.inseq.internal;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -27,7 +26,6 @@ import edu.wlu.cs.levy.CG.KDTree;
 public class InseqActivator extends AbstractCyActivator {
 
     // Every unique csv imported will be assigned its own InseqSession
-    private List<InseqSession> sessionList = new ArrayList<InseqSession>();
     private Properties properties;
     private BundleContext context;
     private MainPanel panel;
@@ -65,7 +63,7 @@ public class InseqActivator extends AbstractCyActivator {
                 @Override
                 public void handleEvent(RowsSetEvent e) {
                     if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
-                        //panel.updateSelectionPanel();
+                        panel.updateSelectionPanel();
                     }
                 }
             };

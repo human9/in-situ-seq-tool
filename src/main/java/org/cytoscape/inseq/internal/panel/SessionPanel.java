@@ -25,7 +25,6 @@ import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,6 +38,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
@@ -66,7 +67,6 @@ public class SessionPanel extends JPanel {
     private JButton pop;
     private boolean useSubset;
     private boolean interaction = true;
-    private JComboBox<InseqSession> netBox; 
     JList<TypeNetwork> networkList;
     DefaultListModel<TypeNetwork> model;
     private InseqSession session;
@@ -116,22 +116,6 @@ public class SessionPanel extends JPanel {
         this.session = session;
         this.setLayout(new GridBagLayout());
 
-        //use JTable for TypeNetworks
-        //use combobox for sessions
-/*
-            public void itemStateChanged(ItemEvent e) {
-                TypeNetwork selected = (TypeNetwork) netBox.getSelectedItem();
-                session.setSelectedNetwork(selected);
-                if(selected == null) {
-                    session.setSelection(null);
-                }
-                else { 
-                    session.setSelection(selected.getSelection());
-                }
-                selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
-            }
-        
-  */      
         ImageIcon icon = NetworkUtil.iconFromResource("/texture/pop.png");
         pop = new JButton(icon);
         pop.addActionListener(new ActionListener() {
@@ -157,6 +141,21 @@ public class SessionPanel extends JPanel {
         networkList = new JList<TypeNetwork>(model);
         networkList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         networkList.setLayoutOrientation(JList.VERTICAL);
+
+        networkList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                TypeNetwork selected = (TypeNetwork) networkList.getSelectedValue();
+                session.setSelectedNetwork(selected);
+                if(selected == null) {
+                    session.setSelection(null);
+                }
+                else { 
+                    session.setSelection(selected.getSelection());
+                }
+                selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
+            }
+        });
+
         JScrollPane listScroller = new JScrollPane(networkList);
         listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
 
@@ -272,7 +271,6 @@ public class SessionPanel extends JPanel {
                             Rectangle r = new Rectangle(w*width, h*height, width, height);
                             session.setSelection(r);
                             // Makes new network be created
-                            netBox.setSelectedItem(null);
                             makeNetwork(getTN());
                         }
                     }
@@ -307,11 +305,9 @@ public class SessionPanel extends JPanel {
     public TypeNetwork getTN() {
 
         // Create a new TypeNetwork
-        TypeNetwork network;
-        if((TypeNetwork)(netBox.getSelectedItem()) == null)
-            network = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(), distance, cutoff);
-        else
-            network = (TypeNetwork)(netBox.getSelectedItem());
+        TypeNetwork network
+            = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(),
+                              distance, cutoff);
         return network;
     }
 
