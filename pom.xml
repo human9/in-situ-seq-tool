@@ -145,15 +145,23 @@
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>core-task-api</artifactId>
-			<version>3.1.0</version>
+			<version>3.2.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-app-api</artifactId>
-			<version>3.1.0</version>
+			<version>3.2.0</version>
 			<scope>provided</scope>
 		</dependency>
+        <dependency>
+        <groupId>org.cytoscape</groupId>
+            <artifactId>viewmodel-api</artifactId>
+			<version>3.2.0</version>
+			<scope>provided</scope>
+        </dependency>
+
+
 
 		<!-- KD-Tree Implementation -->
 		<dependency>

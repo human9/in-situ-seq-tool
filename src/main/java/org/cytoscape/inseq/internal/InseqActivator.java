@@ -10,10 +10,15 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
-import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.view.model.VisualProperty;
+import org.cytoscape.view.model.events.ViewChangeRecord;
+import org.cytoscape.view.model.events.ViewChangedEvent;
+import org.cytoscape.view.model.events.ViewChangedListener;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.osgi.framework.BundleContext;
 
 import edu.wlu.cs.levy.CG.KDTree;
@@ -59,12 +64,28 @@ public class InseqActivator extends AbstractCyActivator {
             panel = new MainPanel(this);
             registerAllServices(context, panel, properties);
 
+            ViewChangedListener vcl = new ViewChangedListener() {
+                public void handleEvent(ViewChangedEvent<?> e) {
+                   for (ViewChangeRecord<?> record : e.getPayloadCollection()) {
+                        VisualProperty<?> vp = record.getVisualProperty();
+                        if (vp == BasicVisualLexicon.NODE_X_LOCATION || vp == BasicVisualLexicon.NODE_Y_LOCATION) {
+                            System.out.println(vp.getDisplayName() + record.getValue());
+                        }
+                   }
+                }
+            };
+            registerService(context, vcl, ViewChangedListener.class, properties);
             RowsSetListener rsl = new RowsSetListener() {
                 @Override
                 public void handleEvent(RowsSetEvent e) {
-                    if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
-                        panel.updateSelectionPanel();
-                    }
+                    System.out.println("Row listener fired");
+                    CyTable t = e.getSource();
+                    /*for(CyColumn c : t.getColumns()) {
+
+                          System.out.println(c.getName());
+                    }*/
+
+                    //panel.updateSelectionPanel();
                 }
             };
             registerService(context, rsl, RowsSetListener.class, properties);
