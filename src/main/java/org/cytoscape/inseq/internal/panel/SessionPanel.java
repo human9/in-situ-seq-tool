@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.panel;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -77,7 +78,7 @@ public class SessionPanel extends JPanel {
 
     class SeparateFrame extends JFrame {
         static final long serialVersionUID = 4324324l;
-        SeparateFrame(JFrame parent, String title, Dimension size) {
+        SeparateFrame(Component parent, String title, Dimension size) {
             super(title);
             this.setMinimumSize(new Dimension(100,100));
             setPreferredSize(new Dimension((int)Math.max(size.getWidth(), 400), (int)Math.max(size.getHeight(), 400)));
@@ -132,6 +133,7 @@ public class SessionPanel extends JPanel {
         pop.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                try {
                 pop.setVisible(false);
                 frame = new SeparateFrame(ia.getCSAA().getCySwingApplication().getJFrame(), "Imageplot", selectionPanel.getSize());
                 selectionPanel.setWindow(frame);
@@ -144,6 +146,10 @@ public class SessionPanel extends JPanel {
                 });
                 revalidate();
                 repaint();
+                } catch (java.lang.IllegalArgumentException i) {
+                    pop.setVisible(true);
+			        JOptionPane.showMessageDialog(SessionPanel.this, "Couldn't open new window", "Error", JOptionPane.WARNING_MESSAGE);
+                }
                 
             }
         });

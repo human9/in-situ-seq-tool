@@ -59,11 +59,11 @@ public class ImportAction extends AbstractCyAction {
             //Collections.sort(names);
 		} 
 		catch (FileNotFoundException x) {
-			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(ia.getCSAA().getCySwingApplication().getJFrame(), "File not found", "Error", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		catch (IOException x) {
-			JOptionPane.showMessageDialog(null, "IO error, please retry", "Error", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(ia.getCSAA().getCySwingApplication().getJFrame(), "IO error, please retry", "Error", JOptionPane.WARNING_MESSAGE);
 			x.printStackTrace();	
 			return;
 		}
