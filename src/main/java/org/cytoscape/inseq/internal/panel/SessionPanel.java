@@ -41,6 +41,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
@@ -159,6 +161,11 @@ public class SessionPanel extends JPanel {
         networkList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         networkList.setLayoutOrientation(JList.VERTICAL);
 
+        networkList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateListSelection();
+            }
+        });
         networkList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 updateListSelection(); 

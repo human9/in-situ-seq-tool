@@ -67,7 +67,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
     }
     
     public void itemStateChanged(ItemEvent e) {
-        if(sessionPanels.getSize() > 0) {
+        if(sessionSelectionBox.getSelectedItem() != null) {
             currentPanel = (SessionPanel) sessionSelectionBox.getSelectedItem();
 
             deck.show(table, currentPanel.name);
