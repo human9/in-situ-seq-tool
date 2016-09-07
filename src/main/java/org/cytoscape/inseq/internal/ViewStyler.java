@@ -113,6 +113,8 @@ public class ViewStyler extends AbstractTask {
 		}
         style.addVisualMappingFunction(nodeColour);
         style.addVisualMappingFunction(labelColour);
+
+        style.apply(s.getSelectedNetwork().view);
     }
 
 	public void run(TaskMonitor monitor) {
