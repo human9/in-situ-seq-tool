@@ -130,7 +130,7 @@ public class ViewStyler extends AbstractTask {
 		a.getCyNetworkManager().addNetwork(network.getNetwork());
 		a.getCyNetworkViewManager().addNetworkView(view);
 		a.getVisualMappingManager().setVisualStyle(style, view);
-		a.getVisualMappingManager().setCurrentVisualStyle(style);
+		//a.getVisualMappingManager().setCurrentVisualStyle(style);
 		view.updateView();
 	}
 

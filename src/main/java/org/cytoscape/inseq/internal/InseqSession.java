@@ -266,7 +266,7 @@ public class InseqSession {
     public void updateStyle() {
         style = ViewStyler.initStyle(this, CAA);
 
-        CAA.getVisualMappingManager().setCurrentVisualStyle(style);
+        //CAA.getVisualMappingManager().setCurrentVisualStyle(style);
 
         for(TypeNetwork net : networks) {
             for(CyNetworkView view : CAA.getCyNetworkViewManager()
