@@ -129,7 +129,7 @@ public class ViewStyler extends AbstractTask {
 		a.getCyEventHelper().flushPayloadEvents();
 		a.getCyNetworkManager().addNetwork(network.getNetwork());
 		a.getCyNetworkViewManager().addNetworkView(view);
-		a.getVisualMappingManager().setVisualStyle(style, view);
+		//a.getVisualMappingManager().setVisualStyle(style, view);
 		//a.getVisualMappingManager().setCurrentVisualStyle(style);
 		view.updateView();
 	}

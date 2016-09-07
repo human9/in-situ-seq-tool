@@ -10,20 +10,28 @@ import org.cytoscape.util.swing.DropDownMenuButton;
 
 public class MenuAction extends AbstractAction {
 
-    JPopupMenu popup;
+    JPopupMenu popup = new JPopupMenu();
+    JMenuItem delete = new JMenuItem("Delete");
 
-    public MenuAction(String text) {
+    private MainPanel main;
+
+    public MenuAction(String text, MainPanel main) {
         super(text);
-        popup = new JPopupMenu();
-        popup.add(new JMenuItem("Import new..."));
-        popup.add(new JMenuItem("Rename"));
-        popup.add(new JMenuItem("Delete"));
+        this.main = main;
+        delete.addActionListener(this);
+        popup.add(delete);
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        DropDownMenuButton b = (DropDownMenuButton) e.getSource();
-        popup.show(b, 0, b.getHeight());
+        if(e.getSource() == delete) {
+            main.deletePanel(); 
+        }
+        else {
+            DropDownMenuButton b = (DropDownMenuButton) e.getSource();
+            popup.show(b, 0, b.getHeight());
+        }
+
     }
 
 }

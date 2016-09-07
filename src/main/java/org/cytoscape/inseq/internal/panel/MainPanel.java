@@ -40,7 +40,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
         sessionPanels = new DefaultComboBoxModel<SessionPanel>();
         sessionSelectionBox = new JComboBox<SessionPanel>(sessionPanels);
         sessionSelectionBox.addItemListener(this);
-        DropDownMenuButton newNet = new DropDownMenuButton(new MenuAction("Menu"));
+        DropDownMenuButton newNet = new DropDownMenuButton(new MenuAction("Menu", this));
 
         JPanel header = new JPanel();
         header.setLayout(new GridBagLayout());
@@ -67,12 +67,21 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
     }
     
     public void itemStateChanged(ItemEvent e) {
-        currentPanel = (SessionPanel) sessionSelectionBox.getSelectedItem();
+        if(sessionPanels.getSize() > 0) {
+            currentPanel = (SessionPanel) sessionSelectionBox.getSelectedItem();
 
-        deck.show(table, currentPanel.name);
+            deck.show(table, currentPanel.name);
+
+        }
 
         revalidate();
         repaint();
+    }
+
+    protected void deletePanel() {
+        table.remove(currentPanel);
+        currentPanel.shutDown();
+        sessionPanels.removeElement(currentPanel);
     }
 
     public void addSession(String name, InseqSession session) {

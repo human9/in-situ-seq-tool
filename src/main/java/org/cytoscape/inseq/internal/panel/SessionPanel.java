@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
@@ -38,8 +40,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
@@ -109,6 +109,17 @@ public class SessionPanel extends JPanel {
         return cons;
     }
 
+    public void updateListSelection() {
+        TypeNetwork selected = (TypeNetwork) networkList.getSelectedValue();
+        session.setSelectedNetwork(selected);
+        if(selected == null) {
+            session.setSelection(null);
+        }
+        else { 
+            session.setSelection(selected.getSelection());
+        }
+        selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
+    }
 
     public SessionPanel(String name, final InseqActivator ia, InseqSession session) {
         this.ia = ia;
@@ -142,17 +153,9 @@ public class SessionPanel extends JPanel {
         networkList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         networkList.setLayoutOrientation(JList.VERTICAL);
 
-        networkList.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                TypeNetwork selected = (TypeNetwork) networkList.getSelectedValue();
-                session.setSelectedNetwork(selected);
-                if(selected == null) {
-                    session.setSelection(null);
-                }
-                else { 
-                    session.setSelection(selected.getSelection());
-                }
-                selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
+        networkList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                updateListSelection(); 
             }
         });
 
