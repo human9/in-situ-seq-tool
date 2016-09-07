@@ -353,6 +353,7 @@ public class SessionPanel extends JPanel {
         Task refreshTask = new AbstractTask() {
             public void run(TaskMonitor monitor) {
                 refreshNetworks(network);
+                updateListSelection();
             }
         };
         
