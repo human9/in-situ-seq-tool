@@ -46,8 +46,13 @@ public class ImportAction extends AbstractCyAction {
 		int returnVal = fc.showOpenDialog(ia.getCSAA().getCySwingApplication().getJFrame());
 		if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
 
-		File raw = new File(fc.getSelectedFile().getAbsolutePath());
         String filename = fc.getSelectedFile().getName();
+        if(ia.doesImportExist(filename)) {
+			JOptionPane.showMessageDialog(ia.getCSAA().getCySwingApplication().getJFrame(),"An imported file named " + filename + " already exists!", "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+    
+        }
+		File raw = new File(fc.getSelectedFile().getAbsolutePath());
 
         List<String> names = new ArrayList<String>();
         List<Transcript> transcripts = new ArrayList<Transcript>();

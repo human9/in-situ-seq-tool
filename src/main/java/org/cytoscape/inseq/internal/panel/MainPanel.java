@@ -117,6 +117,14 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
         return "Inseq";
     }
 
+    public boolean exists(String filename) {
+        for(int i = 0; i < sessionPanels.getSize(); i++) {
+            SessionPanel sp = (SessionPanel) sessionPanels.getElementAt(i);
+            if(sp.name.equals(filename)) return true;
+        }
+        return false;
+    }
+
     public void shutDown() {
         for(int i = 0; i < sessionPanels.getSize(); i++) {
             SessionPanel sp = (SessionPanel) sessionPanels.getElementAt(i);

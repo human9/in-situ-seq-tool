@@ -82,6 +82,11 @@ public class InseqActivator extends AbstractCyActivator {
         cyPanel.setSelectedIndex(index);
     }
 
+    public boolean doesImportExist(String filename) {
+        if(panel == null) return false;
+
+        return panel.exists(filename);
+    }
     /** 
      *  Returns the CyAppAdapter convenience interface.
      */

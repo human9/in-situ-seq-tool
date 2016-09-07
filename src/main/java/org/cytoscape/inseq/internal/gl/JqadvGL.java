@@ -218,7 +218,7 @@ public class JqadvGL {
      * Add a translation event into the queue.
      */
     public void move(float x, float y) {
-        eventFiFo.addLast(new float[] {x,y});
+        eventFiFo.add(new float[] {x,y});
         animator.go();
     }
 
@@ -227,7 +227,7 @@ public class JqadvGL {
      */
     public void updateScale(float direction, float x, float y) {
         for(int i = 0; i < 10; i++) {
-            eventFiFo.addLast(new float[] {direction,x,y});
+            eventFiFo.add(new float[] {direction,x,y});
         }
         animator.go();
     }
@@ -639,7 +639,7 @@ public class JqadvGL {
         float[] e;
         int size = (int) Math.floor(eventFiFo.size() * 0.5);
         while(eventFiFo.size() > size) {
-            e = eventFiFo.removeFirst();
+            e = eventFiFo.remove();
             switch(e.length) {
                 default:
                     System.err.println("Invalid event: This should never happen");
