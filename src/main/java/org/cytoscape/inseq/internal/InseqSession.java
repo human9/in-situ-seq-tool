@@ -226,8 +226,9 @@ public class InseqSession {
 
     public void setSelectedNetwork(TypeNetwork n) {
         selectedNetwork = networks.indexOf(n);
-        CyNetworkViewManager CNVM = CAA.getCyNetworkViewManager();
-        CNVM.addNetworkView(n.view);
+        //CyNetworkViewManager CNVM = CAA.getCyNetworkViewManager();
+        CAA.getCyApplicationManager().setCurrentNetworkView(n.view);
+        //CNVM.addNetworkView(n.view);
         n.view.updateView();
     }
     

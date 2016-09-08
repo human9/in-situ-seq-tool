@@ -111,7 +111,7 @@ public class SyncTask extends AbstractTask {
             for(int i = 0; i < nodes.size(); i++) {
                 tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, locations[i][0]);
                 tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
-                tn.view.updateView();
+                //tn.view.updateView();
             }
         }
 
