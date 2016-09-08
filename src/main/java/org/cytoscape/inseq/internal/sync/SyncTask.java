@@ -12,6 +12,7 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.VisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
@@ -94,17 +95,22 @@ public class SyncTask extends AbstractTask {
             locations[i][0] = view.getNodeView(unionNode).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION);
             locations[i][1] = view.getNodeView(unionNode).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
         }
+        double xloc = view.getVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION);
+        double yloc = view.getVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION);
+        double scale = view.getVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR);
 		
-        // we don't actually give a stuff about the union view
+        // we don't actually want the union view
         adapter.getCyNetworkViewManager().destroyNetworkView(view);
 
         // Apply union node locations to everything else
         for(TypeNetwork tn : networkList) {
+            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xloc);
+            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, yloc);
+            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR, scale);
             List<CyNode> nodes = tn.getNodeList();
             for(int i = 0; i < nodes.size(); i++) {
                 tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, locations[i][0]);
                 tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
-                adapter.getCyEventHelper().flushPayloadEvents();
                 tn.view.updateView();
             }
         }
