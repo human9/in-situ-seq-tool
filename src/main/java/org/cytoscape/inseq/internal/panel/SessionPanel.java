@@ -21,6 +21,7 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Arrays;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -47,6 +48,7 @@ import javax.swing.event.ListSelectionListener;
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.ViewStyler;
+import org.cytoscape.inseq.internal.sync.SyncTask;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
@@ -175,7 +177,14 @@ public class SessionPanel extends JPanel {
         JScrollPane listScroller = new JScrollPane(networkList);
         listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller), makeCons());
+        JButton layoutButton = new JButton("Layout selected");
+        layoutButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SyncTask t = new SyncTask(networkList.getSelectedValuesList(), ia.getCAA(), session);
+                ia.getCSAA().getDialogTaskManager().execute(new TaskIterator(t));
+            }
+        });
+        add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller, layoutButton), makeCons());
 
         JPanel distancePanel = new JPanel();
         distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.LINE_AXIS));

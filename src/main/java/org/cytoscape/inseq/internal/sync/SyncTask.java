@@ -3,15 +3,18 @@ package org.cytoscape.inseq.internal.sync;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sound.sampled.Control.Type;
-
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 
 public class SyncTask extends AbstractTask {
@@ -28,6 +31,7 @@ public class SyncTask extends AbstractTask {
 
     public void run(TaskMonitor monitor) {
         monitor.setTitle("Synchronising network layouts");
+
         //monitor.setStatusMessage("message");
 
         /* Overview of algorithm
@@ -74,11 +78,36 @@ public class SyncTask extends AbstractTask {
         }
         
         // Apply layout
+		CyNetworkView view = adapter.getCyNetworkViewFactory().createNetworkView(union);
+		final CyLayoutAlgorithmManager algm = adapter.getCyLayoutAlgorithmManager();
+		CyLayoutAlgorithm algor = algm.getDefaultLayout();
+		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
+		adapter.getTaskManager().execute(itr);
+		adapter.getCyNetworkManager().addNetwork(union);
+		adapter.getCyNetworkViewManager().addNetworkView(view);
+        
 
-        // Apply union node locations to other networks
+        // Find union node locations
+        double[][] locations = new double[unionNodes.size()][2];
+        for(int i = 0; i < unionNodes.size(); i++) {
+            CyNode unionNode = unionNodes.get(i);
+            locations[i][0] = view.getNodeView(unionNode).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION);
+            locations[i][1] = view.getNodeView(unionNode).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+        }
+		
+        // we don't actually give a stuff about the union view
+        adapter.getCyNetworkViewManager().destroyNetworkView(view);
 
-        // Delete union
-
+        // Apply union node locations to everything else
+        for(TypeNetwork tn : networkList) {
+            List<CyNode> nodes = tn.getNodeList();
+            for(int i = 0; i < nodes.size(); i++) {
+                tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, locations[i][0]);
+                tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
+                adapter.getCyEventHelper().flushPayloadEvents();
+                tn.view.updateView();
+            }
+        }
 
     }
 

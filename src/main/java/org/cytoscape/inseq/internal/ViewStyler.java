@@ -40,8 +40,12 @@ public class ViewStyler extends AbstractTask {
 		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
 
 		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.DARK_GRAY);
-		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, new Color(5,20,2));
+		vs.setDefaultValue(BasicVisualLexicon.NODE_SELECTED_PAINT, Color.RED);
+		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
+		vs.setDefaultValue(BasicVisualLexicon.NODE_LABEL_COLOR, Color.WHITE);
 		vs.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, new Color(204,255,204));
+		vs.setDefaultValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 150);
+		vs.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 255);
 		
 		VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
 		for(InseqSession.Gene g : s.getGenes())
@@ -49,14 +53,14 @@ public class ViewStyler extends AbstractTask {
 			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(g.name, g.color);
 		}
 		vs.addVisualMappingFunction(nodeColour);
-		
+	/*	
 		VisualMappingFunction<String,Paint> labelColor = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
 		for(InseqSession.Gene g : s.getGenes())
 		{
 			((DiscreteMapping<String,Paint>)labelColor).putMapValue(g.name, g.color);
 		}
 		vs.addVisualMappingFunction(labelColor);
-		
+	*/	
 		VisualMappingFunction<String,String> ntool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.NODE_TOOLTIP);
 		vs.addVisualMappingFunction(ntool);
 		VisualMappingFunction<String,String> etool = pvmf.createVisualMappingFunction("num", String.class, BasicVisualLexicon.EDGE_TOOLTIP);

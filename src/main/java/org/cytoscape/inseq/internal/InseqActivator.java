@@ -84,7 +84,7 @@ public class InseqActivator extends AbstractCyActivator {
                         if((Boolean)record.getValue() == true) willUpdate = true;
                     }
                     if(willUpdate) {
-                        System.out.println("Updating");
+                        //System.out.println("Updating");
                         panel.updateSelectionPanel();
                     }
                     /*CyTable t = e.getSource();
