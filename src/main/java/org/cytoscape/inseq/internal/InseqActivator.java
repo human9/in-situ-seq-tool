@@ -10,7 +10,8 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
-import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.events.RowSetRecord;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
@@ -69,7 +70,7 @@ public class InseqActivator extends AbstractCyActivator {
                    for (ViewChangeRecord<?> record : e.getPayloadCollection()) {
                         VisualProperty<?> vp = record.getVisualProperty();
                         if (vp == BasicVisualLexicon.NODE_X_LOCATION || vp == BasicVisualLexicon.NODE_Y_LOCATION) {
-                            System.out.println(vp.getDisplayName() + record.getValue());
+                            //System.out.println(vp.getDisplayName() + record.getValue());
                         }
                    }
                 }
@@ -78,14 +79,20 @@ public class InseqActivator extends AbstractCyActivator {
             RowsSetListener rsl = new RowsSetListener() {
                 @Override
                 public void handleEvent(RowsSetEvent e) {
-                    System.out.println("Row listener fired");
-                    CyTable t = e.getSource();
-                    /*for(CyColumn c : t.getColumns()) {
+                    boolean willUpdate = false;
+                    for (RowSetRecord record : e.getColumnRecords(CyNetwork.SELECTED)) {
+                        if((Boolean)record.getValue() == true) willUpdate = true;
+                    }
+                    if(willUpdate) {
+                        System.out.println("Updating");
+                        panel.updateSelectionPanel();
+                    }
+                    /*CyTable t = e.getSource();
+                    for(CyColumn c : t.getColumns()) {
 
                           System.out.println(c.getName());
                     }*/
 
-                    //panel.updateSelectionPanel();
                 }
             };
             registerService(context, rsl, RowsSetListener.class, properties);

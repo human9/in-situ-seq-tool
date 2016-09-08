@@ -133,6 +133,7 @@ public class ShuffleTask extends AbstractTask {
         for (int i = 0; i < numTranscriptsForGene.length; i++)
         {
             CyNode node = network.addNode();
+            net.addNode(i, node);
             CyRow row = nodeTable.getRow(node.getSUID());
             row.set(CyNetwork.NAME, session.name(i));
             row.set("num", numTranscriptsForGene[i]);

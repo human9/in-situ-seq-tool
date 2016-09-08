@@ -68,7 +68,7 @@ public class SessionPanel extends JPanel {
     private SelectionPanel selectionPanel;
     private BasePanel basePanel;
     private JButton pop;
-    private boolean useSubset;
+    private boolean useSubset = true;
     private boolean interaction = true;
     JList<TypeNetwork> networkList;
     DefaultListModel<TypeNetwork> model;
@@ -192,9 +192,9 @@ public class SessionPanel extends JPanel {
         add(ExpandableOptionsFactory.makeOptionsPanel("Distance control", distancePanel), makeCons());
 
         JRadioButton entire = new JRadioButton("Entire dataset");
-        entire.setSelected(true);
 
         JRadioButton subset = new JRadioButton("Current selection");
+        subset.setSelected(true);
 
         ButtonGroup selectionGroup = new ButtonGroup();
         selectionGroup.add(entire);
