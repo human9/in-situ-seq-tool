@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.model.CyEdge;
@@ -27,9 +28,14 @@ public class ShuffleTask extends AbstractTask {
     private CyTable nodeTable;
     private CyTable edgeTable;
     private String genName;
+    private double sigLevel;
+    private boolean bonferroni;
 
-    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName) {
+    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
+            double sigLevel, boolean bonferroni) {
         this.net = n;
+        this.sigLevel = sigLevel;
+        this.bonferroni = bonferroni;
         this.session = s;
         this.interaction = interaction;
         this.genName = genName;
@@ -140,6 +146,24 @@ public class ShuffleTask extends AbstractTask {
             row.set("proportion", (double)numTranscriptsForGene[i]/N);
         }
 
+        double a = 100 - sigLevel;
+        
+        if(bonferroni) {
+            double m = colocations.size();
+            a = 1 - a/(m);
+        }
+
+        double decimal = a / 100;
+
+        double div = decimal / 2;
+
+        double level = 1 - div;
+
+        System.out.println(level);
+
+        NormalDistribution d = new NormalDistribution();
+        double q = d.inverseCumulativeProbability(level);
+        System.out.println(q);
         for(String key : colocations.keySet()) {
             
             Colocation colocation = colocations.get(key);
@@ -150,12 +174,12 @@ public class ShuffleTask extends AbstractTask {
               //      + ", " + colocation.actualCount + ", " + Z);
 
             if(interaction) {
-                if(Z > 1.96) {
+                if(Z > q) {
                     addEdge(colocation, Z, key);
                 }
             }
             else {
-                if(Z < -1.96) {
+                if(Z < -q) {
                     addEdge(colocation, Z, key);
                 }
 

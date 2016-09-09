@@ -21,7 +21,6 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Arrays;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -29,6 +28,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -53,6 +53,7 @@ import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -64,7 +65,7 @@ public class SessionPanel extends JPanel {
 
     InseqActivator ia;
 
-    private double distance = 8;
+    private double distance = 30;
     private double cutoff = 0;
     private SeparateFrame frame;
     private SelectionPanel selectionPanel;
@@ -77,6 +78,11 @@ public class SessionPanel extends JPanel {
     private InseqSession session;
     private JCheckBox autoSlider;
     public final String name;
+    private CyLayoutAlgorithm layoutAlgorithm;
+    double mag = 20;
+    double sig = 95;
+    JCheckBox bonferroni;
+    boolean bon;
 
     private TaskIterator itr; 
 
@@ -177,18 +183,45 @@ public class SessionPanel extends JPanel {
         JScrollPane listScroller = new JScrollPane(networkList);
         listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
 
+		JComboBox<CyLayoutAlgorithm> layoutComboBox = new JComboBox<CyLayoutAlgorithm>(ia.getCAA().getCyLayoutAlgorithmManager().getAllLayouts().toArray(new CyLayoutAlgorithm[0]));
+		layoutAlgorithm = ia.getCAA().getCyLayoutAlgorithmManager().getLayout("force-directed");
+		layoutComboBox.setSelectedItem(layoutAlgorithm);
+		layoutComboBox.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED){
+					layoutAlgorithm = (CyLayoutAlgorithm) layoutComboBox.getSelectedItem();
+				}
+			}
+		});
+
         JButton layoutButton = new JButton("Layout selected");
         layoutButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                SyncTask t = new SyncTask(networkList.getSelectedValuesList(), ia.getCAA(), session);
+                SyncTask t = new SyncTask(networkList.getSelectedValuesList(), layoutAlgorithm, ia.getCAA(), session);
                 ia.getCSAA().getDialogTaskManager().execute(new TaskIterator(t));
             }
         });
-        add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller, layoutButton), makeCons());
+        add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller, layoutComboBox, layoutButton), makeCons());
+
+        JPanel magPanel = new JPanel();
+        magPanel.setLayout(new BoxLayout(magPanel, BoxLayout.LINE_AXIS));
+        JLabel mlabel = new JLabel("Magnification: ");
+        magPanel.add(mlabel);
+        JSpinner magnification = new JSpinner(new SpinnerNumberModel(mag, 0d, 100d, 1d));
+        magPanel.add(magnification);
+        magnification.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                mag = (Double)(magnification.getValue());
+            }
+        });
+        JLabel xlabel = new JLabel("x");
+        magPanel.add(xlabel);
 
         JPanel distancePanel = new JPanel();
         distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.LINE_AXIS));
-        JLabel dlabel = new JLabel("Distance cutoff: ");
+        JLabel dlabel = new JLabel("Search distance: ");
         distancePanel.add(dlabel);
         JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
         distancePanel.add(distanceCutoff);
@@ -198,7 +231,10 @@ public class SessionPanel extends JPanel {
                 distance = (Double)(distanceCutoff.getValue());
             }
         });
-        add(ExpandableOptionsFactory.makeOptionsPanel("Distance control", distancePanel), makeCons());
+        JLabel ulabel = new JLabel("μm");
+        distancePanel.add(ulabel);
+        
+        add(ExpandableOptionsFactory.makeOptionsPanel("Distance control", magPanel, distancePanel), makeCons());
 
         JRadioButton entire = new JRadioButton("Entire dataset");
 
@@ -241,10 +277,35 @@ public class SessionPanel extends JPanel {
 
         JPanel sigPanel = new JPanel();
         sigPanel.setLayout(new BoxLayout(sigPanel, BoxLayout.LINE_AXIS));
+        sigPanel.add(new JLabel("Find"));
         sigPanel.add(positive);
         sigPanel.add(negative);
+        sigPanel.add(new JLabel("interactions."));
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", sigPanel), makeCons());
+        bonferroni = new JCheckBox("Use Bonferroni Correction");
+        bonferroni.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                    bon = true;
+                }
+                else bon = false;
+            }
+        });
+        JSpinner sigLevel = new JSpinner(new SpinnerNumberModel(sig, 0d, 100d, 1d));
+        sigLevel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                sig = (Double)(magnification.getValue());
+            }
+        });
+        JPanel bonPanel = new JPanel();
+        bonPanel.setLayout(new BoxLayout(bonPanel, BoxLayout.LINE_AXIS));
+        bonPanel.add(new JLabel("Use a "));
+        bonPanel.add(sigLevel);
+        bonPanel.add(new JLabel("% confidence interval."));
+
+
+        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", sigPanel, bonferroni, bonPanel), makeCons());
 
         entire.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -327,12 +388,13 @@ public class SessionPanel extends JPanel {
 
     }   
 
+    double CONV = 0.15;
     public TypeNetwork getTN() {
 
         // Create a new TypeNetwork
         TypeNetwork network
             = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(),
-                              distance, cutoff);
+                              distance / (mag*CONV), cutoff);
         return network;
     }
 
@@ -353,9 +415,11 @@ public class SessionPanel extends JPanel {
         else {
             type = 'E';
         }
+
+        double px = distance / (mag*CONV);
         String networkName 
             = String.format("%c%.2f X%d Y%d W%d H%d", type, network.getDistance(),x,y,w,h);
-        Task neighboursTask = new FindNeighboursTask(selection, session.tree, network, distance, useSubset);
+        Task neighboursTask = new FindNeighboursTask(selection, session.tree, network, px, useSubset);
         
         itr.append(neighboursTask);
 
@@ -363,12 +427,12 @@ public class SessionPanel extends JPanel {
         // Register the network
         Task registerTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
-                session.addNetwork(network, distance, cutoff);
+                session.addNetwork(network, px, cutoff);
             }
         };
 
         // Construct and display the new network.
-        Task networkTask = new ShuffleTask(network, interaction, session, networkName);
+        Task networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bon);
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
@@ -407,8 +471,8 @@ public class SessionPanel extends JPanel {
 
             JPanel spinnerPanel = new JPanel();
             spinnerPanel.setLayout(new FlowLayout());
-            x = new JSpinner(new SpinnerNumberModel(session.min.width/4, 0, session.min.width, 1));
-            y = new JSpinner(new SpinnerNumberModel(session.min.height/4, 0, session.min.height, 1));
+            x = new JSpinner(new SpinnerNumberModel((session.min.width/4) / (mag*CONV), 0, (session.min.width) / (mag*CONV), 1));
+            y = new JSpinner(new SpinnerNumberModel((session.min.height/4) / (mag*CONV), 0, session.min.height / (mag*CONV), 1));
             spinnerPanel.add(x);
             spinnerPanel.add(new JLabel("x"));
             spinnerPanel.add(y);
@@ -425,6 +489,8 @@ public class SessionPanel extends JPanel {
 
         public Dimension getInput() {
             setVisible(true);
+            d.width *= (mag*CONV);
+            d.height *= (mag*CONV);
             return d;
         }
 

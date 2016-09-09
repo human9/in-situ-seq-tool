@@ -10,9 +10,7 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.VisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
@@ -23,9 +21,11 @@ public class SyncTask extends AbstractTask {
     final List<TypeNetwork> networkList;
     final CyAppAdapter adapter;
     final InseqSession session;
+    final CyLayoutAlgorithm algorithm;
 
-    public SyncTask(List<TypeNetwork> list, CyAppAdapter a, InseqSession s) {
+    public SyncTask(List<TypeNetwork> list, CyLayoutAlgorithm algorithm, CyAppAdapter a, InseqSession s) {
         networkList = list;
+        this.algorithm = algorithm;
         adapter = a;
         session = s;
     }
@@ -80,9 +80,7 @@ public class SyncTask extends AbstractTask {
         
         // Apply layout
 		CyNetworkView view = adapter.getCyNetworkViewFactory().createNetworkView(union);
-		final CyLayoutAlgorithmManager algm = adapter.getCyLayoutAlgorithmManager();
-		CyLayoutAlgorithm algor = algm.getDefaultLayout();
-		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
+		TaskIterator itr = algorithm.createTaskIterator(view, algorithm.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		adapter.getTaskManager().execute(itr);
 		adapter.getCyNetworkManager().addNetwork(union);
 		adapter.getCyNetworkViewManager().addNetworkView(view);
