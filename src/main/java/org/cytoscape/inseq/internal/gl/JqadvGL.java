@@ -131,6 +131,9 @@ public class JqadvGL {
 
     protected void init(GL2 gl2) {
 
+        // Attempt to enable vsync
+        gl2.setSwapInterval(1);
+
         // Enable specific OpenGL capabilities.
         gl2.glEnable(GL.GL_BLEND);
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -237,8 +240,13 @@ public class JqadvGL {
     /**
      * Change HUD visibility.
      */
-    public void setHUD(boolean state) {
-        HUDVisible = state;
+    public void toggleHUD() {
+        HUDVisible = !HUDVisible;
+        animator.go();
+    }
+    
+    public void HUDon() {
+        HUDVisible = true;
         animator.go();
     }
 
@@ -424,6 +432,14 @@ public class JqadvGL {
                .ortho(0, w, h, 0, -1, 1)
                .get(PBuffer);
         
+    }
+
+    public float getWidth() {
+        return w;
+    }
+
+    public float getHeight() {
+        return h;
     }
 
     /**

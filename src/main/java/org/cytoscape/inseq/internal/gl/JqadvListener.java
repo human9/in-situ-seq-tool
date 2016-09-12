@@ -9,6 +9,8 @@ import org.cytoscape.inseq.internal.InseqSession;
 
 import com.jogamp.newt.Display;
 import com.jogamp.newt.Display.PointerIcon;
+import com.jogamp.newt.event.KeyEvent;
+import com.jogamp.newt.event.KeyListener;
 import com.jogamp.newt.event.MouseAdapter;
 import com.jogamp.newt.event.MouseEvent;
 
@@ -17,7 +19,7 @@ import com.jogamp.newt.event.MouseEvent;
  *
  * @author John Salamon
  */
-public class JqadvListener extends MouseAdapter {
+public class JqadvListener extends MouseAdapter implements KeyListener {
 
     static final long serialVersionUID = 22l;
     
@@ -59,10 +61,49 @@ public class JqadvListener extends MouseAdapter {
         session.setSelection(null);
     }
 
-    public void center() {
-        jqadvgl.centerView();
+    private void mover(int x, int y) {
+        for(int i = 0; i < 10; i++) {
+            jqadvgl.move(x,y);
+        }
     }
 
+    public void keyPressed(KeyEvent e) {
+        switch(e.getKeyCode()) {
+            case KeyEvent.VK_F:
+                panel.toggleFullscreen();
+                break;
+            case KeyEvent.VK_H:
+                jqadvgl.toggleHUD();
+                break;
+            case KeyEvent.VK_PAGE_UP:
+                jqadvgl.updateScale(-1, jqadvgl.getWidth()/2, jqadvgl.getHeight()/2);
+                break;
+            case KeyEvent.VK_PAGE_DOWN:
+                jqadvgl.updateScale(1, jqadvgl.getWidth()/2, jqadvgl.getHeight()/2);
+                break;
+            case KeyEvent.VK_LEFT:
+                mover(-1, 0);
+                break;
+            case KeyEvent.VK_RIGHT:
+                mover(1, 0);
+                break;
+            case KeyEvent.VK_UP:
+                mover(0, -1);
+                break;
+            case KeyEvent.VK_DOWN:
+                mover(0, 1);
+                break;
+            case KeyEvent.VK_C:
+                jqadvgl.centerView();
+                jqadvgl.animator.go();
+                break;
+
+        }
+    }
+    
+    public void keyReleased(KeyEvent e) {
+
+    }
     
     @Override
     public void mouseWheelMoved(MouseEvent e) {

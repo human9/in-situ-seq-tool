@@ -153,15 +153,6 @@ public class SelectionPanel extends JPanel {
             }
         });
 
-        JToggleButton toggleHUD = new JToggleButton("HUD", true);
-        plotControls.add(toggleHUD);
-        toggleHUD.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getGL().setHUD(toggleHUD.isSelected());
-            }
-        });
-        
         JToggleButton showSelection 
             = new JToggleButton("RECT", true);
         plotControls.add(showSelection);

@@ -34,6 +34,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     private GLWindow window;
     private InseqSession session;
     private SelectionPanel panel;
+    private boolean fullscreen;
 
     PointerIcon cursor;
     Display display;
@@ -68,6 +69,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
         jqadvListener = new JqadvListener(session, jqadvgl, this);
         window.addMouseListener(jqadvListener);
+        window.addKeyListener(jqadvListener);
 
         this.setNEWTChild(window);
     }
@@ -95,6 +97,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
     public void center() {
         jqadvgl.centerView();
+        jqadvgl.HUDon();
         jqadvgl.animator.go();
     }
 
@@ -134,6 +137,11 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
 
     public JqadvGL getGL() {
         return jqadvgl;
+    }
+
+    public void toggleFullscreen() {
+        fullscreen = !fullscreen;
+        window.setFullscreen(fullscreen);
     }
 
 }
