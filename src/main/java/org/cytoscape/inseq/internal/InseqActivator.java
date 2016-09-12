@@ -10,8 +10,6 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
-import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.events.RowSetRecord;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
@@ -79,10 +77,10 @@ public class InseqActivator extends AbstractCyActivator {
             RowsSetListener rsl = new RowsSetListener() {
                 @Override
                 public void handleEvent(RowsSetEvent e) {
-                    boolean willUpdate = false;
-                    for (RowSetRecord record : e.getColumnRecords(CyNetwork.SELECTED)) {
+                    boolean willUpdate = true;
+                    /*for (RowSetRecord record : e.getColumnRecords(CyNetwork.SELECTED)) {
                         if((Boolean)record.getValue() == true) willUpdate = true;
-                    }
+                    }*/
                     if(willUpdate) {
                         //System.out.println("Updating");
                         panel.updateSelectionPanel();

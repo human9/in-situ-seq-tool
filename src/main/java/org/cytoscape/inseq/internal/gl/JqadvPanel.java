@@ -116,7 +116,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
             Collections.reverse(list);
             Transcript tr = null;
             for(Transcript t : list) {
-                if(session.isActive(t)) {
+                if(jqadvgl.getShowAll() || session.isActive(t)) {
                     tr = t;
                     break;
                 }

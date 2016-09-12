@@ -58,6 +58,8 @@ public class JqadvGL {
     private boolean initDone;
     private boolean pathClosed;
     private boolean makeCenter = true;
+    private boolean HUDVisible = true;
+    private boolean showAll = true;
     private float[] coords;
     private float[] colours;
     private float[] symbols;
@@ -233,6 +235,14 @@ public class JqadvGL {
     }
 
     /**
+     * Change HUD visibility.
+     */
+    public void setHUD(boolean state) {
+        HUDVisible = state;
+        animator.go();
+    }
+
+    /**
      * Set a new scale and signal that it should be updated.
      */
     public void setImageScale(float value) {
@@ -246,6 +256,15 @@ public class JqadvGL {
         animator.go();
     }
 
+    public void setShowAll(boolean state) {
+        showAll = state;
+        changeNetworkComponents();
+    }
+
+    public boolean getShowAll() {
+        return showAll;
+    }
+
     public void changeNetworkComponents() {
 
         List<Transcript> transcripts = session.getRaw();
@@ -253,7 +272,7 @@ public class JqadvGL {
         for(int i = 0; i < transcripts.size(); i++) {
             // set it to negative to make it not appear
             Transcript t = transcripts.get(i);
-            if(session.isActive(t)) {
+            if(showAll || session.isActive(t)) {
                 coords[i*3+2] = t.type;
             } else {
                 coords[i*3+2] = -t.type-1;
@@ -592,7 +611,9 @@ public class JqadvGL {
             drawSelectedPointBubble(gl2);    
         }
         
-        textRenderer.renderText(gl2, scale, selectedTranscript);
+        if(HUDVisible) {
+            textRenderer.renderText(gl2, scale, selectedTranscript);
+        }
         
         if(!eventFiFo.isEmpty()) animator.go();
     }

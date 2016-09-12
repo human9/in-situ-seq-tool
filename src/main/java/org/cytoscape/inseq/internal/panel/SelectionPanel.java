@@ -11,13 +11,14 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
@@ -133,10 +134,36 @@ public class SelectionPanel extends JPanel {
                 updateSelection();
             }
         });
+
+        JToggleButton bigSymbols = new JToggleButton(NetworkUtil.iconFromResource("/texture/bold.png"));
+        plotControls.add(bigSymbols);
+        bigSymbols.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.getGL().largePoints(bigSymbols.isSelected());
+            }
+        });
         
+        JToggleButton showAllButton = new JToggleButton("Show all", true);
+        plotControls.add(showAllButton);
+        showAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.getGL().setShowAll(showAllButton.isSelected());
+            }
+        });
+
+        JToggleButton toggleHUD = new JToggleButton("HUD", true);
+        plotControls.add(toggleHUD);
+        toggleHUD.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jqadvpanel.getGL().setHUD(toggleHUD.isSelected());
+            }
+        });
         
-        JButton showSelection 
-            = new JButton("RECT");
+        JToggleButton showSelection 
+            = new JToggleButton("RECT", true);
         plotControls.add(showSelection);
         showSelection.addActionListener(new ActionListener() {
             @Override
@@ -145,8 +172,8 @@ public class SelectionPanel extends JPanel {
             }
         });
         
-        JButton polygonSelect 
-            = new JButton("POLY");
+        JToggleButton polygonSelect 
+            = new JToggleButton("POLY");
         plotControls.add(polygonSelect);
         polygonSelect.addActionListener(new ActionListener() {
             @Override
@@ -154,6 +181,10 @@ public class SelectionPanel extends JPanel {
                 jqadvpanel.getListener().enablePoly();
             }
         });
+
+        ButtonGroup areaGroup = new ButtonGroup();
+        areaGroup.add(showSelection);
+        areaGroup.add(polygonSelect);
         
         JButton center 
             = new JButton("RESET");
@@ -162,15 +193,6 @@ public class SelectionPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 jqadvpanel.center();
-            }
-        });
-
-        JCheckBox bigSymbols = new JCheckBox("Big symbols");
-        plotControls.add(bigSymbols);
-        bigSymbols.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getGL().largePoints(bigSymbols.isSelected());
             }
         });
 
@@ -194,24 +216,7 @@ public class SelectionPanel extends JPanel {
                 jqadvpanel.getGL().setImageScale(((Double)pointScale.getValue()).floatValue());   
             }
         });
-        
-        JButton out = new JButton("-");
-        plotControls.add(out);
-        out.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getGL().updateScale(1, jqadvpanel.getWidth()/2, jqadvpanel.getHeight()/2);
-            }
-        });
-        
-        JButton in = new JButton("+");
-        plotControls.add(in);
-        in.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getGL().updateScale(-1, jqadvpanel.getWidth()/2, jqadvpanel.getHeight()/2);
-            }
-        });
+
     }
 
     public void setSelected(Transcript t) {
