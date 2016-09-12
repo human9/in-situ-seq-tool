@@ -9,15 +9,12 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
+import org.cytoscape.inseq.internal.sync.ViewAdjustmentListener;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
-import org.cytoscape.view.model.VisualProperty;
-import org.cytoscape.view.model.events.ViewChangeRecord;
-import org.cytoscape.view.model.events.ViewChangedEvent;
 import org.cytoscape.view.model.events.ViewChangedListener;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.osgi.framework.BundleContext;
 
 import edu.wlu.cs.levy.CG.KDTree;
@@ -63,17 +60,8 @@ public class InseqActivator extends AbstractCyActivator {
             panel = new MainPanel(this);
             registerAllServices(context, panel, properties);
 
-            ViewChangedListener vcl = new ViewChangedListener() {
-                public void handleEvent(ViewChangedEvent<?> e) {
-                   for (ViewChangeRecord<?> record : e.getPayloadCollection()) {
-                        VisualProperty<?> vp = record.getVisualProperty();
-                        if (vp == BasicVisualLexicon.NODE_X_LOCATION || vp == BasicVisualLexicon.NODE_Y_LOCATION) {
-                            //System.out.println(vp.getDisplayName() + record.getValue());
-                        }
-                   }
-                }
-            };
-            registerService(context, vcl, ViewChangedListener.class, properties);
+            ViewAdjustmentListener al = new ViewAdjustmentListener(s);
+            registerService(context, al, ViewChangedListener.class, properties);
             RowsSetListener rsl = new RowsSetListener() {
                 @Override
                 public void handleEvent(RowsSetEvent e) {
