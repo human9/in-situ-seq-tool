@@ -16,7 +16,6 @@ import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.vizmap.VisualStyle;
 
 import edu.wlu.cs.levy.CG.KDTree;
@@ -227,9 +226,9 @@ public class InseqSession {
     public void setSelectedNetwork(TypeNetwork n) {
         selectedNetwork = networks.indexOf(n);
         //CyNetworkViewManager CNVM = CAA.getCyNetworkViewManager();
-        CAA.getCyApplicationManager().setCurrentNetworkView(n.view);
+        CAA.getCyApplicationManager().setCurrentNetworkView(n.getView());
         //CNVM.addNetworkView(n.view);
-        n.view.updateView();
+        n.getView().updateView();
     }
     
     public TypeNetwork getSelectedNetwork() {

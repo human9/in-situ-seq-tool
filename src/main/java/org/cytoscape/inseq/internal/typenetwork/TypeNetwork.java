@@ -19,7 +19,7 @@ public class TypeNetwork {
 	double distance;
 	double cutoff;
 	private Shape selection;
-	public CyNetworkView view;
+	private CyNetworkView view;
 
     // An ordered list of CyNodes, so that nodes of type (i) can be looked up
     // without jumping through too many hoops
@@ -44,6 +44,14 @@ public class TypeNetwork {
 	public CyNetwork getNetwork() {
 		return network;
 	}
+
+    public CyNetworkView getView() {
+        return view;
+    }
+
+    public void setView(CyNetworkView v) {
+        view = v;
+    }
 
 	public void setNetwork(CyNetwork n) {
 		network = n;

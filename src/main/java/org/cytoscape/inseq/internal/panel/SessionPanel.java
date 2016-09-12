@@ -71,8 +71,6 @@ public class SessionPanel extends JPanel {
     private SelectionPanel selectionPanel;
     private BasePanel basePanel;
     private JButton pop;
-    private boolean useSubset = true;
-    private boolean interaction = true;
     JList<TypeNetwork> networkList;
     DefaultListModel<TypeNetwork> model;
     private InseqSession session;
@@ -82,7 +80,9 @@ public class SessionPanel extends JPanel {
     double mag = 20;
     double sig = 95;
     JCheckBox bonferroni;
-    boolean bon;
+    boolean bonferroniCorrection = true;
+    private boolean useSubset = true;
+    private boolean interaction = true;
 
     private TaskIterator itr; 
 
@@ -158,7 +158,7 @@ public class SessionPanel extends JPanel {
                 repaint();
                 } catch (java.lang.IllegalArgumentException i) {
                     pop.setVisible(true);
-			        JOptionPane.showMessageDialog(SessionPanel.this, "Couldn't open new window", "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(SessionPanel.this, "Couldn't open new window", "Error", JOptionPane.WARNING_MESSAGE);
                 }
                 
             }
@@ -183,17 +183,17 @@ public class SessionPanel extends JPanel {
         JScrollPane listScroller = new JScrollPane(networkList);
         listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
 
-		JComboBox<CyLayoutAlgorithm> layoutComboBox = new JComboBox<CyLayoutAlgorithm>(ia.getCAA().getCyLayoutAlgorithmManager().getAllLayouts().toArray(new CyLayoutAlgorithm[0]));
-		layoutAlgorithm = ia.getCAA().getCyLayoutAlgorithmManager().getLayout("force-directed");
-		layoutComboBox.setSelectedItem(layoutAlgorithm);
-		layoutComboBox.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED){
-					layoutAlgorithm = (CyLayoutAlgorithm) layoutComboBox.getSelectedItem();
-				}
-			}
-		});
+        JComboBox<CyLayoutAlgorithm> layoutComboBox = new JComboBox<CyLayoutAlgorithm>(ia.getCAA().getCyLayoutAlgorithmManager().getAllLayouts().toArray(new CyLayoutAlgorithm[0]));
+        layoutAlgorithm = ia.getCAA().getCyLayoutAlgorithmManager().getLayout("force-directed");
+        layoutComboBox.setSelectedItem(layoutAlgorithm);
+        layoutComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED){
+                    layoutAlgorithm = (CyLayoutAlgorithm) layoutComboBox.getSelectedItem();
+                }
+            }
+        });
 
         JButton layoutButton = new JButton("Layout selected");
         layoutButton.addActionListener(new ActionListener() {
@@ -282,13 +282,10 @@ public class SessionPanel extends JPanel {
         sigPanel.add(negative);
         sigPanel.add(new JLabel("interactions."));
 
-        bonferroni = new JCheckBox("Use Bonferroni Correction");
+        bonferroni = new JCheckBox("Use Bonferroni Correction", true);
         bonferroni.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                if(e.getStateChange() == ItemEvent.SELECTED) {
-                    bon = true;
-                }
-                else bon = false;
+                bonferroniCorrection = bonferroni.isSelected();
             }
         });
         JSpinner sigLevel = new JSpinner(new SpinnerNumberModel(sig, 0d, 100d, 1d));
@@ -432,7 +429,7 @@ public class SessionPanel extends JPanel {
         };
 
         // Construct and display the new network.
-        Task networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bon);
+        Task networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bonferroniCorrection);
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
@@ -510,10 +507,10 @@ public class SessionPanel extends JPanel {
 
     }
 
-	@Override
-	public String toString() {
-		return name;
-	}
+    @Override
+    public String toString() {
+        return name;
+    }
 
     public void shutDown() {
         if(frame != null) {

@@ -118,13 +118,17 @@ public class ViewStyler extends AbstractTask {
         style.addVisualMappingFunction(nodeColour);
         style.addVisualMappingFunction(labelColour);
 
-        style.apply(s.getSelectedNetwork().view);
+        try {
+            style.apply(s.getSelectedNetwork().getView());
+        } catch (NullPointerException e) {
+            // No network created yet
+        }
     }
 
 	public void run(TaskMonitor monitor) {
 		
 		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network.getNetwork());
-		network.view = view;
+		network.setView(view);
 		style.apply(view);
 
 		final CyLayoutAlgorithmManager algm = a.getCyLayoutAlgorithmManager();

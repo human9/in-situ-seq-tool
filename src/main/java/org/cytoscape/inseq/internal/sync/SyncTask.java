@@ -100,15 +100,16 @@ public class SyncTask extends AbstractTask {
         // we don't actually want the union view
         adapter.getCyNetworkViewManager().destroyNetworkView(view);
 
-        // Apply union node locations to everything else
         for(TypeNetwork tn : networkList) {
-            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xloc);
-            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, yloc);
-            tn.view.setVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR, scale);
+            // Apply union zoom and centering to other views
+            tn.getView().setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xloc);
+            tn.getView().setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, yloc);
+            tn.getView().setVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR, scale);
             List<CyNode> nodes = tn.getNodeList();
+            // Apply union node locations to other nodes
             for(int i = 0; i < nodes.size(); i++) {
-                tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, locations[i][0]);
-                tn.view.getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
+                tn.getView().getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, locations[i][0]);
+                tn.getView().getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
                 //tn.view.updateView();
             }
         }
