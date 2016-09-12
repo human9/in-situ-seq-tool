@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
@@ -57,6 +58,8 @@ public class ShuffleTask extends AbstractTask {
         // A map of all colocations within the selection
         Map<String, Colocation> colocations = new HashMap<String, Colocation>();
 
+        int[] numColocationsForGene = new int[session.getGenes().size()];
+
         // Stores the number of each transcript name that are found
         int[] numTranscriptsForGene = new int[session.getGenes().size()];
         
@@ -75,12 +78,13 @@ public class ShuffleTask extends AbstractTask {
             
             N++;
 
-            // Increment n for this gene
-            numTranscriptsForGene[t.type]++;
 
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
             if(t.getNeighboursForNetwork(net).size() < 1) continue;
+            
+            // Increment n for this gene
+            numTranscriptsForGene[t.type]++;
 
             //
             for(Transcript n : t.getNeighboursForNetwork(net)) {
@@ -91,6 +95,14 @@ public class ShuffleTask extends AbstractTask {
                 }
                 colocations.get(key).actualCount++;
                 k++;
+
+                if(n.type == t.type) {
+                    numColocationsForGene[t.type]++;
+                }
+                else {
+                    numColocationsForGene[n.type]++;
+                    numColocationsForGene[t.type]++;
+                }
             }
         }
 
@@ -99,13 +111,19 @@ public class ShuffleTask extends AbstractTask {
         k /= 2;
         for(Colocation c : colocations.values()) {
             c.actualCount /= 2;
-            int na = numTranscriptsForGene[c.getFirst().type];
-            int nb = numTranscriptsForGene[c.getSecond().type];
+            int na = numColocationsForGene[c.getFirst().type] / 2;
+            int nb = numColocationsForGene[c.getSecond().type] / 2;
+            System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + k + ", " + na + ", " + nb);
             if(c.getFirst().type == c.getSecond().type) {
-                c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
+                c.expectedCount = 0;
+                //c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
                 //System.out.println("\n\n" + session.name(c.getFirst().type) + k + "," + na);
             } else {
-                c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
+                //c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
+                HypergeometricDistribution hd = new HypergeometricDistribution(k, na, nb);
+                double p = hd.upperCumulativeProbability(c.actualCount);
+                System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + p);
+                c.expectedCount = p;
             }
         }
         
@@ -145,7 +163,7 @@ public class ShuffleTask extends AbstractTask {
             row.set("num", numTranscriptsForGene[i]);
             row.set("proportion", (double)numTranscriptsForGene[i]/N);
         }
-
+/*
         double a = 100 - sigLevel;
         
         if(bonferroni) {
@@ -162,29 +180,30 @@ public class ShuffleTask extends AbstractTask {
         System.out.println(level);
 
         NormalDistribution d = new NormalDistribution();
-        double q = d.inverseCumulativeProbability(level);
-        System.out.println(q);
+        double q = d.inverseCumulativeProbability(level);*/
         for(String key : colocations.keySet()) {
             
             Colocation colocation = colocations.get(key);
 
             double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
 
+            Z = colocation.expectedCount;
+
             //System.out.println(key + ", " + colocation.expectedCount
               //      + ", " + colocation.actualCount + ", " + Z);
 
             if(interaction) {
-                if(Z > q) {
+                if(Z < 0.05d) {
                     addEdge(colocation, Z, key);
                 }
             }
-            else {
+        /*    else {
                 if(Z < -q) {
                     addEdge(colocation, Z, key);
                 }
 
             }
-
+*/
         }
     }
     private void addEdge(Colocation colocation, double Z, String key) {

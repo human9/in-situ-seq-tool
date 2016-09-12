@@ -468,8 +468,8 @@ public class SessionPanel extends JPanel {
 
             JPanel spinnerPanel = new JPanel();
             spinnerPanel.setLayout(new FlowLayout());
-            x = new JSpinner(new SpinnerNumberModel((session.min.width/4) / (mag*CONV), 0, (session.min.width) / (mag*CONV), 1));
-            y = new JSpinner(new SpinnerNumberModel((session.min.height/4) / (mag*CONV), 0, session.min.height / (mag*CONV), 1));
+            x = new JSpinner(new SpinnerNumberModel((int)((session.min.width/4) / (mag*CONV)), 0, (int)(session.min.width / (mag*CONV)), 1));
+            y = new JSpinner(new SpinnerNumberModel((int)((session.min.height/4) / (mag*CONV)), 0, (int)(session.min.height / (mag*CONV)), 1));
             spinnerPanel.add(x);
             spinnerPanel.add(new JLabel("x"));
             spinnerPanel.add(y);
@@ -494,6 +494,7 @@ public class SessionPanel extends JPanel {
         public void propertyChange(PropertyChangeEvent e) {
             Object value = op.getValue();
             if(value.equals("OK")) {
+                System.out.println(x.getValue());
                 d = new Dimension((int)x.getValue(), (int)y.getValue());
                 setVisible(false);
             }
