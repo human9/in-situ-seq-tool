@@ -1,11 +1,11 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.model.CyEdge;
@@ -181,6 +181,14 @@ public class ShuffleTask extends AbstractTask {
 
         NormalDistribution d = new NormalDistribution();
         double q = d.inverseCumulativeProbability(level);*/
+
+
+        Comparator<Colocation> comparator = new Comparator<Colocation>() {
+            public int compare(Colocation c1, Colocation c2) {
+                return c2.rank - c1.getId(); // use your logic
+            }
+        };
+        
         for(String key : colocations.keySet()) {
             
             Colocation colocation = colocations.get(key);
@@ -188,6 +196,7 @@ public class ShuffleTask extends AbstractTask {
             double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
 
             Z = colocation.expectedCount;
+
 
             //System.out.println(key + ", " + colocation.expectedCount
               //      + ", " + colocation.actualCount + ", " + Z);
@@ -235,6 +244,7 @@ public class ShuffleTask extends AbstractTask {
         private Transcript first;
         private Transcript second;
 
+        public int rank;
         public int actualCount = 0;
         public double expectedCount = 0;
 
