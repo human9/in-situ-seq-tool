@@ -1,7 +1,10 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -113,7 +116,7 @@ public class ShuffleTask extends AbstractTask {
             c.actualCount /= 2;
             int na = numColocationsForGene[c.getFirst().type] / 2;
             int nb = numColocationsForGene[c.getSecond().type] / 2;
-            System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + k + ", " + na + ", " + nb);
+            //System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + k + ", " + na + ", " + nb);
             if(c.getFirst().type == c.getSecond().type) {
                 c.expectedCount = 0;
                 //c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
@@ -122,7 +125,7 @@ public class ShuffleTask extends AbstractTask {
                 //c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
                 HypergeometricDistribution hd = new HypergeometricDistribution(k, na, nb);
                 double p = hd.upperCumulativeProbability(c.actualCount);
-                System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + p);
+                //System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + p);
                 c.expectedCount = p;
             }
         }
@@ -152,6 +155,7 @@ public class ShuffleTask extends AbstractTask {
         edgeTable = network.getDefaultEdgeTable();  
         edgeTable.createColumn("num", Integer.class, false);
         edgeTable.createColumn("normal", Double.class, false);
+        edgeTable.createColumn("rank", Integer.class, false);
 
         // Add nodes into actual network
         for (int i = 0; i < numTranscriptsForGene.length; i++)
@@ -183,27 +187,39 @@ public class ShuffleTask extends AbstractTask {
         double q = d.inverseCumulativeProbability(level);*/
 
 
+        // Place ranking
+        List<Colocation> rankedColocations = new ArrayList<Colocation>(colocations.values());
+        // Order by significance
         Comparator<Colocation> comparator = new Comparator<Colocation>() {
             public int compare(Colocation c1, Colocation c2) {
-                return c2.rank - c1.getId(); // use your logic
+                return c1.expectedCount < c2.expectedCount ? -1 : 1;
             }
         };
+        Collections.sort(rankedColocations, comparator);
+
+        // Give ranks, excluding self colocations
+        int rank = 1;
+        Iterator<Colocation> itr = rankedColocations.iterator();
+        while(itr.hasNext()) {
+            Colocation c = itr.next();
+            
+            if(c.getFirst().type == c.getSecond().type) {
+                itr.remove();
+            }
+            else {
+                c.rank = rank++;
+            }
+        }
         
         for(String key : colocations.keySet()) {
             
             Colocation colocation = colocations.get(key);
 
-            double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
-
-            Z = colocation.expectedCount;
-
-
-            //System.out.println(key + ", " + colocation.expectedCount
-              //      + ", " + colocation.actualCount + ", " + Z);
+            double p = colocation.expectedCount;
 
             if(interaction) {
-                if(Z < 0.05d) {
-                    addEdge(colocation, Z, key);
+                if(p < 0.05d) {
+                    addEdge(colocation, key);
                 }
             }
         /*    else {
@@ -215,7 +231,7 @@ public class ShuffleTask extends AbstractTask {
 */
         }
     }
-    private void addEdge(Colocation colocation, double Z, String key) {
+    private void addEdge(Colocation colocation, String key) {
 
             CyNode thisNode = NetworkUtil.getNodeWithName(network,
                     nodeTable, session.name(colocation.getFirst().type));
@@ -224,7 +240,7 @@ public class ShuffleTask extends AbstractTask {
             
             if(thisNode == otherNode) {
                 nodeTable.getRow(thisNode.getSUID())
-                    .set("selfnorm", Math.abs(Z));
+                    .set("selfnorm", Math.abs(colocation.expectedCount));
                 return;
             }
 
@@ -236,7 +252,8 @@ public class ShuffleTask extends AbstractTask {
             row.set(CyNetwork.NAME, key);
             row.set(CyEdge.INTERACTION, "Co-occurence");
             row.set("num", (int) colocation.actualCount); 
-            row.set("normal", Math.abs(Z)); 
+            row.set("rank", (int) colocation.rank);
+            row.set("normal", Math.abs(colocation.expectedCount)); 
     }
     
     class Colocation {
