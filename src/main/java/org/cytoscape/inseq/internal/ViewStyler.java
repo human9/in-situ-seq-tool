@@ -41,6 +41,7 @@ public class ViewStyler extends AbstractTask {
 
 		vs.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.DARK_GRAY);
 		vs.setDefaultValue(BasicVisualLexicon.NODE_SELECTED_PAINT, Color.RED);
+		vs.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_SELECTED_PAINT, Color.YELLOW);
 		vs.setDefaultValue(BasicVisualLexicon.NETWORK_BACKGROUND_PAINT, Color.BLACK);
 		vs.setDefaultValue(BasicVisualLexicon.NODE_LABEL_COLOR, Color.WHITE);
 		vs.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, new Color(204,255,204));
@@ -75,16 +76,29 @@ public class ViewStyler extends AbstractTask {
 		((ContinuousMapping<Double,Double>)sizeMap).addPoint(1d,new  BoundaryRangeValues<Double>(80d,100d,110d));
 		vs.addVisualMappingFunction(sizeMap);
 
-		VisualMappingFunction<Double,Double> edges = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
-		vs.addVisualMappingFunction(edges);
 		//VisualMappingFunction<Double,Double> borders = pvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
 		//vs.addVisualMappingFunction(borders);
 		
+        /*
 		((ContinuousMapping<Double,Double>)edges).addPoint(1.96d,new  BoundaryRangeValues<Double>(0d,2d,4d));
 		((ContinuousMapping<Double,Double>)edges).addPoint(3d,new  BoundaryRangeValues<Double>(4d,5d,6d));
 		((ContinuousMapping<Double,Double>)edges).addPoint(6d,new  BoundaryRangeValues<Double>(6d,8d,10d));
 		((ContinuousMapping<Double,Double>)edges).addPoint(10d,new  BoundaryRangeValues<Double>(10d,15d,20d));
 		vs.addVisualMappingFunction(edges);
+        */
+		VisualMappingFunction<Integer,Double> edges = cvmf.createVisualMappingFunction("rank", Integer.class, BasicVisualLexicon.EDGE_WIDTH);
+
+		((ContinuousMapping<Integer,Double>)edges).addPoint(1,new  BoundaryRangeValues<Double>(20d,20d,20d));
+		((ContinuousMapping<Integer,Double>)edges).addPoint(50,new  BoundaryRangeValues<Double>(1d,1d,1d));
+		vs.addVisualMappingFunction(edges);
+		
+        VisualMappingFunction<Integer,Paint> edgeColour = cvmf.createVisualMappingFunction("rank", Integer.class, BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT);
+
+		((ContinuousMapping<Integer,Paint>)edgeColour).addPoint(1,new  BoundaryRangeValues<Paint>(Color.RED, Color.RED, Color.RED));
+		((ContinuousMapping<Integer,Paint>)edgeColour).addPoint(50,new  BoundaryRangeValues<Paint>(Color.GRAY, Color.GRAY, Color.GRAY));
+		vs.addVisualMappingFunction(edgeColour);
+
+
 /*
 		VisualMappingFunction<Double,Double> edgeMap = cvmf.createVisualMappingFunction("normal", Double.class, BasicVisualLexicon.EDGE_WIDTH);
 		((ContinuousMapping<Double,Double>)edgeMap).addPoint(1.96d,new  BoundaryRangeValues<Double>(4d,8d,12d));
