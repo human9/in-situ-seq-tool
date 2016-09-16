@@ -23,7 +23,7 @@ import org.cytoscape.work.TaskMonitor;
  * 
  */
 
-public class ShuffleTask extends AbstractTask {
+public class HypergeometricTask extends AbstractTask {
 
     private TypeNetwork net;
     private InseqSession session;
@@ -35,7 +35,7 @@ public class ShuffleTask extends AbstractTask {
     private double sigLevel;
     private boolean bonferroni;
 
-    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
+    public HypergeometricTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
             double sigLevel, boolean bonferroni) {
         this.net = n;
         this.sigLevel = sigLevel;
@@ -126,6 +126,7 @@ public class ShuffleTask extends AbstractTask {
                 HypergeometricDistribution hd = new HypergeometricDistribution(k, na, nb);
                 double p = hd.upperCumulativeProbability(c.actualCount);
                 //System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + p);
+                System.out.println(p);
                 c.expectedCount = p;
             }
         }
@@ -192,7 +193,10 @@ public class ShuffleTask extends AbstractTask {
         // Order by significance
         Comparator<Colocation> comparator = new Comparator<Colocation>() {
             public int compare(Colocation c1, Colocation c2) {
-                return c1.expectedCount < c2.expectedCount ? -1 : 1;
+                if(c1.expectedCount == c2.expectedCount) return 0;
+                else {
+                    return c1.expectedCount < c2.expectedCount ? -1 : 1;
+                }
             }
         };
         Collections.sort(rankedColocations, comparator);

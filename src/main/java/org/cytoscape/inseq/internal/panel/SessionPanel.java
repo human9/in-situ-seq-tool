@@ -50,7 +50,7 @@ import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.ViewStyler;
 import org.cytoscape.inseq.internal.sync.SyncTask;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
-import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
+import org.cytoscape.inseq.internal.typenetwork.HypergeometricTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
@@ -429,7 +429,7 @@ public class SessionPanel extends JPanel {
         };
 
         // Construct and display the new network.
-        Task networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bonferroniCorrection);
+        Task networkTask = new HypergeometricTask(network, interaction, session, networkName, sig, bonferroniCorrection);
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 
