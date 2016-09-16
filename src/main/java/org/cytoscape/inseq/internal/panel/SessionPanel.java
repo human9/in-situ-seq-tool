@@ -429,7 +429,10 @@ public class SessionPanel extends JPanel {
         };
 
         // Construct and display the new network.
-        Task networkTask = new HypergeometricTask(network, interaction, session, networkName, sig, bonferroniCorrection);
+        Task networkTask = new HypergeometricTask(network, interaction, session, networkName);//sig, bonferroniCorrection);
+
+        // TODO: Fix this mess
+        // I'd do it now but I'm writing docs so cbf tbh 
 
         Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
 

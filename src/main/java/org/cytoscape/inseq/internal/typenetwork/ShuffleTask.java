@@ -1,14 +1,10 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.math3.distribution.HypergeometricDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.model.CyEdge;
@@ -20,10 +16,10 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
 /**
- * 
+ * Provide network generation using the label shuffling method. 
  */
 
-public class HypergeometricTask extends AbstractTask {
+public class ShuffleTask extends AbstractTask {
 
     private TypeNetwork net;
     private InseqSession session;
@@ -32,9 +28,14 @@ public class HypergeometricTask extends AbstractTask {
     private CyTable nodeTable;
     private CyTable edgeTable;
     private String genName;
+    private double sigLevel;
+    private boolean bonferroni;
 
-    public HypergeometricTask(TypeNetwork n, boolean interaction, InseqSession s, String genName) {
+    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
+            double sigLevel, boolean bonferroni) {
         this.net = n;
+        this.sigLevel = sigLevel;
+        this.bonferroni = bonferroni;
         this.session = s;
         this.interaction = interaction;
         this.genName = genName;
@@ -56,8 +57,6 @@ public class HypergeometricTask extends AbstractTask {
         // A map of all colocations within the selection
         Map<String, Colocation> colocations = new HashMap<String, Colocation>();
 
-        int[] numColocationsForGene = new int[session.getGenes().size()];
-
         // Stores the number of each transcript name that are found
         int[] numTranscriptsForGene = new int[session.getGenes().size()];
         
@@ -76,13 +75,12 @@ public class HypergeometricTask extends AbstractTask {
             
             N++;
 
+            // Increment n for this gene
+            numTranscriptsForGene[t.type]++;
 
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
             if(t.getNeighboursForNetwork(net).size() < 1) continue;
-            
-            // Increment n for this gene
-            numTranscriptsForGene[t.type]++;
 
             //
             for(Transcript n : t.getNeighboursForNetwork(net)) {
@@ -93,14 +91,6 @@ public class HypergeometricTask extends AbstractTask {
                 }
                 colocations.get(key).actualCount++;
                 k++;
-
-                if(n.type == t.type) {
-                    numColocationsForGene[t.type]++;
-                }
-                else {
-                    numColocationsForGene[n.type]++;
-                    numColocationsForGene[t.type]++;
-                }
             }
         }
 
@@ -109,20 +99,13 @@ public class HypergeometricTask extends AbstractTask {
         k /= 2;
         for(Colocation c : colocations.values()) {
             c.actualCount /= 2;
-            int na = numColocationsForGene[c.getFirst().type] / 2;
-            int nb = numColocationsForGene[c.getSecond().type] / 2;
-            //System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + k + ", " + na + ", " + nb);
+            int na = numTranscriptsForGene[c.getFirst().type];
+            int nb = numTranscriptsForGene[c.getSecond().type];
             if(c.getFirst().type == c.getSecond().type) {
-                c.expectedCount = 0;
-                //c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
+                c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
                 //System.out.println("\n\n" + session.name(c.getFirst().type) + k + "," + na);
             } else {
-                //c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
-                HypergeometricDistribution hd = new HypergeometricDistribution(k, na, nb);
-                double p = hd.upperCumulativeProbability(c.actualCount);
-                //System.out.println(session.name(c.getFirst().type) + session.name(c.getSecond().type) + p);
-                System.out.println(p);
-                c.expectedCount = p;
+                c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
             }
         }
         
@@ -151,7 +134,6 @@ public class HypergeometricTask extends AbstractTask {
         edgeTable = network.getDefaultEdgeTable();  
         edgeTable.createColumn("num", Integer.class, false);
         edgeTable.createColumn("normal", Double.class, false);
-        edgeTable.createColumn("rank", Integer.class, false);
 
         // Add nodes into actual network
         for (int i = 0; i < numTranscriptsForGene.length; i++)
@@ -163,7 +145,7 @@ public class HypergeometricTask extends AbstractTask {
             row.set("num", numTranscriptsForGene[i]);
             row.set("proportion", (double)numTranscriptsForGene[i]/N);
         }
-/*
+
         double a = 100 - sigLevel;
         
         if(bonferroni) {
@@ -180,57 +162,32 @@ public class HypergeometricTask extends AbstractTask {
         System.out.println(level);
 
         NormalDistribution d = new NormalDistribution();
-        double q = d.inverseCumulativeProbability(level);*/
-
-
-        // Place ranking
-        List<Colocation> rankedColocations = new ArrayList<Colocation>(colocations.values());
-        // Order by significance
-        Comparator<Colocation> comparator = new Comparator<Colocation>() {
-            public int compare(Colocation c1, Colocation c2) {
-                if(c1.expectedCount == c2.expectedCount) return 0;
-                else {
-                    return c1.expectedCount < c2.expectedCount ? -1 : 1;
-                }
-            }
-        };
-        Collections.sort(rankedColocations, comparator);
-
-        // Give ranks, excluding self colocations
-        int rank = 1;
-        Iterator<Colocation> itr = rankedColocations.iterator();
-        while(itr.hasNext()) {
-            Colocation c = itr.next();
-            
-            if(c.getFirst().type == c.getSecond().type) {
-                itr.remove();
-            }
-            else {
-                c.rank = rank++;
-            }
-        }
-        
+        double q = d.inverseCumulativeProbability(level);
+        System.out.println(q);
         for(String key : colocations.keySet()) {
             
             Colocation colocation = colocations.get(key);
 
-            double p = colocation.expectedCount;
+            double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
+
+            //System.out.println(key + ", " + colocation.expectedCount
+              //      + ", " + colocation.actualCount + ", " + Z);
 
             if(interaction) {
-                if(p < 0.05d) {
-                    addEdge(colocation, key);
+                if(Z > q) {
+                    addEdge(colocation, Z, key);
                 }
             }
-        /*    else {
+            else {
                 if(Z < -q) {
                     addEdge(colocation, Z, key);
                 }
 
             }
-*/
+
         }
     }
-    private void addEdge(Colocation colocation, String key) {
+    private void addEdge(Colocation colocation, double Z, String key) {
 
             CyNode thisNode = NetworkUtil.getNodeWithName(network,
                     nodeTable, session.name(colocation.getFirst().type));
@@ -239,7 +196,7 @@ public class HypergeometricTask extends AbstractTask {
             
             if(thisNode == otherNode) {
                 nodeTable.getRow(thisNode.getSUID())
-                    .set("selfnorm", Math.abs(colocation.expectedCount));
+                    .set("selfnorm", Math.abs(Z));
                 return;
             }
 
@@ -251,8 +208,7 @@ public class HypergeometricTask extends AbstractTask {
             row.set(CyNetwork.NAME, key);
             row.set(CyEdge.INTERACTION, "Co-occurence");
             row.set("num", (int) colocation.actualCount); 
-            row.set("rank", (int) colocation.rank);
-            row.set("normal", Math.abs(colocation.expectedCount)); 
+            row.set("normal", Math.abs(Z)); 
     }
     
     class Colocation {
@@ -260,7 +216,6 @@ public class HypergeometricTask extends AbstractTask {
         private Transcript first;
         private Transcript second;
 
-        public int rank;
         public int actualCount = 0;
         public double expectedCount = 0;
 
