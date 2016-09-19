@@ -51,6 +51,7 @@ import org.cytoscape.inseq.internal.ViewStyler;
 import org.cytoscape.inseq.internal.sync.SyncTask;
 import org.cytoscape.inseq.internal.typenetwork.FindNeighboursTask;
 import org.cytoscape.inseq.internal.typenetwork.HypergeometricTask;
+import org.cytoscape.inseq.internal.typenetwork.ShuffleTask;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
@@ -83,6 +84,7 @@ public class SessionPanel extends JPanel {
     boolean bonferroniCorrection = true;
     private boolean useSubset = true;
     private boolean interaction = true;
+    private boolean useShuffle = true;
 
     private TaskIterator itr; 
 
@@ -270,10 +272,19 @@ public class SessionPanel extends JPanel {
         JRadioButton negative = new JRadioButton("Negative");
         JRadioButton positive = new JRadioButton("Positive");
         positive.setSelected(true);
+        
 
         ButtonGroup significanceGroup = new ButtonGroup();
         significanceGroup.add(negative);
         significanceGroup.add(positive);
+        
+        JRadioButton shuffle = new JRadioButton("Shuffle");
+        JRadioButton hypergeometric = new JRadioButton("Hypergeometric");
+        shuffle.setSelected(true);
+        
+        ButtonGroup testGroup = new ButtonGroup();
+        testGroup.add(shuffle);
+        testGroup.add(hypergeometric);
 
         JPanel sigPanel = new JPanel();
         sigPanel.setLayout(new BoxLayout(sigPanel, BoxLayout.LINE_AXIS));
@@ -281,6 +292,11 @@ public class SessionPanel extends JPanel {
         sigPanel.add(positive);
         sigPanel.add(negative);
         sigPanel.add(new JLabel("interactions."));
+
+        JPanel testPanel = new JPanel();
+        testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.LINE_AXIS));
+        testPanel.add(shuffle);
+        testPanel.add(hypergeometric);
 
         bonferroni = new JCheckBox("Use Bonferroni Correction", true);
         bonferroni.addItemListener(new ItemListener() {
@@ -302,8 +318,18 @@ public class SessionPanel extends JPanel {
         bonPanel.add(new JLabel("% confidence interval."));
 
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", sigPanel, bonferroni, bonPanel), makeCons());
+        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, sigPanel, bonferroni, bonPanel), makeCons());
 
+        shuffle.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                useShuffle = true;
+            }
+        });
+        hypergeometric.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                useShuffle = false;
+            }
+        });
         entire.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 useSubset = false;  
@@ -429,12 +455,19 @@ public class SessionPanel extends JPanel {
         };
 
         // Construct and display the new network.
-        Task networkTask = new HypergeometricTask(network, interaction, session, networkName);//sig, bonferroniCorrection);
+        Task networkTask;
+
+        if(useShuffle) {
+            networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bonferroniCorrection);
+        }
+        else {
+            networkTask = new HypergeometricTask(network, session, networkName);//sig, bonferroniCorrection);
+        }
 
         // TODO: Fix this mess
         // I'd do it now but I'm writing docs so cbf tbh 
 
-        Task styleTask = new ViewStyler(network, session.getStyle(), ia.getCAA());
+        Task styleTask = new ViewStyler(network, useShuffle, session.getStyle(), ia.getCAA());
 
         Task refreshTask = new AbstractTask() {
             public void run(TaskMonitor monitor) {

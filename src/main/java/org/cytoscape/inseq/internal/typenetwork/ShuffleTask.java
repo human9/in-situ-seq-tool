@@ -6,39 +6,28 @@ import java.util.Map;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.inseq.internal.util.NetworkUtil;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
 /**
  * Provide network generation using the label shuffling method. 
  */
 
-public class ShuffleTask extends AbstractTask {
+public class ShuffleTask extends SpatialNetworkTask {
 
-    private TypeNetwork net;
-    private InseqSession session;
     private boolean interaction;
-    private CyNetwork network;
-    private CyTable nodeTable;
-    private CyTable edgeTable;
-    private String genName;
     private double sigLevel;
     private boolean bonferroni;
 
     public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
             double sigLevel, boolean bonferroni) {
-        this.net = n;
+        super(n, s, genName);
         this.sigLevel = sigLevel;
         this.bonferroni = bonferroni;
-        this.session = s;
         this.interaction = interaction;
-        this.genName = genName;
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -99,9 +88,9 @@ public class ShuffleTask extends AbstractTask {
         k /= 2;
         for(Colocation c : colocations.values()) {
             c.actualCount /= 2;
-            int na = numTranscriptsForGene[c.getFirst().type];
-            int nb = numTranscriptsForGene[c.getSecond().type];
-            if(c.getFirst().type == c.getSecond().type) {
+            int na = getNumTranscript(c.getFirst());
+            int nb = getNumTranscript(c.getSecond());
+            if(c.getFirst() == c.getSecond()) {
                 c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
                 //System.out.println("\n\n" + session.name(c.getFirst().type) + k + "," + na);
             } else {
@@ -109,42 +98,6 @@ public class ShuffleTask extends AbstractTask {
             }
         }
         
-
-        network = net.getNetwork();
-
-        // Name the network
-        String name
-            = network.getRow(network).get(CyNetwork.NAME, String.class);
-        if(name != null)
-        {
-            network.getRow(network).set(CyNetwork.NAME, name);
-        }
-        else {
-            //System.out.println(genName);
-            network.getRow(network).set(CyNetwork.NAME, genName);
-        }
-
-        // Get the node table and add columns
-        nodeTable = net.getNodeTable();
-        nodeTable.createColumn("num", Integer.class, false);
-        nodeTable.createColumn("proportion", Double.class, false);
-        nodeTable.createColumn("selfnorm", Double.class, false);
-        
-        // Get the edge table and add columns
-        edgeTable = network.getDefaultEdgeTable();  
-        edgeTable.createColumn("num", Integer.class, false);
-        edgeTable.createColumn("normal", Double.class, false);
-
-        // Add nodes into actual network
-        for (int i = 0; i < numTranscriptsForGene.length; i++)
-        {
-            CyNode node = network.addNode();
-            net.addNode(i, node);
-            CyRow row = nodeTable.getRow(node.getSUID());
-            row.set(CyNetwork.NAME, session.name(i));
-            row.set("num", numTranscriptsForGene[i]);
-            row.set("proportion", (double)numTranscriptsForGene[i]/N);
-        }
 
         double a = 100 - sigLevel;
         
@@ -154,11 +107,8 @@ public class ShuffleTask extends AbstractTask {
         }
 
         double decimal = a / 100;
-
         double div = decimal / 2;
-
         double level = 1 - div;
-
         System.out.println(level);
 
         NormalDistribution d = new NormalDistribution();
@@ -175,62 +125,16 @@ public class ShuffleTask extends AbstractTask {
 
             if(interaction) {
                 if(Z > q) {
-                    addEdge(colocation, Z, key);
+                    addEdge(colocation, key);
                 }
             }
             else {
                 if(Z < -q) {
-                    addEdge(colocation, Z, key);
+                    addEdge(colocation, key);
                 }
 
             }
 
-        }
-    }
-    private void addEdge(Colocation colocation, double Z, String key) {
-
-            CyNode thisNode = NetworkUtil.getNodeWithName(network,
-                    nodeTable, session.name(colocation.getFirst().type));
-            CyNode otherNode = NetworkUtil.getNodeWithName(network,
-                    nodeTable, session.name(colocation.getSecond().type));
-            
-            if(thisNode == otherNode) {
-                nodeTable.getRow(thisNode.getSUID())
-                    .set("selfnorm", Math.abs(Z));
-                return;
-            }
-
-            CyEdge edge
-                = network.addEdge(thisNode, otherNode, false);
-
-            CyRow row = edgeTable.getRow(edge.getSUID());
-
-            row.set(CyNetwork.NAME, key);
-            row.set(CyEdge.INTERACTION, "Co-occurence");
-            row.set("num", (int) colocation.actualCount); 
-            row.set("normal", Math.abs(Z)); 
-    }
-    
-    class Colocation {
-
-        private Transcript first;
-        private Transcript second;
-
-        public int actualCount = 0;
-        public double expectedCount = 0;
-
-        public Colocation(Transcript t1, Transcript t2) {
-            Transcript[] ordered = session.orderTranscripts(t1, t2);
-            first = ordered[0];
-            second = ordered[1];
-        }
-
-        public Transcript getFirst() {
-            return first;
-        }
-        
-        public Transcript getSecond() {
-            return second;
         }
     }
 }
