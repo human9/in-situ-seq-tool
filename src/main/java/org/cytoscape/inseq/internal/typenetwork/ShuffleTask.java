@@ -1,15 +1,10 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
-import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyRow;
-import org.cytoscape.model.CyTable;
 import org.cytoscape.work.TaskMonitor;
 
 /**
@@ -37,35 +32,22 @@ public class ShuffleTask extends SpatialNetworkTask {
 
         taskMonitor.showMessage(TaskMonitor.Level.INFO,
                 "Finding distribution by shuffling names");
-
-        // A list of every single transcript
-        List <Transcript> allTranscripts = session.tree.range(new double[]{
-            0, 0,},
-            new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
         
-        // A map of all colocations within the selection
-        Map<String, Colocation> colocations = new HashMap<String, Colocation>();
-
-        // Stores the number of each transcript name that are found
-        int[] numTranscriptsForGene = new int[session.getGenes().size()];
-        
-        // Number of transcripts in the selection
-        int N = 0;
 
         // Number of colocations
         int k = 0;
 
         //System.out.println("\ninteraction, expected, actual, Z");
-        for (Transcript t : allTranscripts)
+        for (Transcript t : session.getRaw())
         {
 
             // If t isn't inside the selection, go to next.
             if(t.getSelection(net) != net.getSelection()) continue;
             
-            N++;
+            incrTotal();
 
             // Increment n for this gene
-            numTranscriptsForGene[t.type]++;
+            incrTranscript(t.type);
 
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
@@ -83,6 +65,8 @@ public class ShuffleTask extends SpatialNetworkTask {
             }
         }
 
+
+        int N = getTotal();
 
         // Because we count every colocation twice
         k /= 2;
@@ -106,33 +90,37 @@ public class ShuffleTask extends SpatialNetworkTask {
             a = 1 - a/(m);
         }
 
-        double decimal = a / 100;
-        double div = decimal / 2;
-        double level = 1 - div;
-        System.out.println(level);
 
-        NormalDistribution d = new NormalDistribution();
-        double q = d.inverseCumulativeProbability(level);
-        System.out.println(q);
+        for(Colocation c : colocations.values()) {
+            
+            NormalDistribution d = new NormalDistribution(c.expectedCount, Math.sqrt(c.expectedCount));
+
+            c.pvalue = 1d - d.cumulativeProbability(c.actualCount);
+            
+        }
+
+        // Do ranking
+        List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
+        rankEdges(colocationList, rankComparator);
+
+        // Adds in all nodes, labels, etc
+        initNetwork();
+
         for(String key : colocations.keySet()) {
             
-            Colocation colocation = colocations.get(key);
-
-            double Z = (colocation.actualCount - colocation.expectedCount) / Math.sqrt(colocation.expectedCount);
-
-            //System.out.println(key + ", " + colocation.expectedCount
-              //      + ", " + colocation.actualCount + ", " + Z);
-
+            Colocation c = colocations.get(key);
+        
             if(interaction) {
-                if(Z > q) {
-                    addEdge(colocation, key);
+                if(c.actualCount >= c.expectedCount
+                        && c.pvalue < 0.05d) {
+                    addEdge(c, key);
                 }
             }
             else {
-                if(Z < -q) {
-                    addEdge(colocation, key);
+                if(c.actualCount <= c.expectedCount
+                        && c.pvalue < 0.05d) {
+                    addEdge(c, key);
                 }
-
             }
 
         }

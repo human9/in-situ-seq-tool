@@ -30,16 +30,16 @@ public class HypergeometricTask extends SpatialNetworkTask {
             // If t isn't inside the selection, go to next.
             if(t.getSelection(net) != net.getSelection()) continue;
             
+            incrTotal();
+
+            // Increment n for this gene
+            incrTranscript(t.type);
+
             // If t isn't colocated, go to next.
             if(t.getNeighboursForNetwork(net) == null) continue;
             if(t.getNeighboursForNetwork(net).size() < 1) continue;
             
-            incrTotal();
-            
-            // Increment n for this gene
-            incrTranscript(t.type);
 
-            //
             for(Transcript n : t.getNeighboursForNetwork(net)) {
                 
                 String key = session.generateName(t, n);

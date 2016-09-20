@@ -97,16 +97,8 @@ public class SpatialNetworkTask extends AbstractTask {
 
     protected void initNetwork() {
         // Name the network
-        String name
-            = network.getRow(network).get(CyNetwork.NAME, String.class);
-        if(name != null)
-        {
-            network.getRow(network).set(CyNetwork.NAME, name);
-        }
-        else {
-            //System.out.println(genName);
-            network.getRow(network).set(CyNetwork.NAME, name);
-        }
+            
+        network.getRow(network).set(CyNetwork.NAME, name);
 
         // Get the node table and add columns
         nodeTable.createColumn("num", Integer.class, false);

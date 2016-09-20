@@ -278,7 +278,7 @@ public class SessionPanel extends JPanel {
         significanceGroup.add(negative);
         significanceGroup.add(positive);
         
-        JRadioButton shuffle = new JRadioButton("Shuffle");
+        JRadioButton shuffle = new JRadioButton("Label shuffle");
         JRadioButton hypergeometric = new JRadioButton("Hypergeometric");
         shuffle.setSelected(true);
         
@@ -295,6 +295,7 @@ public class SessionPanel extends JPanel {
 
         JPanel testPanel = new JPanel();
         testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.LINE_AXIS));
+        testPanel.add(new JLabel("Test type:"));
         testPanel.add(shuffle);
         testPanel.add(hypergeometric);
 
