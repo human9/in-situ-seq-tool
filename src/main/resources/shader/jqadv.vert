@@ -10,7 +10,7 @@ uniform float[128] symbols;
 uniform float texnum;
 uniform float sel;
 uniform float ptscale;
-uniform float extrascale;
+uniform float tiny;
 varying float offset;
 varying float size;
 varying float num;
@@ -25,7 +25,12 @@ void main(void) {
       gl_Position = P * Mv * vec4(coord2d.x, coord2d.y, 0, 1); 
 
       f_color = vec4(colours[int(coord2d.z)], 1);
-      gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
+      if(tiny > 0) {
+        gl_PointSize = 1 * (1.0 + sel * 10);
+      }
+      else {
+        gl_PointSize = ptscale * ptsize * (1.0 + sel * 1.6);
+      }
     }
     else {
 		gl_Position = vec4(-2, -2, 0, 1);

@@ -146,7 +146,6 @@ public class SessionPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                pop.setVisible(false);
                 frame = new SeparateFrame(ia.getCSAA().getCySwingApplication().getJFrame(), "Imageplot", selectionPanel.getSize());
                 selectionPanel.setWindow(frame);
                 frame.addWindowListener(new WindowAdapter() {
@@ -158,6 +157,7 @@ public class SessionPanel extends JPanel {
                 });
                 revalidate();
                 repaint();
+                pop.setVisible(false);
                 } catch (java.lang.IllegalArgumentException i) {
                     pop.setVisible(true);
                     JOptionPane.showMessageDialog(SessionPanel.this, "Couldn't open new window", "Error", JOptionPane.WARNING_MESSAGE);

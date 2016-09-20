@@ -68,6 +68,7 @@ public class JqadvGL {
     private FloatBuffer selectionShape;
     private BufferedImage image;
     private int capacity;
+    private float[] tiny = {-1f};
 
     private Transcript selectedTranscript;
     private InseqSession session;
@@ -203,6 +204,8 @@ public class JqadvGL {
         st.uniform(gl2, uniPtScale);
         GLUniformData uniExtraScale = new GLUniformData("extrascale", 1, FloatBuffer.wrap(extrascale));
         st.uniform(gl2, uniExtraScale);
+        GLUniformData uniTiny = new GLUniformData("tiny", 1, FloatBuffer.wrap(tiny));
+        st.uniform(gl2, uniTiny);
 
         GLUniformData sprite = new GLUniformData("sprite", 1);
         st.uniform(gl2, sprite);
@@ -258,9 +261,20 @@ public class JqadvGL {
         animator.go();
     }
 
-    public void largePoints(boolean e) {
-        if(e) point_scale[0] = 2;
-        else  point_scale[0] = 1;
+    public void largePoints(int sizeSwitch) {
+        switch(sizeSwitch) {
+            case 0:
+                point_scale[0] = 2;
+                break;
+            case 1:
+                point_scale[0] = 1;
+                tiny[0] = 1f;
+                break;
+            case 2:
+                tiny[0] = -1f;
+                break;
+
+        }
         animator.go();
     }
 

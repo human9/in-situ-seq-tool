@@ -58,6 +58,7 @@ public class SelectionPanel extends JPanel {
     private InseqSession session;
     private JqadvPanel jqadvpanel;
     private Transcript selected;
+    private int size = 0;
 
     public void setWindow(JFrame parent) {
         this.parent = parent;
@@ -135,12 +136,29 @@ public class SelectionPanel extends JPanel {
             }
         });
 
-        JToggleButton bigSymbols = new JToggleButton(NetworkUtil.iconFromResource("/texture/bold.png"));
+        JButton bigSymbols = new JButton(NetworkUtil.iconFromResource("/texture/normal.png"));
         plotControls.add(bigSymbols);
         bigSymbols.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                jqadvpanel.getGL().largePoints(bigSymbols.isSelected());
+
+                jqadvpanel.getGL().largePoints(size);
+
+                switch(size) {
+                    case 0:
+                        bigSymbols.setIcon(NetworkUtil.iconFromResource("/texture/bold.png"));
+                        size++;
+                        break;
+                    case 1:
+                        bigSymbols.setIcon(NetworkUtil.iconFromResource("/texture/small.png"));
+                        size++;
+                        break;
+                    case 2:
+                        bigSymbols.setIcon(NetworkUtil.iconFromResource("/texture/normal.png"));
+                        size = 0;
+                        break;
+                }
+
             }
         });
         
