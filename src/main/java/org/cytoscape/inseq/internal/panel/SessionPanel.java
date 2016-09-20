@@ -209,6 +209,7 @@ public class SessionPanel extends JPanel {
         JLabel mlabel = new JLabel("Magnification: ");
         magPanel.add(mlabel);
         JSpinner magnification = new JSpinner(new SpinnerNumberModel(mag, 0d, 100d, 1d));
+        magnification.setMaximumSize(new Dimension(80, magnification.getPreferredSize().height));
         magPanel.add(magnification);
         magnification.addChangeListener(new ChangeListener() {
             @Override
@@ -224,6 +225,7 @@ public class SessionPanel extends JPanel {
         JLabel dlabel = new JLabel("Search distance: ");
         distancePanel.add(dlabel);
         JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
+        distanceCutoff.setMaximumSize(new Dimension(80, distanceCutoff.getPreferredSize().height));
         distancePanel.add(distanceCutoff);
         distanceCutoff.addChangeListener(new ChangeListener() {
             @Override
@@ -304,9 +306,10 @@ public class SessionPanel extends JPanel {
                 sig = (Double)(sigLevel.getValue());
             }
         });
+        sigLevel.setMaximumSize(new Dimension(80, sigLevel.getPreferredSize().height));
         JPanel bonPanel = new JPanel();
         bonPanel.setLayout(new BoxLayout(bonPanel, BoxLayout.LINE_AXIS));
-        bonPanel.add(new JLabel("Cutoff at p = "));
+        bonPanel.add(new JLabel("Condition: p < "));
         bonPanel.add(sigLevel);
 
 

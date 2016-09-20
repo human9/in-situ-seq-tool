@@ -78,8 +78,27 @@ public class SpatialNetworkTask extends AbstractTask {
         
         // Do ranking
         List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
-        rankEdges(colocationList, rankComparator);
 
+        Iterator<Colocation> itr = colocationList.iterator();
+        while(itr.hasNext()) {
+            Colocation c = itr.next();
+            
+            if(interaction) {
+                if(c.actualCount < c.expectedCount
+                        || c.pvalue >= sigLevel) {
+                    itr.remove();
+                }
+            }
+            else {
+                if(c.actualCount > c.expectedCount
+                        || c.pvalue >= sigLevel) {
+                    itr.remove();
+                }
+            }
+            
+        }
+        rankEdges(colocationList, rankComparator);
+        
         // Adds in all nodes, labels, etc
         initNetwork();
 
@@ -87,17 +106,9 @@ public class SpatialNetworkTask extends AbstractTask {
             
             Colocation c = colocations.get(key);
         
-            if(interaction) {
-                if(c.actualCount > c.expectedCount
-                        && c.pvalue < sigLevel) {
-                    addEdge(c, key);
-                }
-            }
-            else {
-                if(c.actualCount < c.expectedCount
-                        && c.pvalue < sigLevel) {
-                    addEdge(c, key);
-                }
+            // Anything unranked was discarded earlier
+            if(c.rank != 0) {
+                addEdge(c, key);
             }
 
         }

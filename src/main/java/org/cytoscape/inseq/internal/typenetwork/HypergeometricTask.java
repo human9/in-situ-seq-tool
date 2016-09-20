@@ -45,6 +45,7 @@ public class HypergeometricTask extends SpatialNetworkTask {
                     colocations.put(key, new Colocation(t, n));
                 }
                 colocations.get(key).add(n); // we should come to the other soon enough...
+                colocations.get(key).actualCount++;
 
                 if(n.type == t.type) {
                     incrColocalisation(t.type);
@@ -59,7 +60,8 @@ public class HypergeometricTask extends SpatialNetworkTask {
         for(Colocation c : colocations.values()) {
 
             HypergeometricDistribution hd = new HypergeometricDistribution(getTotal(), getNumTranscript(c.getFirst()), getNumTranscript(c.getSecond()));
-            c.pvalue = hd.upperCumulativeProbability(c.totalNum());
+            c.expectedCount = hd.getNumericalMean();
+            c.pvalue = hd.cumulativeProbability(c.totalNum());
         }
 
         super.run(taskMonitor);
