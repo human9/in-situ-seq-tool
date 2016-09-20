@@ -1,5 +1,6 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -41,13 +42,19 @@ public class SpatialNetworkTask extends AbstractTask {
     private int[] numColocationsForGene;
     protected HashMap<String, Colocation> colocations = new HashMap<String, Colocation>();
 
+    private boolean interaction;
+    private double sigLevel;
+
     // Total number of transcripts
     private int N = 0;
 
-    public SpatialNetworkTask(TypeNetwork n, InseqSession s, String genName) {
+    public SpatialNetworkTask(TypeNetwork n, InseqSession s, String genName,
+            boolean interaction, double sigLevel) {
         this.net = n;
         this.session = s;
         this.name = genName;
+        this.interaction = interaction;
+        this.sigLevel = sigLevel;
 
         network = net.getNetwork();
         nodeTable = net.getNodeTable();
@@ -68,7 +75,32 @@ public class SpatialNetworkTask extends AbstractTask {
     }
 
     public void run(TaskMonitor taskMonitor) {
-        //TODO: Throw exception here
+        
+        // Do ranking
+        List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
+        rankEdges(colocationList, rankComparator);
+
+        // Adds in all nodes, labels, etc
+        initNetwork();
+
+        for(String key : colocations.keySet()) {
+            
+            Colocation c = colocations.get(key);
+        
+            if(interaction) {
+                if(c.actualCount > c.expectedCount
+                        && c.pvalue < sigLevel) {
+                    addEdge(c, key);
+                }
+            }
+            else {
+                if(c.actualCount < c.expectedCount
+                        && c.pvalue < sigLevel) {
+                    addEdge(c, key);
+                }
+            }
+
+        }
     }
 
     protected void incrTotal() {

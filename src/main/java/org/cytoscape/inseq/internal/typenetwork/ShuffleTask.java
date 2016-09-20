@@ -1,8 +1,5 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.TaskMonitor;
@@ -13,16 +10,9 @@ import org.cytoscape.work.TaskMonitor;
 
 public class ShuffleTask extends SpatialNetworkTask {
 
-    private boolean interaction;
-    private double sigLevel;
-    private boolean bonferroni;
-
-    public ShuffleTask(TypeNetwork n, boolean interaction, InseqSession s, String genName,
-            double sigLevel, boolean bonferroni) {
-        super(n, s, genName);
-        this.sigLevel = sigLevel;
-        this.bonferroni = bonferroni;
-        this.interaction = interaction;
+    public ShuffleTask(TypeNetwork n, InseqSession s, String genName,
+            boolean interaction, double sigLevel) {
+        super(n, s, genName, interaction, sigLevel);
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -82,15 +72,6 @@ public class ShuffleTask extends SpatialNetworkTask {
             }
         }
         
-
-        double a = 100 - sigLevel;
-        
-        if(bonferroni) {
-            double m = colocations.size();
-            a = 1 - a/(m);
-        }
-
-
         for(Colocation c : colocations.values()) {
             
             NormalDistribution d = new NormalDistribution(c.expectedCount, Math.sqrt(c.expectedCount));
@@ -99,30 +80,7 @@ public class ShuffleTask extends SpatialNetworkTask {
             
         }
 
-        // Do ranking
-        List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
-        rankEdges(colocationList, rankComparator);
+        super.run(taskMonitor);
 
-        // Adds in all nodes, labels, etc
-        initNetwork();
-
-        for(String key : colocations.keySet()) {
-            
-            Colocation c = colocations.get(key);
-        
-            if(interaction) {
-                if(c.actualCount >= c.expectedCount
-                        && c.pvalue < 0.05d) {
-                    addEdge(c, key);
-                }
-            }
-            else {
-                if(c.actualCount <= c.expectedCount
-                        && c.pvalue < 0.05d) {
-                    addEdge(c, key);
-                }
-            }
-
-        }
     }
 }

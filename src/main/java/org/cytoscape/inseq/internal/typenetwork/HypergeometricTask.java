@@ -1,8 +1,5 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math3.distribution.HypergeometricDistribution;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.TaskMonitor;
@@ -12,8 +9,9 @@ import org.cytoscape.work.TaskMonitor;
  */
 public class HypergeometricTask extends SpatialNetworkTask {
 
-    public HypergeometricTask(TypeNetwork n, InseqSession s, String genName) {
-        super(n, s, genName);
+    public HypergeometricTask(TypeNetwork n, InseqSession s, String genName,
+            boolean interaction, double sigLevel) {
+        super(n, s, genName, interaction, sigLevel);
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -64,21 +62,6 @@ public class HypergeometricTask extends SpatialNetworkTask {
             c.pvalue = hd.upperCumulativeProbability(c.totalNum());
         }
 
-        // Do ranking
-        List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
-        rankEdges(colocationList, rankComparator);
-
-        // Adds in all nodes, labels, etc
-        initNetwork();
-        
-        // Add edges
-        for(String key : colocations.keySet()) {
-            
-            Colocation colocation = colocations.get(key);
-
-            if(colocation.pvalue < 0.05d) {
-                addEdge(colocation, key);
-            }
-        }
+        super.run(taskMonitor);
     }
 }

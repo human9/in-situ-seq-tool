@@ -79,9 +79,7 @@ public class SessionPanel extends JPanel {
     public final String name;
     private CyLayoutAlgorithm layoutAlgorithm;
     double mag = 20;
-    double sig = 95;
-    JCheckBox bonferroni;
-    boolean bonferroniCorrection = true;
+    double sig = 0.05;
     private boolean useSubset = true;
     private boolean interaction = true;
     private boolean useShuffle = true;
@@ -218,7 +216,7 @@ public class SessionPanel extends JPanel {
                 mag = (Double)(magnification.getValue());
             }
         });
-        JLabel xlabel = new JLabel("x");
+        JLabel xlabel = new JLabel("X");
         magPanel.add(xlabel);
 
         JPanel distancePanel = new JPanel();
@@ -247,7 +245,7 @@ public class SessionPanel extends JPanel {
         selectionGroup.add(entire);
         selectionGroup.add(subset);
         
-        autoSlider = new JCheckBox("Use automatic slider (multiple networks)");
+        autoSlider = new JCheckBox("Use automatic slider (Creates multiple networks)");
         autoSlider.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
@@ -291,7 +289,7 @@ public class SessionPanel extends JPanel {
         sigPanel.add(new JLabel("Find"));
         sigPanel.add(positive);
         sigPanel.add(negative);
-        sigPanel.add(new JLabel("interactions."));
+        sigPanel.add(new JLabel("associations."));
 
         JPanel testPanel = new JPanel();
         testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.LINE_AXIS));
@@ -299,27 +297,20 @@ public class SessionPanel extends JPanel {
         testPanel.add(shuffle);
         testPanel.add(hypergeometric);
 
-        bonferroni = new JCheckBox("Use Bonferroni Correction", true);
-        bonferroni.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                bonferroniCorrection = bonferroni.isSelected();
-            }
-        });
-        JSpinner sigLevel = new JSpinner(new SpinnerNumberModel(sig, 0d, 100d, 1d));
+        JSpinner sigLevel = new JSpinner(new SpinnerNumberModel(sig, 0d, 1, 0.01d));
         sigLevel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                sig = (Double)(magnification.getValue());
+                sig = (Double)(sigLevel.getValue());
             }
         });
         JPanel bonPanel = new JPanel();
         bonPanel.setLayout(new BoxLayout(bonPanel, BoxLayout.LINE_AXIS));
-        bonPanel.add(new JLabel("Use a "));
+        bonPanel.add(new JLabel("Cutoff at p = "));
         bonPanel.add(sigLevel);
-        bonPanel.add(new JLabel("% confidence interval."));
 
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, sigPanel, bonferroni, bonPanel), makeCons());
+        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, sigPanel, bonPanel), makeCons());
 
         shuffle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -459,10 +450,10 @@ public class SessionPanel extends JPanel {
         Task networkTask;
 
         if(useShuffle) {
-            networkTask = new ShuffleTask(network, interaction, session, networkName, sig, bonferroniCorrection);
+            networkTask = new ShuffleTask(network, session, networkName, interaction, sig);
         }
         else {
-            networkTask = new HypergeometricTask(network, session, networkName);//sig, bonferroniCorrection);
+            networkTask = new HypergeometricTask(network, session, networkName, interaction, sig);
         }
 
         // TODO: Fix this mess
