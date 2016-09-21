@@ -82,7 +82,7 @@ public class SessionPanel extends JPanel {
     double sig = 0.05;
     private boolean useSubset = true;
     private int interaction = 0;
-    private boolean useShuffle = true;
+    private int testType = 0;
 
     private TaskIterator itr; 
 
@@ -280,24 +280,64 @@ public class SessionPanel extends JPanel {
             }
         });
         
-        JRadioButton shuffle = new JRadioButton("Label shuffle");
-        JRadioButton hypergeometric = new JRadioButton("Hypergeometric");
-        shuffle.setSelected(true);
-        
-        ButtonGroup testGroup = new ButtonGroup();
-        testGroup.add(shuffle);
-        testGroup.add(hypergeometric);
+        // List of all our test task classes
 
-        JPanel sigPanel = new JPanel();
-        sigPanel.setLayout(new BoxLayout(sigPanel, BoxLayout.LINE_AXIS));
-        sigPanel.add(new JLabel("Find interactions that occur: "));
-        sigPanel.add(interactionBox);
+        String[] tests = new String[]{"Label shuffle", "Hypergeometric test"};
+        JComboBox<String> testBox = new JComboBox<String>(tests);
+        testBox.setSelectedItem(tests[0]);
+        testBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED){
+                    testType = testBox.getSelectedIndex();
+                }
+            }
+        });
+
+        JButton testInfo = new JButton("?");
+        testInfo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String description = "<html><body><p style='width: 300px;'>";
+                switch(testType) {
+                    case 0:
+                        description
+                            += "The label shuffle method creates a distribution that"
+                            + " models shuffling the labels of every transcript "
+                            + "and then recounting which transcripts are colocated."
+                            + "The actual colocation count for each transcript pair is"
+                            + " then compared to this distribution to assess probability."
+                            + "</p></body></html>";
+                        JOptionPane.showMessageDialog(ia.getCSAA().getCySwingApplication().getJFrame(), description, "Label shuffle test", JOptionPane.INFORMATION_MESSAGE);
+                        break;
+                    case 1:
+                        description
+                            += "The hypergeometric test method also creates a distribution"
+                            + " used to assess probability. For the interaction of transcripts A-B, it uses the "
+                            + "hypergeometric distribution with the following parameters:"
+                            + "<li>N = total transcript no.</li>"
+                            + "<li>n = total no. of A</li>"
+                            + "<li>K = total no. of B</li>"
+                            + "<li>k = no. of transcripts involved in A-B colocations</li>"
+                            + "</p></body></html>";
+
+                        JOptionPane.showMessageDialog(ia.getCSAA().getCySwingApplication().getJFrame(), description, "Hypergeometric test", JOptionPane.INFORMATION_MESSAGE);
+                        break;
+                }
+                
+            }
+        });
 
         JPanel testPanel = new JPanel();
         testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.LINE_AXIS));
-        testPanel.add(new JLabel("Test type:"));
-        testPanel.add(shuffle);
-        testPanel.add(hypergeometric);
+        testPanel.add(new JLabel("Test type: "));
+        testPanel.add(testBox);
+        testPanel.add(testInfo);
+        
+        JPanel interactionPanel = new JPanel();
+        interactionPanel.setLayout(new BoxLayout(interactionPanel, BoxLayout.LINE_AXIS));
+        interactionPanel.add(new JLabel("Find interactions that occur: "));
+        interactionPanel.add(interactionBox);
+
 
         JSpinner sigLevel = new JSpinner(new SpinnerNumberModel(sig, 0d, 1, 0.01d));
         sigLevel.addChangeListener(new ChangeListener() {
@@ -313,18 +353,8 @@ public class SessionPanel extends JPanel {
         bonPanel.add(sigLevel);
 
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, sigPanel, bonPanel), makeCons());
+        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, interactionPanel, bonPanel), makeCons());
 
-        shuffle.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                useShuffle = true;
-            }
-        });
-        hypergeometric.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                useShuffle = false;
-            }
-        });
         entire.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 useSubset = false;  
@@ -337,7 +367,7 @@ public class SessionPanel extends JPanel {
             }
         });
 
-        JButton types = new JButton("Generate co-occurence network(s)");
+        JButton types = new JButton("Generate network(s)");
         itr = new TaskIterator();
         types.addActionListener(new ActionListener() {
             @Override
@@ -440,17 +470,18 @@ public class SessionPanel extends JPanel {
         // Construct and display the new network.
         Task networkTask;
 
-        if(useShuffle) {
-            networkTask = new ShuffleTask(network, session, networkName, interaction, sig);
-        }
-        else {
-            networkTask = new HypergeometricTask(network, session, networkName, interaction, sig);
+        switch(testType) {
+            case 0:
+                networkTask = new ShuffleTask(network, session, networkName, interaction, sig);
+                break;
+            case 1:
+                networkTask = new HypergeometricTask(network, session, networkName, interaction, sig);
+                break;
+            default:
+                throw new java.lang.IndexOutOfBoundsException("Selected test type invalid");
         }
 
-        // TODO: Fix this mess
-        // I'd do it now but I'm writing docs so cbf tbh 
-
-        Task styleTask = new ViewStyler(network, useShuffle, session.getStyle(), ia.getCAA());
+        Task styleTask = new ViewStyler(network, testType, session.getStyle(), ia.getCAA());
 
         Task refreshTask = new AbstractTask() {
             public void run(TaskMonitor monitor) {

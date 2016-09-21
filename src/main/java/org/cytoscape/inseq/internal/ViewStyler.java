@@ -25,7 +25,7 @@ public class ViewStyler extends AbstractTask {
 	private TypeNetwork network;
 	private VisualStyle style;
 
-	public ViewStyler(TypeNetwork n, boolean isShuffle, VisualStyle s, CyAppAdapter a) {
+	public ViewStyler(TypeNetwork n, int testType, VisualStyle s, CyAppAdapter a) {
 		this.a = a;
 		this.network = n;
 		this.style = s;
