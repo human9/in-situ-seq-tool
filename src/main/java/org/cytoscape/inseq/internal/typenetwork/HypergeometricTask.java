@@ -9,12 +9,9 @@ import org.cytoscape.work.TaskMonitor;
  */
 public class HypergeometricTask extends SpatialNetworkTask {
 
-    boolean interaction;
-
     public HypergeometricTask(TypeNetwork n, InseqSession s, String genName,
-            boolean interaction, double sigLevel) {
+            int interaction, double sigLevel) {
         super(n, s, genName, interaction, sigLevel);
-        this.interaction = interaction;
     }
 
     /** Shuffles gene names in order to generate a random distribution.

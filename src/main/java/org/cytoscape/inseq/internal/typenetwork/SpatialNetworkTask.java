@@ -39,14 +39,14 @@ public class SpatialNetworkTask extends AbstractTask {
     private int[] numColocationsForGene;
     protected HashMap<String, Colocation> colocations = new HashMap<String, Colocation>();
 
-    private boolean interaction;
+    private int interaction;
     private double sigLevel;
 
     // Total number of transcripts
     private int N = 0;
 
     public SpatialNetworkTask(TypeNetwork n, InseqSession s, String genName,
-            boolean interaction, double sigLevel) {
+            int interaction, double sigLevel) {
         this.net = n;
         this.session = s;
         this.name = genName;
@@ -64,38 +64,50 @@ public class SpatialNetworkTask extends AbstractTask {
 
     public void run(TaskMonitor taskMonitor) {
         
-        // Assign a sensible pvalue for ranking
+        // Assign a sensible pvalue for ranking, and remove interactions as required
         List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
-        for(Colocation c : colocationList) {
-            if(interaction) {
-                // Looking for more than expected, need to search the upper side
-                c.pvalue = 1d - (c.probabilityCumulative - c.probability); // invert probability
-            }
-            else {
-                // Looking for less than expected, need to search the lower side
-                c.pvalue = c.probabilityCumulative; // no need to invert
-            }
-        }
-
-        // Do ranking
         Iterator<Colocation> itr = colocationList.iterator();
         while(itr.hasNext()) {
             Colocation c = itr.next();
             
-            if(interaction) {
-                if(c.actualCount < c.distributionMean
-                        || c.pvalue >= sigLevel) {
-                    itr.remove();
-                }
-            }
-            else {
-                if(c.actualCount > c.distributionMean
-                        || c.pvalue >= sigLevel) {
-                    itr.remove();
-                }
+            switch(interaction) {
+                case 0:
+                    // Looking for more than expected, need to search the upper side
+                    c.pvalue = 1d - (c.probabilityCumulative - c.probability); // invert probability
+                    c.interaction = 0;
+
+                    if(c.actualCount < c.distributionMean
+                            || c.pvalue >= sigLevel) {
+                        itr.remove();
+                    }
+                    break;
+                case 1:
+                    // Looking for less than expected, need to search the lower side
+                    c.pvalue = c.probabilityCumulative; // no need to invert
+                    c.interaction = 1;
+
+                    if(c.actualCount > c.distributionMean
+                            || c.pvalue >= sigLevel) {
+                        itr.remove();
+                    }
+                    break;
+                case 2:
+                    // Look both ways
+                    if(1d - (c.probabilityCumulative - c.probability) < sigLevel) {
+                        c.pvalue = 1d - (c.probabilityCumulative - c.probability);
+                        c.interaction = 0;
+                    }
+                    else if(c.probabilityCumulative < sigLevel) {
+                        c.pvalue = c.probabilityCumulative;
+                        c.interaction = 1;
+                    }
+                    else
+                        itr.remove();
+                    break;
             }
             
         }
+        // Assign rank
         rankEdges(colocationList, Colocation.rankComparator);
         
         // Adds in all nodes, labels, etc
@@ -184,7 +196,16 @@ public class SpatialNetworkTask extends AbstractTask {
             CyRow row = edgeTable.getRow(edge.getSUID());
 
             row.set(CyNetwork.NAME, key);
-            row.set(CyEdge.INTERACTION, "Co-occurence");
+            String interType = "Colocation ";
+            switch(colocation.interaction) {
+                case 0:
+                    interType += "(Positive)";
+                    break;
+                case 1:
+                    interType += "(Negative)";
+                    break;
+            }
+            row.set(CyEdge.INTERACTION, interType);
             row.set("num", (int) colocation.actualCount); 
             row.set("rank", (int) colocation.rank);
             row.set("normal", Math.abs(colocation.pvalue)); 

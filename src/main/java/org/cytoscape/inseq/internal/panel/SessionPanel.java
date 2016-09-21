@@ -81,7 +81,7 @@ public class SessionPanel extends JPanel {
     double mag = 20;
     double sig = 0.05;
     private boolean useSubset = true;
-    private boolean interaction = true;
+    private int interaction = 0;
     private boolean useShuffle = true;
 
     private TaskIterator itr; 
@@ -268,15 +268,17 @@ public class SessionPanel extends JPanel {
         subPanel.add(subset);
         add(ExpandableOptionsFactory.makeOptionsPanel("Region Selection", autoSlider, subPanel), makeCons());
 
-
-        JRadioButton negative = new JRadioButton("Negative");
-        JRadioButton positive = new JRadioButton("Positive");
-        positive.setSelected(true);
-        
-
-        ButtonGroup significanceGroup = new ButtonGroup();
-        significanceGroup.add(negative);
-        significanceGroup.add(positive);
+        String[] interactions = new String[]{"More than expected", "Less than expected", "Any unexpected interaction"};
+        JComboBox<String> interactionBox = new JComboBox<String>(interactions);
+        interactionBox.setSelectedItem(interactions[0]);
+        interactionBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED){
+                    interaction = interactionBox.getSelectedIndex();
+                }
+            }
+        });
         
         JRadioButton shuffle = new JRadioButton("Label shuffle");
         JRadioButton hypergeometric = new JRadioButton("Hypergeometric");
@@ -288,10 +290,8 @@ public class SessionPanel extends JPanel {
 
         JPanel sigPanel = new JPanel();
         sigPanel.setLayout(new BoxLayout(sigPanel, BoxLayout.LINE_AXIS));
-        sigPanel.add(new JLabel("Find"));
-        sigPanel.add(positive);
-        sigPanel.add(negative);
-        sigPanel.add(new JLabel("associations."));
+        sigPanel.add(new JLabel("Find interactions that occur: "));
+        sigPanel.add(interactionBox);
 
         JPanel testPanel = new JPanel();
         testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.LINE_AXIS));
@@ -334,18 +334,6 @@ public class SessionPanel extends JPanel {
         subset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 useSubset = true;   
-            }
-        });
-
-        positive.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                interaction = true;  
-            }
-        });
-        
-        negative.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                interaction = false;
             }
         });
 

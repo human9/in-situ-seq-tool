@@ -11,7 +11,7 @@ import org.cytoscape.work.TaskMonitor;
 public class ShuffleTask extends SpatialNetworkTask {
 
     public ShuffleTask(TypeNetwork n, InseqSession s, String genName,
-            boolean interaction, double sigLevel) {
+            int interaction, double sigLevel) {
         super(n, s, genName, interaction, sigLevel);
     }
 
