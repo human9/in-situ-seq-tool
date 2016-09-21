@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,8 +34,6 @@ public class SpatialNetworkTask extends AbstractTask {
 
     final String name;
 
-    Comparator<Colocation> rankComparator;
-
     // Stores the number of each transcript name that are found
     private int[] numTranscriptsForGene;
     private int[] numColocationsForGene;
@@ -59,15 +56,6 @@ public class SpatialNetworkTask extends AbstractTask {
         network = net.getNetwork();
         nodeTable = net.getNodeTable();
         edgeTable = network.getDefaultEdgeTable();
-    
-        rankComparator = new Comparator<Colocation>() {
-            public int compare(Colocation c1, Colocation c2) {
-                if(c1.pvalue == c2.pvalue) return 0;
-                else {
-                    return c1.pvalue < c2.pvalue ? -1 : 1;
-                }
-            }
-        };
 
         numTranscriptsForGene = new int[session.getGenes().size()];
         numColocationsForGene = new int[session.getGenes().size()];
@@ -76,28 +64,39 @@ public class SpatialNetworkTask extends AbstractTask {
 
     public void run(TaskMonitor taskMonitor) {
         
-        // Do ranking
+        // Assign a sensible pvalue for ranking
         List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
+        for(Colocation c : colocationList) {
+            if(interaction) {
+                // Looking for more than expected, need to search the upper side
+                c.pvalue = 1d - (c.probabilityCumulative - c.probability); // invert probability
+            }
+            else {
+                // Looking for less than expected, need to search the lower side
+                c.pvalue = c.probabilityCumulative; // no need to invert
+            }
+        }
 
+        // Do ranking
         Iterator<Colocation> itr = colocationList.iterator();
         while(itr.hasNext()) {
             Colocation c = itr.next();
             
             if(interaction) {
-                if(c.actualCount < c.expectedCount
+                if(c.actualCount < c.distributionMean
                         || c.pvalue >= sigLevel) {
                     itr.remove();
                 }
             }
             else {
-                if(c.actualCount > c.expectedCount
+                if(c.actualCount > c.distributionMean
                         || c.pvalue >= sigLevel) {
                     itr.remove();
                 }
             }
             
         }
-        rankEdges(colocationList, rankComparator);
+        rankEdges(colocationList, Colocation.rankComparator);
         
         // Adds in all nodes, labels, etc
         initNetwork();
@@ -211,67 +210,4 @@ public class SpatialNetworkTask extends AbstractTask {
         }
          
     }
-    
-    protected class Colocation {
-
-        // First transcript type
-        private int first;
-        // Second transcript type
-        private int second;
-
-        public int rank;
-
-        public int actualCount = 0;
-        public double expectedCount = 0;
-        
-        // A p value of some sort, will be used for comparisons by default
-        public double pvalue;
-
-        // A set containing all transcripts used in this colocation
-        private HashSet<Transcript> transcripts = new HashSet<Transcript>();
-
-        public Colocation(Transcript t1, Transcript t2) {
-            Transcript[] ordered = session.orderTranscripts(t1, t2);
-            first = ordered[0].type;
-            second = ordered[1].type;
-        }
-
-        public void add(Transcript t) {
-            transcripts.add(t);
-        }
-
-        public int getFirst() {
-            return first;
-        }
-        
-        public int getSecond() {
-            return second;
-        }
-
-        public int numFirst() {
-            int i = 0;
-            for(Transcript t : transcripts) {
-                if(t.type == first) {
-                    i++;
-                }
-            }
-            return i;
-        }
-
-        public int numSecond() {
-            int i = 0;
-            for(Transcript t : transcripts) {
-                if(t.type == second) {
-                    i++;
-                }
-            }
-            return i;
-
-        }
-
-        public int totalNum() {
-            return transcripts.size();
-        }
-    }
-
 }

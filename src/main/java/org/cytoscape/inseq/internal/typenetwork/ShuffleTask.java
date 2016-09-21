@@ -48,7 +48,7 @@ public class ShuffleTask extends SpatialNetworkTask {
                 
                 String key = session.generateName(t, n);
                 if(!colocations.containsKey(key)) {
-                    colocations.put(key, new Colocation(t, n));
+                    colocations.put(key, new Colocation(session.orderTranscripts(t, n)));
                 }
                 colocations.get(key).actualCount++;
                 k++;
@@ -65,19 +65,19 @@ public class ShuffleTask extends SpatialNetworkTask {
             int na = getNumTranscript(c.getFirst());
             int nb = getNumTranscript(c.getSecond());
             if(c.getFirst() == c.getSecond()) {
-                c.expectedCount = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
+                c.distributionMean = ((double)k*(na*(double)na-na)) / ((double)N*N - N);
                 //System.out.println("\n\n" + session.name(c.getFirst().type) + k + "," + na);
             } else {
-                c.expectedCount = (2d*k*na*nb) / ((double)N*N - N);
+                c.distributionMean = (2d*k*na*nb) / ((double)N*N - N);
             }
         }
         
         for(Colocation c : colocations.values()) {
             
-            NormalDistribution d = new NormalDistribution(c.expectedCount, Math.sqrt(c.expectedCount));
+            NormalDistribution d = new NormalDistribution(c.distributionMean, Math.sqrt(c.distributionMean));
 
-            c.pvalue = 1d - d.cumulativeProbability(c.actualCount);
-            
+            c.probability = d.probability(c.actualCount);
+            c.probabilityCumulative = d.cumulativeProbability(c.actualCount);
         }
 
         super.run(taskMonitor);

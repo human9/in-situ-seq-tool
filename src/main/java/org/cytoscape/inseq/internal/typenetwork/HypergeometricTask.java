@@ -9,9 +9,12 @@ import org.cytoscape.work.TaskMonitor;
  */
 public class HypergeometricTask extends SpatialNetworkTask {
 
+    boolean interaction;
+
     public HypergeometricTask(TypeNetwork n, InseqSession s, String genName,
             boolean interaction, double sigLevel) {
         super(n, s, genName, interaction, sigLevel);
+        this.interaction = interaction;
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -42,7 +45,7 @@ public class HypergeometricTask extends SpatialNetworkTask {
                 
                 String key = session.generateName(t, n);
                 if(!colocations.containsKey(key)) {
-                    colocations.put(key, new Colocation(t, n));
+                    colocations.put(key, new Colocation(session.orderTranscripts(t, n)));
                 }
                 colocations.get(key).add(n); // we should come to the other soon enough...
                 colocations.get(key).actualCount++;
@@ -60,8 +63,10 @@ public class HypergeometricTask extends SpatialNetworkTask {
         for(Colocation c : colocations.values()) {
 
             HypergeometricDistribution hd = new HypergeometricDistribution(getTotal(), getNumTranscript(c.getFirst()), getNumTranscript(c.getSecond()));
-            c.expectedCount = hd.getNumericalMean();
-            c.pvalue = hd.cumulativeProbability(c.totalNum());
+            c.distributionMean = hd.getNumericalMean();
+            
+            c.probability = hd.probability(c.totalNum());
+            c.probabilityCumulative = hd.cumulativeProbability(c.totalNum());
         }
 
         super.run(taskMonitor);
