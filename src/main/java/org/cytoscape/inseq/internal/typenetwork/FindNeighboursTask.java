@@ -4,14 +4,14 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.util.List;
 
-import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
 
 import edu.wlu.cs.levy.CG.KDTree;
 import edu.wlu.cs.levy.CG.KeySizeException;
 
-public class FindNeighboursTask extends AbstractTask {
+public class FindNeighboursTask extends AbstractTask implements ObservableTask {
 
 	KDTree<Transcript> tree;
 	Double distance;
@@ -84,4 +84,11 @@ public class FindNeighboursTask extends AbstractTask {
 		};
 
 	}
+    public <R> R getResults(Class<? extends R> type) {
+        return null;
+    }
+
+    public TypeNetwork getNetwork() {
+        return network;
+    }
 }

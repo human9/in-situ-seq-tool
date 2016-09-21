@@ -150,12 +150,10 @@ public class ViewStyler extends AbstractTask {
 		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		a.getTaskManager().execute(itr);
 
-		a.getCyEventHelper().flushPayloadEvents();
+		//a.getCyEventHelper().flushPayloadEvents();
 		a.getCyNetworkManager().addNetwork(network.getNetwork());
-		a.getCyNetworkViewManager().addNetworkView(view);
 		//a.getVisualMappingManager().setVisualStyle(style, view);
 		//a.getVisualMappingManager().setCurrentVisualStyle(style);
-		view.updateView();
 	}
 
 

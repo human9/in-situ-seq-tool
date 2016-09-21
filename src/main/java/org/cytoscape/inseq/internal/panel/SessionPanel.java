@@ -14,8 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
@@ -56,9 +54,12 @@ import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.FinishStatus;
+import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+import org.cytoscape.work.TaskObserver;
 
 public class SessionPanel extends JPanel {
     
@@ -84,7 +85,7 @@ public class SessionPanel extends JPanel {
     private int interaction = 0;
     private int testType = 0;
 
-    private TaskIterator itr; 
+    private SetterUpperer su;
 
     class SeparateFrame extends JFrame {
         static final long serialVersionUID = 4324324l;
@@ -172,11 +173,6 @@ public class SessionPanel extends JPanel {
         networkList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 updateListSelection();
-            }
-        });
-        networkList.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                updateListSelection(); 
             }
         });
 
@@ -368,13 +364,12 @@ public class SessionPanel extends JPanel {
         });
 
         JButton types = new JButton("Generate network(s)");
-        itr = new TaskIterator();
         types.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
-                //
-                itr = new TaskIterator();
+                
+                su = new SetterUpperer();
                 if(autoSlider.isSelected()) {
                    
                     // Get user input
@@ -398,12 +393,10 @@ public class SessionPanel extends JPanel {
                     }
                 }
                 else {
-                
-                    if(itr.hasNext()) return;
                     makeNetwork(getTN());
                 }
-        
-                ia.getCSAA().getDialogTaskManager().execute(itr);
+
+                su.run();
 
             }
         });
@@ -455,10 +448,7 @@ public class SessionPanel extends JPanel {
         double px = distance / (mag*CONV);
         String networkName 
             = String.format("%c%.2f X%d Y%d W%d H%d", type, network.getDistance(),x,y,w,h);
-        Task neighboursTask = new FindNeighboursTask(selection, session.tree, network, px, useSubset);
-        
-        itr.append(neighboursTask);
-
+        FindNeighboursTask neighboursTask = new FindNeighboursTask(selection, session.tree, network, px, useSubset);
         
         // Register the network
         Task registerTask = new AbstractTask() {
@@ -484,20 +474,55 @@ public class SessionPanel extends JPanel {
         Task styleTask = new ViewStyler(network, testType, session.getStyle(), ia.getCAA());
 
         Task refreshTask = new AbstractTask() {
-            public void run(TaskMonitor monitor) {
+            public void run (TaskMonitor monitor) {
                 refreshNetworks(network);
-                updateListSelection();
+                //updateListSelection();
             }
         };
-        
-        itr.insertTasksAfter(neighboursTask, registerTask, networkTask, styleTask, refreshTask);
+
+        su.add(neighboursTask, new TaskIterator(registerTask, networkTask, styleTask, refreshTask));
     }
     
+    class SetterUpperer implements TaskObserver {
+
+        int state = 0;
+        
+        TaskIterator findNeighboursIterator = new TaskIterator();
+        TaskIterator laterIterator = new TaskIterator();
+
+        public void add(FindNeighboursTask f, TaskIterator i) {
+            findNeighboursIterator.append(f);
+            laterIterator.append(i);
+        }
+
+        public void run() {
+            ia.getCSAA().getDialogTaskManager().execute(findNeighboursIterator, this);
+        }
+
+        public void allFinished(FinishStatus s) {
+            if(s.getType() == FinishStatus.Type.SUCCEEDED) {
+                switch(state) {
+                    case 0:
+                        ia.getCSAA().getDialogTaskManager().execute(laterIterator, this);
+                        state++;
+                        break;
+                    case 1:
+                        networkList.setSelectedValue(model.lastElement(), true);
+                        break;
+                }
+            }
+        }
+
+        public void taskFinished(ObservableTask t) {
+            
+        }
+    }
+
     public void refreshNetworks(TypeNetwork selected) {
         if(!model.contains(selected)) {
             model.addElement(selected);
         }
-        networkList.setSelectedValue(selected, true);
+        //networkList.setSelectedValue(selected, true);
     }
 
     public void updateSelectionPanel() {
