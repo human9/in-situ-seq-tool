@@ -45,6 +45,9 @@ public class ShuffleTask extends SpatialNetworkTask {
 
             //
             for(Transcript n : t.getNeighboursForNetwork(net)) {
+
+                // If t isn't inside the selection, go to next.
+                if(n.getSelection(net) != net.getSelection()) continue;
                 
                 String key = session.generateName(t, n);
                 if(!colocations.containsKey(key)) {
@@ -74,6 +77,9 @@ public class ShuffleTask extends SpatialNetworkTask {
         
         for(Colocation c : colocations.values()) {
             
+            if(c.distributionMean == 0) {
+                System.out.println(session.name(c.getFirst()) + "-" + session.name(c.getSecond()));
+            }
             NormalDistribution d = new NormalDistribution(c.distributionMean, Math.sqrt(c.distributionMean));
 
             c.probability = d.probability(c.actualCount);

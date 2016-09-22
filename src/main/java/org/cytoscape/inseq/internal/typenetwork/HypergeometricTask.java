@@ -40,6 +40,9 @@ public class HypergeometricTask extends SpatialNetworkTask {
 
             for(Transcript n : t.getNeighboursForNetwork(net)) {
                 
+                // If t isn't inside the selection, go to next.
+                if(n.getSelection(net) != net.getSelection()) continue;
+
                 String key = session.generateName(t, n);
                 if(!colocations.containsKey(key)) {
                     colocations.put(key, new Colocation(session.orderTranscripts(t, n)));

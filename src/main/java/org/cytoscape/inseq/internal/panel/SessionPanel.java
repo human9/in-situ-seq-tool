@@ -390,6 +390,7 @@ public class SessionPanel extends JPanel {
                     int width = (int) Math.ceil(total.width / numHorizontal);
                     int height = (int) Math.ceil(total.height / numVertical);
 
+
                     for(int h = 0; h < numVertical; h++) {
                         for(int w = 0; w < numHorizontal; w++) {
                             Rectangle r = new Rectangle(w*width, h*height, width, height);
