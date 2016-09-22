@@ -10,8 +10,8 @@ import org.cytoscape.work.TaskMonitor;
 public class HypergeometricTask extends SpatialNetworkTask {
 
     public HypergeometricTask(TypeNetwork n, InseqSession s, String genName,
-            int interaction, double sigLevel) {
-        super(n, s, genName, interaction, sigLevel);
+            int interaction, double sigLevel, double r) {
+        super(n, s, genName, interaction, sigLevel, r);
     }
 
     /** Shuffles gene names in order to generate a random distribution.
@@ -20,7 +20,7 @@ public class HypergeometricTask extends SpatialNetworkTask {
     public void run(TaskMonitor taskMonitor) {
 
         taskMonitor.showMessage(TaskMonitor.Level.INFO,
-                "Finding distribution by shuffling names");
+                "Using hypergeometric distribution");
 
         for (Transcript t : session.getRaw())
         {

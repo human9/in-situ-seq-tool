@@ -82,8 +82,10 @@ public class SessionPanel extends JPanel {
     public final String name;
     private CyLayoutAlgorithm layoutAlgorithm;
     double mag = 20;
+    double rankCutoff = 100;
     double sig = 0.05;
     private boolean useSubset = true;
+    private boolean rcutoff = false;
     private int interaction = 0;
     private int testType = 0;
 
@@ -355,8 +357,33 @@ public class SessionPanel extends JPanel {
         bonPanel.add(new JLabel("Condition: p < "));
         bonPanel.add(sigLevel);
 
+        JPanel rankPanel = new JPanel();
+        rankPanel.setLayout(new BoxLayout(rankPanel, BoxLayout.LINE_AXIS));
 
-        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, interactionPanel, bonPanel), makeCons());
+        JCheckBox useRankCutoff = new JCheckBox("Only show edges ranked up to ");
+        useRankCutoff.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                    rcutoff = true;
+                }
+                else {
+                    rcutoff = false;
+                }
+            }
+        });
+        rankPanel.add(useRankCutoff);
+        JSpinner rankLimit = new JSpinner(new SpinnerNumberModel(rankCutoff, 1d, 10000d, 1d));
+        rankLimit.setMaximumSize(new Dimension(80, rankLimit.getPreferredSize().height));
+        rankLimit.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                rankCutoff = (Double)(rankLimit.getValue());
+            }
+        });
+        rankPanel.add(rankLimit);
+
+
+        add(ExpandableOptionsFactory.makeOptionsPanel("Significance", testPanel, interactionPanel, bonPanel, rankPanel), makeCons());
 
         entire.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -468,12 +495,19 @@ public class SessionPanel extends JPanel {
         // Construct and display the new network.
         Task networkTask;
 
+        double r;
+        if(rcutoff) {
+            r = rankCutoff;
+        }
+        else {
+            r = Double.POSITIVE_INFINITY;
+        }
         switch(testType) {
             case 0:
-                networkTask = new ShuffleTask(network, session, networkName, interaction, sig);
+                networkTask = new ShuffleTask(network, session, networkName, interaction, sig, r);
                 break;
             case 1:
-                networkTask = new HypergeometricTask(network, session, networkName, interaction, sig);
+                networkTask = new HypergeometricTask(network, session, networkName, interaction, sig, r);
                 break;
             default:
                 throw new java.lang.IndexOutOfBoundsException("Selected test type invalid");

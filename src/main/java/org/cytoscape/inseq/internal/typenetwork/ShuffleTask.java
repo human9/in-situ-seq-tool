@@ -11,8 +11,8 @@ import org.cytoscape.work.TaskMonitor;
 public class ShuffleTask extends SpatialNetworkTask {
 
     public ShuffleTask(TypeNetwork n, InseqSession s, String genName,
-            int interaction, double sigLevel) {
-        super(n, s, genName, interaction, sigLevel);
+            int interaction, double sigLevel, double r) {
+        super(n, s, genName, interaction, sigLevel, r);
     }
 
     /** Shuffles gene names in order to generate a random distribution.

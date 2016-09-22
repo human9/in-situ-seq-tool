@@ -41,17 +41,19 @@ public class SpatialNetworkTask extends AbstractTask {
 
     private int interaction;
     private double sigLevel;
+    private double rankCutoff;
 
     // Total number of transcripts
     private int N = 0;
 
     public SpatialNetworkTask(TypeNetwork n, InseqSession s, String genName,
-            int interaction, double sigLevel) {
+            int interaction, double sigLevel, double rankCutoff) {
         this.net = n;
         this.session = s;
         this.name = genName;
         this.interaction = interaction;
         this.sigLevel = sigLevel;
+        this.rankCutoff = rankCutoff;
 
         network = net.getNetwork();
         nodeTable = net.getNodeTable();
@@ -118,7 +120,7 @@ public class SpatialNetworkTask extends AbstractTask {
             Colocation c = colocations.get(key);
         
             // Anything unranked was discarded earlier
-            if(c.rank != 0) {
+            if(c.rank != 0 && c.rank <= rankCutoff) {
                 addEdge(c, key);
             }
 
@@ -187,6 +189,7 @@ public class SpatialNetworkTask extends AbstractTask {
             if(thisNode == otherNode) {
                 nodeTable.getRow(thisNode.getSUID())
                     .set("selfnorm", Math.abs(colocation.pvalue));
+                System.out.println(colocation.pvalue);
                 return;
             }
 
@@ -223,7 +226,7 @@ public class SpatialNetworkTask extends AbstractTask {
             Colocation c = itr.next();
             
             if(c.getFirst() == c.getSecond()) {
-                itr.remove();
+                c.rank = 1;
             }
             else {
                 c.rank = rank++;

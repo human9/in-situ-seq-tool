@@ -89,7 +89,8 @@ public class ViewStyler extends AbstractTask {
 		VisualMappingFunction<Integer,Double> edges = cvmf.createVisualMappingFunction("rank", Integer.class, BasicVisualLexicon.EDGE_WIDTH);
 
 		((ContinuousMapping<Integer,Double>)edges).addPoint(1,new  BoundaryRangeValues<Double>(20d,20d,20d));
-		((ContinuousMapping<Integer,Double>)edges).addPoint(50,new  BoundaryRangeValues<Double>(1d,1d,1d));
+		((ContinuousMapping<Integer,Double>)edges).addPoint(10,new  BoundaryRangeValues<Double>(10d,10d,10d));
+		((ContinuousMapping<Integer,Double>)edges).addPoint(50,new  BoundaryRangeValues<Double>(3d,3d,3d));
 		vs.addVisualMappingFunction(edges);
 		
         VisualMappingFunction<Integer,Paint> edgeColour = cvmf.createVisualMappingFunction("rank", Integer.class, BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT);
@@ -109,10 +110,8 @@ public class ViewStyler extends AbstractTask {
 */		
 		VisualMappingFunction<Double,Double> selfMap = cvmf.createVisualMappingFunction("selfnorm", Double.class, BasicVisualLexicon.NODE_BORDER_WIDTH);
 
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(1.96d,new  BoundaryRangeValues<Double>(0d,2d,4d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(3d,new  BoundaryRangeValues<Double>(4d,5d,6d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(6d,new  BoundaryRangeValues<Double>(6d,8d,10d));
-		((ContinuousMapping<Double,Double>)selfMap).addPoint(10d,new  BoundaryRangeValues<Double>(10d,12d,14d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(0d,new  BoundaryRangeValues<Double>(5d,5d,5d));
+		((ContinuousMapping<Double,Double>)selfMap).addPoint(1d,new  BoundaryRangeValues<Double>(1d,1d,1d));
 		vs.addVisualMappingFunction(selfMap);
 		
 		a.getVisualMappingManager().addVisualStyle(vs);
@@ -124,13 +123,10 @@ public class ViewStyler extends AbstractTask {
     public static void updateColours(VisualStyle style, InseqSession s, CyAppAdapter a) {
 		VisualMappingFunctionFactory dvmf = a.getVisualMappingFunctionDiscreteFactory();
         VisualMappingFunction<String,Paint> nodeColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_BORDER_PAINT);
-		VisualMappingFunction<String,Paint> labelColour = dvmf.createVisualMappingFunction("name", String.class, BasicVisualLexicon.NODE_LABEL_COLOR);
 		for(InseqSession.Gene g : s.getGenes()) {
 			((DiscreteMapping<String,Paint>)nodeColour).putMapValue(g.name, g.color);
-			((DiscreteMapping<String,Paint>)labelColour).putMapValue(g.name, g.color);
 		}
         style.addVisualMappingFunction(nodeColour);
-        style.addVisualMappingFunction(labelColour);
 
         try {
             style.apply(s.getSelectedNetwork().getView());
