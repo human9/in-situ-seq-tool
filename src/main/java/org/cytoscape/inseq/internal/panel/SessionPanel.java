@@ -470,7 +470,12 @@ public class SessionPanel extends JPanel {
         int x = 0; int y = 0; int w = 0; int h = 0;
         if(useSubset && selection != null) {
             Rectangle2D bounds = selection.getBounds2D();
-            type = selection.contains(bounds) ? 'R' : 'P';
+            if(autoSlider.isSelected()) {
+                type = 'A';
+            }
+            else {
+                type = selection.contains(bounds) ? 'R' : 'P';
+            }
             x = (int)bounds.getX();
             y = (int)bounds.getY();
             w = (int)bounds.getWidth();
@@ -480,9 +485,43 @@ public class SessionPanel extends JPanel {
             type = 'E';
         }
 
+        char test = (testType == 0) ? 'S' : 'H';
         double px = distance / (mag*CONV);
+
+        double r;
+        if(rcutoff) {
+            r = rankCutoff;
+        }
+        else {
+            r = Double.POSITIVE_INFINITY;
+        }
+
+        String rankString;
+        if(r == Double.POSITIVE_INFINITY) {
+            rankString = "ALL";
+        }
+        else {
+            rankString = ((Integer)((Double)r).intValue()).toString();
+        }
+        
+        char side;
+        switch(interaction) {
+            case 0:
+                side = 'M';
+                break;
+            case 1:
+                side = 'L';
+                break;
+            case 2:
+                side = 'A';
+                break;
+            default:
+                side = 'E';
+                break;
+        }
+
         String networkName 
-            = String.format("%c%.2f X%d Y%d W%d H%d", type, network.getDistance(),x,y,w,h);
+            = String.format("%c%.2f%c%.2f%c%s:%d:%d:%d:%d", type, network.getDistance(), test, sig, side, rankString, x,y,w,h);
         FindNeighboursTask neighboursTask = new FindNeighboursTask(selection, session.tree, network, px, useSubset);
         
         // Register the network
@@ -495,13 +534,6 @@ public class SessionPanel extends JPanel {
         // Construct and display the new network.
         Task networkTask;
 
-        double r;
-        if(rcutoff) {
-            r = rankCutoff;
-        }
-        else {
-            r = Double.POSITIVE_INFINITY;
-        }
         switch(testType) {
             case 0:
                 networkTask = new ShuffleTask(network, session, networkName, interaction, sig, r);
