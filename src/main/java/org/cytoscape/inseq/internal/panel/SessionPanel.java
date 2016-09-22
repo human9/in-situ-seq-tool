@@ -643,7 +643,6 @@ public class SessionPanel extends JPanel {
         public void propertyChange(PropertyChangeEvent e) {
             Object value = op.getValue();
             if(value.equals("OK")) {
-                System.out.println(x.getValue());
                 d = new Dimension((int)x.getValue(), (int)y.getValue());
                 setVisible(false);
             }

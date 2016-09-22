@@ -189,7 +189,6 @@ public class SpatialNetworkTask extends AbstractTask {
             if(thisNode == otherNode) {
                 nodeTable.getRow(thisNode.getSUID())
                     .set("selfnorm", Math.abs(colocation.pvalue));
-                System.out.println(colocation.pvalue);
                 return;
             }
 
