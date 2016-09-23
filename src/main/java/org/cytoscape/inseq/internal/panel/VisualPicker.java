@@ -59,8 +59,6 @@ public class VisualPicker extends JDialog implements ChangeListener
         symbol = session.getGeneSymbol(type);
         this.setTitle("Editing " + session.name(type) + " appearance");
 
-        setMinimumSize(new Dimension(100,100));
-        setPreferredSize(new Dimension(600, 460));
         getRootPane().setBorder(new EmptyBorder(2,2,2,2));
 
         addWindowListener(new WindowAdapter() {

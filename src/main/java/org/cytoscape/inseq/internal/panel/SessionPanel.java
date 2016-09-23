@@ -69,7 +69,7 @@ public class SessionPanel extends JPanel {
 
     InseqActivator ia;
 
-    private double distance = 30;
+    private double distance = 10;
     private double cutoff = 0;
     private SeparateFrame frame;
     private SelectionPanel selectionPanel;
@@ -209,17 +209,22 @@ public class SessionPanel extends JPanel {
         });
         add(ExpandableOptionsFactory.makeOptionsPanel("Network list", listScroller, layoutComboBox, layoutButton), makeCons());
 
+
+        JSpinner magnification = new JSpinner(new SpinnerNumberModel(mag, 0d, 100d, 1d));
+        JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance * mag * CONV, 0d, 100d, 0.1d));
+        JSpinner px = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
+
         JPanel magPanel = new JPanel();
         magPanel.setLayout(new BoxLayout(magPanel, BoxLayout.LINE_AXIS));
         JLabel mlabel = new JLabel("Magnification: ");
         magPanel.add(mlabel);
-        JSpinner magnification = new JSpinner(new SpinnerNumberModel(mag, 0d, 100d, 1d));
         magnification.setMaximumSize(new Dimension(80, magnification.getPreferredSize().height));
         magPanel.add(magnification);
         magnification.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
                 mag = (Double)(magnification.getValue());
+                distanceCutoff.setValue(distance * mag * CONV);
             }
         });
         JLabel xlabel = new JLabel("X");
@@ -229,17 +234,29 @@ public class SessionPanel extends JPanel {
         distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.LINE_AXIS));
         JLabel dlabel = new JLabel("Search distance: ");
         distancePanel.add(dlabel);
-        JSpinner distanceCutoff = new JSpinner(new SpinnerNumberModel(distance, 0d, 100d, 0.1d));
         distanceCutoff.setMaximumSize(new Dimension(80, distanceCutoff.getPreferredSize().height));
         distancePanel.add(distanceCutoff);
         distanceCutoff.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                distance = (Double)(distanceCutoff.getValue());
+                distance = (Double)distanceCutoff.getValue() / (mag * CONV);
+                px.setValue(distance);
             }
         });
-        JLabel ulabel = new JLabel("μm");
+        JLabel ulabel = new JLabel("μm  (");
         distancePanel.add(ulabel);
+
+        px.setMaximumSize(new Dimension(80, px.getPreferredSize().height));
+        distancePanel.add(px);
+        px.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                distance = (Double)px.getValue();
+                distanceCutoff.setValue(distance * mag * CONV);
+            }
+        });
+        JLabel pxLabel = new JLabel("px)");
+        distancePanel.add(pxLabel);
         
         add(ExpandableOptionsFactory.makeOptionsPanel("Distance control", magPanel, distancePanel), makeCons());
 
@@ -452,13 +469,13 @@ public class SessionPanel extends JPanel {
 
     }   
 
-    double CONV = 0.15;
+    double CONV = (1.0/3.0) / 20d;
     public TypeNetwork getTN() {
 
         // Create a new TypeNetwork
         TypeNetwork network
             = new TypeNetwork(ia.getCAA().getCyNetworkFactory().createNetwork(),
-                              distance / (mag*CONV), cutoff);
+                              distance, cutoff);
         return network;
     }
 
@@ -486,7 +503,7 @@ public class SessionPanel extends JPanel {
         }
 
         char test = (testType == 0) ? 'S' : 'H';
-        double px = distance / (mag*CONV);
+        double px = distance;
 
         double r;
         if(rcutoff) {

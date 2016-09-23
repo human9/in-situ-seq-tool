@@ -234,7 +234,9 @@ public class JqadvGL {
      * Add a scaling event into the queue.
      */
     public void updateScale(float direction, float x, float y) {
-        for(int i = 0; i < 10; i++) {
+        int SCALE_AMPLIFIER = 8;
+
+        for(int i = 0; i < SCALE_AMPLIFIER; i++) {
             eventFiFo.add(new float[] {direction,x,y});
         }
         animator.go();
@@ -622,7 +624,7 @@ public class JqadvGL {
 
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
-        drawBackground(gl2);
+        //drawBackground(gl2);
         drawImage(gl2);
         drawPoints(gl2);
 
@@ -688,7 +690,7 @@ public class JqadvGL {
     public void fetchUpdates(GL2 gl2) {
         
         float[] e;
-        int size = (int) Math.floor(eventFiFo.size() * 0.5);
+        int size = (int) Math.floor(eventFiFo.size() * 0.6);
         while(eventFiFo.size() > size) {
             e = eventFiFo.remove();
             switch(e.length) {

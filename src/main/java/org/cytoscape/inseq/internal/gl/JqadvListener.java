@@ -62,7 +62,8 @@ public class JqadvListener extends MouseAdapter implements KeyListener {
     }
 
     private void mover(int x, int y) {
-        for(int i = 0; i < 10; i++) {
+        int MOVE_AMPLIFICATION = 5;
+        for(int i = 0; i < MOVE_AMPLIFICATION; i++) {
             jqadvgl.move(x,y);
         }
     }
