@@ -414,7 +414,7 @@ public class SessionPanel extends JPanel {
             }
         });
 
-        JButton types = new JButton("Generate network(s)");
+        JButton types = new JButton("<html><body><b>Generate network(s)</b></body></html>");
         types.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
