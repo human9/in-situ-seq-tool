@@ -1,6 +1,7 @@
 package org.cytoscape.inseq.internal.panel;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -9,11 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
-import javax.imageio.spi.IIORegistry;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,22 +21,18 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.cytoscape.inseq.internal.InseqActivator;
 import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.inseq.internal.gl.JqadvPanel;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
 import org.cytoscape.inseq.internal.util.NetworkUtil;
-import org.cytoscape.inseq.internal.util.ParseUtil;
 import org.cytoscape.inseq.internal.util.WrapLayout;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
-
-import com.twelvemonkeys.imageio.plugins.tiff.TIFFImageReaderSpi;
+import org.cytoscape.util.swing.DropDownMenuButton;
 
 /** 
  *  A panel containing the zoomable imageplot as well as controls.
@@ -54,15 +48,12 @@ public class SelectionPanel extends JPanel {
     InseqActivator ia;
     boolean showAllSelected = false;
     private JButton colourPicker;
-    private JFrame parent;
     private InseqSession session;
     private JqadvPanel jqadvpanel;
     private Transcript selected;
     private int size = 0;
 
-    public void setWindow(JFrame parent) {
-        this.parent = parent;
-    }
+    public Parent parent;
 
     public JqadvPanel getJqadvPanel() {
         return jqadvpanel;
@@ -71,7 +62,7 @@ public class SelectionPanel extends JPanel {
     public SelectionPanel(final InseqActivator ia, InseqSession session) {
         this.ia = ia;
         this.session = session;
-        this.parent = ia.getCSAA().getCySwingApplication().getJFrame();
+        parent = new Parent(ia.getCSAA().getCySwingApplication().getJFrame());
 
         setLayout(new BorderLayout());
         plotControls = new JPanel();
@@ -85,34 +76,9 @@ public class SelectionPanel extends JPanel {
         jqadvpanel = new JqadvPanel(session, this);
         add(jqadvpanel, BorderLayout.CENTER);
 
-        JButton browse 
-            = new JButton(UIManager.getIcon("FileView.directoryIcon"));
-        plotControls.add(browse);
-        browse.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                JFileChooser fc = new JFileChooser();
-                
-                // Force TIF support into ImageIO
-                IIORegistry reg = IIORegistry.getDefaultInstance();
-                reg.registerServiceProvider(new TIFFImageReaderSpi());
-
-                FileFilter filter 
-                    = new FileNameExtensionFilter("Supported image formats", 
-                            ImageIO.getReaderFileSuffixes());
-                fc.addChoosableFileFilter(filter);
-                fc.setFileFilter(filter);
-                
-                int returnVal 
-                    = fc.showOpenDialog(parent);
-                if (!(returnVal == JFileChooser.APPROVE_OPTION)) return;
-
-                jqadvpanel.getGL().changeImage(
-                        ParseUtil.getImageFile(fc.getSelectedFile().getAbsolutePath()));
-            }
-
-        });
+        
+        DropDownMenuButton imageButton = new DropDownMenuButton(new ImageAction(null, UIManager.getIcon("FileView.directoryIcon"), jqadvpanel.getGL(), parent));
+        plotControls.add(imageButton);
 
         //node selection shows all points checkbox
         
@@ -135,6 +101,9 @@ public class SelectionPanel extends JPanel {
                 updateSelection();
             }
         });
+
+        // make button height somewhat the same
+        imageButton.setPreferredSize( new Dimension( imageButton.getPreferredSize().width, showAll.getPreferredSize().height));
 
         JButton bigSymbols = new JButton(NetworkUtil.iconFromResource("/texture/normal.png"));
         plotControls.add(bigSymbols);
@@ -196,7 +165,7 @@ public class SelectionPanel extends JPanel {
         areaGroup.add(polygonSelect);
         
         JButton center 
-            = new JButton("RESET");
+            = new JButton(NetworkUtil.iconFromResource("/texture/refresh.png"));
         plotControls.add(center);
         center.addActionListener(new ActionListener() {
             @Override
@@ -210,7 +179,7 @@ public class SelectionPanel extends JPanel {
         colourPicker.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VisualPicker(parent, session, jqadvpanel, selected.type);
+                new VisualPicker(parent.getWindow(), session, jqadvpanel, selected.type);
             }
         });
         colourPicker.setEnabled(false);
@@ -240,7 +209,7 @@ public class SelectionPanel extends JPanel {
     }
 
     protected void dispatchCloseEvent() {
-        parent.dispatchEvent(new WindowEvent(parent, WindowEvent.WINDOW_CLOSING));
+        parent.getWindow().dispatchEvent(new WindowEvent(parent.getWindow(), WindowEvent.WINDOW_CLOSING));
     }
 
     public void updateSelection() {
@@ -296,6 +265,23 @@ public class SelectionPanel extends JPanel {
 
         jqadvpanel.getGL().changeNetworkComponents();
 
+    }
+
+    public class Parent {
+        
+        private JFrame window;
+
+        public Parent(JFrame window) {
+            this.window = window;
+        }
+
+        public JFrame getWindow() {
+            return window;
+        }
+
+        public void setWindow(JFrame window) {
+            this.window = window;
+        }
     }
 
 }

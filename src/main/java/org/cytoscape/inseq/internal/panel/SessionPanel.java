@@ -108,7 +108,7 @@ public class SessionPanel extends JPanel {
     
     private void closeWindow() {
         pop.setVisible(true);
-        selectionPanel.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
+        selectionPanel.parent.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
         basePanel.add(selectionPanel);
         basePanel.revalidate();
         repaint();
@@ -150,7 +150,7 @@ public class SessionPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 try {
                 frame = new SeparateFrame(ia.getCSAA().getCySwingApplication().getJFrame(), "Imageplot", selectionPanel.getSize());
-                selectionPanel.setWindow(frame);
+                selectionPanel.parent.setWindow(frame);
                 frame.addWindowListener(new WindowAdapter() {
 
                     @Override
@@ -457,7 +457,7 @@ public class SessionPanel extends JPanel {
 
         selectionPanel = new SelectionPanel(ia, session);
         selectionPanel.plotControls.add(pop);
-        selectionPanel.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
+        selectionPanel.parent.setWindow(ia.getCSAA().getCySwingApplication().getJFrame());
         
         GridBagConstraints selectionCons = new GridBagConstraints();
         selectionCons.fill = GridBagConstraints.BOTH;
