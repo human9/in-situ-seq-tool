@@ -262,6 +262,10 @@ public class JqadvGL {
         extrascale[0] = value;
         animator.go();
     }
+    
+    public float getImageScale() {
+        return extrascale[0];
+    }
 
     public void largePoints(int sizeSwitch) {
         switch(sizeSwitch) {

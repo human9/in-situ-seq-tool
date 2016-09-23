@@ -183,18 +183,7 @@ public class SelectionPanel extends JPanel {
             }
         });
         colourPicker.setEnabled(false);
-        
-        JSpinner pointScale 
-            = new JSpinner(new SpinnerNumberModel(1d, 0d, 100d, 0.01d));
-        plotControls.add(new JLabel("Scaling: "), BorderLayout.LINE_START);
-        plotControls.add(pointScale);
-        pointScale.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                jqadvpanel.getGL().setImageScale(((Double)pointScale.getValue()).floatValue());   
-            }
-        });
-
+    
     }
 
     public void setSelected(Transcript t) {
