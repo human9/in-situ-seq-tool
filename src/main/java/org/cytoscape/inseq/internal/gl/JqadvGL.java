@@ -612,6 +612,27 @@ public class JqadvGL {
 
         gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
         gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+
+        try {
+            for(Transcript t : selectedTranscript.getNeighboursForNetwork(session.getSelectedNetwork()) ) {
+
+                gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+                gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
+                
+                Util.updateUniform(gl2, st, "sel", 1f);
+                gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
+                gl2.glVertexPointer(3, GL.GL_FLOAT, 0, t.index * 3 * GLBuffers.SIZEOF_FLOAT);
+                gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
+                Util.updateUniform(gl2, st, "sel", 0f);
+
+                gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+                gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
+                
+            }
+        }
+        catch (NullPointerException e) {
+            // No neighbours, clean up
+        }
     }
 
 

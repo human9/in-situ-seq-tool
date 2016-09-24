@@ -80,26 +80,31 @@ public class TextRenderer {
         matrix.glLoadIdentity();
         matrix.glTranslatef(5, h-15, 0);
         
-        float fontSize = font.getPixelSize(10, 96);
+        float fontSize = font.getPixelSize(11, 96);
         float[] colour = new float[4];
         for(InseqSession.Gene gene : genesAlphabetical) {
 
             gene.color.getRGBComponents(colour);
             colour[3] = 1;
 
-            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, gene.name,
+            String name = "";
+            if(selection != null) {
+                if(gene.name == session.name(selection.type)) {
+                    name = "> ";
+                }
+            }
+            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, name + gene.name,
                     colour, SAMPLE_COUNT);
         
-            matrix.glTranslatef(0, -15, 0);
+            matrix.glTranslatef(0, -16, 0);
         }
 
         if(selection != null) {
-            float size = font.getPixelSize(10, 96);
             String display = session.name(selection.type) + " " + selection;
             matrix.glLoadIdentity();
-            matrix.glTranslatef(w-(size/2)*display.length(), h-15, 0);
+            matrix.glTranslatef(w-(fontSize/2)*display.length(), h-15, 0);
             session.getGeneColour(selection.type).getRGBColorComponents(colour);
-            util.drawString3D((GL2ES2)gl2, renderer, font, size, display,
+            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, display,
                     colour, SAMPLE_COUNT);
         }
 
