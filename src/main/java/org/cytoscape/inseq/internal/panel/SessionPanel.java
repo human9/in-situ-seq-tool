@@ -618,6 +618,9 @@ public class SessionPanel extends JPanel {
         if(!model.contains(selected)) {
             model.addElement(selected);
         }
+
+        session.setSelection(selected.getSelection());
+        selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
         //networkList.setSelectedValue(selected, true);
     }
 
@@ -626,7 +629,7 @@ public class SessionPanel extends JPanel {
     }
 
     class AutoselectorSetupDialog extends JDialog
-                                  implements PropertyChangeListener {
+                                  implements PropertyChangeListener, ChangeListener {
 
         static final long serialVersionUID = 453l;
 
@@ -639,8 +642,10 @@ public class SessionPanel extends JPanel {
 
             JPanel spinnerPanel = new JPanel();
             spinnerPanel.setLayout(new FlowLayout());
-            x = new JSpinner(new SpinnerNumberModel((int)((session.min.width/4) / (mag*CONV)), 0, (int)(session.min.width / (mag*CONV)), 1));
-            y = new JSpinner(new SpinnerNumberModel((int)((session.min.height/4) / (mag*CONV)), 0, (int)(session.min.height / (mag*CONV)), 1));
+            x = new JSpinner(new SpinnerNumberModel((int)((session.min.width/4)), 0, (int)(session.min.width), 1));
+            y = new JSpinner(new SpinnerNumberModel((int)((session.min.height/4)), 0, (int)(session.min.height), 1));
+            x.addChangeListener(this);
+            y.addChangeListener(this);
             spinnerPanel.add(x);
             spinnerPanel.add(new JLabel("x"));
             spinnerPanel.add(y);
@@ -653,12 +658,22 @@ public class SessionPanel extends JPanel {
             op.addPropertyChangeListener(this);
             pack();
             setLocationRelativeTo(parent);
+
+            d = new Dimension((int)x.getValue(), (int)y.getValue());
+            session.setSelection(new Rectangle(d));
+            selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
+        }
+
+
+        public void stateChanged(ChangeEvent e) {
+            d.setSize((int)x.getValue(), (int)y.getValue());
+            session.setSelection(new Rectangle(d));
+            selectionPanel.getJqadvPanel().getGL().selectionChanged(true);
         }
 
         public Dimension getInput() {
             setVisible(true);
-            d.width *= (mag*CONV);
-            d.height *= (mag*CONV);
+            d.setSize((int)x.getValue(), (int)y.getValue());
             return d;
         }
 
@@ -666,6 +681,7 @@ public class SessionPanel extends JPanel {
             Object value = op.getValue();
             if(value.equals("OK")) {
                 d = new Dimension((int)x.getValue(), (int)y.getValue());
+
                 setVisible(false);
             }
             else {
