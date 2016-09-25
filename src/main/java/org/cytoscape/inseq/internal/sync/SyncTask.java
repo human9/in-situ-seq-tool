@@ -103,6 +103,7 @@ public class SyncTask extends AbstractTask {
 		
         // we don't actually want the union view
         adapter.getCyNetworkViewManager().destroyNetworkView(view);
+		adapter.getCyNetworkManager().destroyNetwork(union);
 
         for(TypeNetwork tn : networkList) {
 

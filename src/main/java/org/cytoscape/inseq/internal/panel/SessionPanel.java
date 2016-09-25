@@ -544,8 +544,12 @@ public class SessionPanel extends JPanel {
         // Register the network
         Task registerTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
+                ia.getCAA().getCyNetworkManager().addNetwork(network.getNetwork());
                 if(!network.emptyFlag) {
                     session.addNetwork(network, px, cutoff);
+                }
+                else {
+                    ia.getCAA().getCyNetworkManager().destroyNetwork(network.getNetwork());
                 }
             }
         };
