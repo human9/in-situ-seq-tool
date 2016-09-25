@@ -15,9 +15,11 @@ varying float offset;
 varying float size;
 varying float num;
 varying float x;
+varying float t;
 
 void main(void) {
   if(coord2d.z >= 0.0) {
+      t = tiny;
       x = sel;
       size = ptsize;
       num = texnum;

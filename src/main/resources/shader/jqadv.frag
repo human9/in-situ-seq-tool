@@ -6,6 +6,7 @@ varying float offset;
 varying float size;
 varying float num;
 varying float x;
+varying float t;
 
 void main(void) {
 
@@ -13,8 +14,14 @@ void main(void) {
     vec2 TextureSize = vec2(1/num, 1);
     vec2 real = TextureCoord + (gl_PointCoord * TextureSize);
 
-    if(x == 0)
-        gl_FragColor = texture2D(sprite, real) * f_color;
+    if(x == 0) {
+        if(t > 0) {
+            gl_FragColor = f_color; 
+        }
+        else {
+            gl_FragColor = texture2D(sprite, real) * f_color;
+        }
+    }
     else {
         vec2 circ = 2.0 * gl_PointCoord - 1.0;
         if(dot(circ, circ) > 1.0) {

@@ -52,6 +52,8 @@ public class FindNeighboursTask extends AbstractTask implements ObservableTask {
 
 			network.setSelection(selection);
 			
+            if(searchArea.size() < 1) network.emptyFlag = true;
+
 			for(Transcript t : searchArea) 
 			{
 				if(cancelled) break;

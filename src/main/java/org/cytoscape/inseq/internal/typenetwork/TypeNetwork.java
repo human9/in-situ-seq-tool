@@ -21,6 +21,9 @@ public class TypeNetwork {
 	private Shape selection;
 	private CyNetworkView view;
 
+    // Set to indicate it should be discarded
+    public boolean emptyFlag;
+
     // An ordered list of CyNodes, so that nodes of type (i) can be looked up
     // without jumping through too many hoops
     private List<CyNode> nodes = new ArrayList<CyNode>();

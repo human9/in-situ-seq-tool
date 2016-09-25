@@ -136,6 +136,8 @@ public class ViewStyler extends AbstractTask {
     }
 
 	public void run(TaskMonitor monitor) {
+
+        if(network.emptyFlag) return;
 		
 		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network.getNetwork());
 		network.setView(view);

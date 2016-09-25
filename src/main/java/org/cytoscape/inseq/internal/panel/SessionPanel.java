@@ -90,6 +90,7 @@ public class SessionPanel extends JPanel {
     private boolean rcutoff = false;
     private int interaction = 0;
     private int testType = 0;
+    private Dimension autoDim;
 
     private SetterUpperer su;
 
@@ -144,6 +145,8 @@ public class SessionPanel extends JPanel {
         this.name = name;
         this.session = session;
         this.setLayout(new GridBagLayout());
+
+        autoDim = new Dimension(session.min.width/4, session.min.height/4);
 
         ImageIcon icon = NetworkUtil.iconFromResource("/texture/pop.png");
         pop = new JButton(icon);
@@ -429,16 +432,12 @@ public class SessionPanel extends JPanel {
                     Dimension d = dialog.getInput();
                     Dimension total = session.min;
 
-                    int numHorizontal = (int) Math.ceil(total.width / d.width);
-                    int numVertical = (int) Math.ceil(total.height / d.height);
-
-                    int width = (int) Math.ceil(total.width / numHorizontal);
-                    int height = (int) Math.ceil(total.height / numVertical);
-
+                    int numHorizontal = (int) Math.ceil((float)total.width / d.width);
+                    int numVertical = (int) Math.ceil((float)total.height / d.height);
 
                     for(int h = 0; h < numVertical; h++) {
                         for(int w = 0; w < numHorizontal; w++) {
-                            Rectangle r = new Rectangle(w*width, h*height, width, height);
+                            Rectangle r = new Rectangle(w*d.width, h*d.height, d.width, d.height);
                             session.setSelection(r);
                             // Makes new network be created
                             makeNetwork(getTN());
@@ -545,7 +544,9 @@ public class SessionPanel extends JPanel {
         // Register the network
         Task registerTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
-                session.addNetwork(network, px, cutoff);
+                if(!network.emptyFlag) {
+                    session.addNetwork(network, px, cutoff);
+                }
             }
         };
 
@@ -567,8 +568,10 @@ public class SessionPanel extends JPanel {
 
         Task refreshTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
-                refreshNetworks(network);
-                //updateListSelection();
+                if(!network.emptyFlag) {
+                    refreshNetworks(network);
+                    //updateListSelection();
+                }
             }
         };
 
@@ -642,8 +645,8 @@ public class SessionPanel extends JPanel {
 
             JPanel spinnerPanel = new JPanel();
             spinnerPanel.setLayout(new FlowLayout());
-            x = new JSpinner(new SpinnerNumberModel((int)((session.min.width/4)), 0, (int)(session.min.width), 1));
-            y = new JSpinner(new SpinnerNumberModel((int)((session.min.height/4)), 0, (int)(session.min.height), 1));
+            x = new JSpinner(new SpinnerNumberModel(autoDim.width, 0, session.min.width, 1));
+            y = new JSpinner(new SpinnerNumberModel(autoDim.height, 0, session.min.height, 1));
             x.addChangeListener(this);
             y.addChangeListener(this);
             spinnerPanel.add(x);
@@ -680,7 +683,7 @@ public class SessionPanel extends JPanel {
         public void propertyChange(PropertyChangeEvent e) {
             Object value = op.getValue();
             if(value.equals("OK")) {
-                d = new Dimension((int)x.getValue(), (int)y.getValue());
+                autoDim.setSize((int)x.getValue(), (int)y.getValue());
 
                 setVisible(false);
             }
