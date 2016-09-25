@@ -21,6 +21,8 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -418,7 +420,6 @@ public class SessionPanel extends JPanel {
         types.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Note: Make sure to initialise tasks before starting the iterator to avoid race conditions
                 
                 su = new SetterUpperer();
                 if(autoSlider.isSelected()) {
@@ -580,10 +581,12 @@ public class SessionPanel extends JPanel {
         
         TaskIterator findNeighboursIterator = new TaskIterator();
         TaskIterator laterIterator = new TaskIterator();
+        List<TypeNetwork> syncNetworks = new ArrayList<TypeNetwork>();
 
         public void add(FindNeighboursTask f, TaskIterator i) {
             findNeighboursIterator.append(f);
             laterIterator.append(i);
+            syncNetworks.add(f.getNetwork());
         }
 
         public void run() {
@@ -598,6 +601,8 @@ public class SessionPanel extends JPanel {
                         state++;
                         break;
                     case 1:
+                        SyncTask t = new SyncTask(syncNetworks, layoutAlgorithm, ia.getCAA(), session);
+                        ia.getCSAA().getDialogTaskManager().execute(new TaskIterator(t));
                         networkList.setSelectedValue(model.lastElement(), true);
                         break;
                 }

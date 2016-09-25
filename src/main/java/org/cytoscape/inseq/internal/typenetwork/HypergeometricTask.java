@@ -20,7 +20,7 @@ public class HypergeometricTask extends SpatialNetworkTask {
     public void run(TaskMonitor taskMonitor) {
 
         taskMonitor.showMessage(TaskMonitor.Level.INFO,
-                "Using hypergeometric distribution");
+                "Assessing colocations using hypergeometric distribution");
 
         for (Transcript t : session.getRaw())
         {
