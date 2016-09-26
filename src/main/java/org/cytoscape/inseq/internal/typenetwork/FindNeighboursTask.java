@@ -4,25 +4,25 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.util.List;
 
-import org.cytoscape.inseq.internal.InseqSession;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
 
 import edu.wlu.cs.levy.CG.KDTree;
 import edu.wlu.cs.levy.CG.KeySizeException;
 
-public class FindNeighboursTask extends AbstractTask {
+public class FindNeighboursTask extends AbstractTask implements ObservableTask {
 
 	KDTree<Transcript> tree;
 	Double distance;
 	boolean subset;
-	InseqSession session;
 	TypeNetwork network;
+    Shape selection;
 	
-	public FindNeighboursTask(InseqSession session, TypeNetwork net, double d, boolean s) {
+	public FindNeighboursTask(Shape selection, KDTree<Transcript> tree, TypeNetwork net, double d, boolean s) {
 
-		tree = session.tree;
-		this.session = session;
+		this.tree = tree;
+		this.selection = selection;
 		distance = d; 
 		network = net;
 		subset = s;
@@ -42,10 +42,8 @@ public class FindNeighboursTask extends AbstractTask {
 
 		List<Transcript> searchArea;
 		try {
-			Shape selection = null;
-			if(subset) {
-				selection = session.getSelection();
-				Rectangle rect = (Rectangle) selection;
+			if(subset && selection != null) {
+				Rectangle rect = selection.getBounds();
 				searchArea = tree.range(new double[]{rect.x, rect.y}, new double[]{rect.x+rect.width, rect.y+rect.height});
 			}
 			else {
@@ -54,6 +52,8 @@ public class FindNeighboursTask extends AbstractTask {
 
 			network.setSelection(selection);
 			
+            if(searchArea.size() < 1) network.emptyFlag = true;
+
 			for(Transcript t : searchArea) 
 			{
 				if(cancelled) break;
@@ -61,6 +61,10 @@ public class FindNeighboursTask extends AbstractTask {
 				if (z % 1000 == 0) {
 					taskMonitor.setProgress((double)z/tree.size());
 				}
+
+                if(subset && selection != null) {
+                    if(!selection.contains(t.pos.x, t.pos.y)) continue;
+                }
 
 				t.setSelection(network, selection);
 				
@@ -82,4 +86,11 @@ public class FindNeighboursTask extends AbstractTask {
 		};
 
 	}
+    public <R> R getResults(Class<? extends R> type) {
+        return null;
+    }
+
+    public TypeNetwork getNetwork() {
+        return network;
+    }
 }

@@ -1,20 +1,19 @@
 package org.cytoscape.inseq.internal.util;
 
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
-
-import edu.wlu.cs.levy.CG.KDTree;
-import edu.wlu.cs.levy.CG.KeySizeException;
 
 /**
  *  Utility methods for parsing input.
@@ -27,77 +26,66 @@ public class ParseUtil {
 	 *  Parses XY coordinates and values from a csv file.
 	 *  Returns a map using the coordinates as keys. 
 	 */
-	public static List<Transcript> parseXYFile(FileReader csv)
+	public static boolean parseXYFile(FileReader csv, List<String> names, List<Transcript> transcripts)
 	{
 		CSVParser inseqParser;
 		try {
 			inseqParser = CSVFormat.EXCEL.withHeader().parse(csv);
 		} catch (IOException e) {
-			return null;
+			return false;
 		}
 
-		List<Transcript> transcripts = new ArrayList<Transcript>(); 
+        int index = 0;
 		for(CSVRecord record : inseqParser)
 		{
-			String name = record.get("name");
 
-			// Discard unknown reads
+            String name = record.get("name");
+			
+            // Discard unknown reads
 			if(name.equals("NNNN"))
 				continue;
+			
+            if(!names.contains(name)) names.add(name);
 			
 			Double x = Double.parseDouble(record.get("global_X_pos"));
 			Double y = Double.parseDouble(record.get("global_Y_pos"));
 			Point2D.Double coordinate = new Point2D.Double(x,y);
-			transcripts.add(new Transcript(coordinate, name));
+			transcripts.add(new Transcript(coordinate, names.indexOf(name), index++));
 
 		}
-		return transcripts;
+		return true;
 	}
+    
+    public static BufferedImage getImageResource(String path) {
 
-	/**
-	 *  Returns a map of all genes in the tree and how often they occur.
-	 */
-	public static Map<String, Integer> getGenes(KDTree<Transcript> tree) {
-
-		Map<String, Integer> genes = new HashMap<String, Integer>();
-
-		// Iterate through all our transcripts
-        for (Transcript t : tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE}))
-        {
-            if(!genes.containsKey(t.name)) {
-                genes.put(t.name, 0);
-            }
-            else {
-                genes.put(t.name, genes.get(t.name) + 1);
-            }
+        BufferedImage bimg;
+        try {
+            bimg = ImageIO.read(ParseUtil.class.getResourceAsStream(path));
+        } catch (IOException|NullPointerException e) {
+            JOptionPane.showMessageDialog(null, 
+                    "The image at: " + path + " could not be loaded", "Warning!",
+            JOptionPane.WARNING_MESSAGE);
+            return null;
         }
-
-		return genes;
-	}
-
-    /**
-     *  Generate a name with consistent ordering.
-     *  Useful for map key generation
-     */
-    public static String generateName(Transcript t1, Transcript t2) {
-        Transcript[] ordered = orderTranscripts(t1, t2);
-        return ordered[0].name + "-" + ordered[1].name;
+        
+        return bimg;
     }
 
+    public static BufferedImage getImageFile(String path) {
 
-    /**
-     * Get consistant order for two transcripts.
-     */
-    public static Transcript[] orderTranscripts(Transcript t1, Transcript t2) {
-
-        String n1 = t1.name;
-        String n2 = t2.name;
-
-        if(n1.compareTo(n2) < 0) {
-            return new Transcript[] {t1, t2};
-        } else {
-            return new Transcript[] {t2, t1};
+        File input = new File(path);
+        BufferedImage bimg;
+        try {
+            bimg = ImageIO.read(input);
+        } catch (IOException|NullPointerException e) {
+            JOptionPane.showMessageDialog(null, 
+                    "The image at: " + path + " could not be loaded", "Warning!",
+            JOptionPane.WARNING_MESSAGE);
+            return null;
         }
+        
+        //System.out.println("File load success.");
+        return bimg;
     }
 
 }

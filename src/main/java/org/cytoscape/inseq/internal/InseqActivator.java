@@ -7,97 +7,117 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.app.swing.CySwingAppAdapter;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.inseq.internal.dataimport.ConstructTreeTask;
 import org.cytoscape.inseq.internal.dataimport.ImportAction;
 import org.cytoscape.inseq.internal.panel.MainPanel;
+import org.cytoscape.inseq.internal.sync.ViewAdjustmentListener;
 import org.cytoscape.inseq.internal.typenetwork.Transcript;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.service.util.AbstractCyActivator;
-import org.cytoscape.work.TaskIterator;
+import org.cytoscape.view.model.events.ViewChangedListener;
 import org.osgi.framework.BundleContext;
 
 import edu.wlu.cs.levy.CG.KDTree;
 
 /** Activation and session control class.
  *  It also provides other classes with access to Cytoscape APIs.
+ *
  *  @author John Salamon
  */
 public class InseqActivator extends AbstractCyActivator {
 
-	private InseqSession session;
-	private Properties properties;
-	private BundleContext context;
-	private MainPanel panel;
+    // Every unique csv imported will be assigned its own InseqSession
+    private Properties properties;
+    private BundleContext context;
+    private MainPanel panel;
 
-	/** The entry point for app execution.
- 	 *  The only immediate visible change should be a new menu option.
-	 */
-	@Override
-	public void start(BundleContext c) throws Exception {
+    /** 
+     *  The entry point for app execution.
+     *  The only immediate visible change should be a new menu option.
+     */
+    @Override
+    public void start(BundleContext c) throws Exception {
+        
+        properties = new Properties();
+        context = c;
+        JoglInitializer.unpackNativeLibrariesForJOGL(c);
 
-		properties = new Properties();
-		context = c;
+        ImportAction menuAction = new ImportAction(this);
+        registerAllServices(context, menuAction, properties);
+    }
 
-		ImportAction menuAction = new ImportAction(this);
-		registerAllServices(context, menuAction, properties);
-	}
-	
-	public void constructTree(List<Transcript> rawImport, InseqActivator ia) {
+    /** 
+     *  Initializes the session.
+     *  This is called by ImportAction on successful import.
+     */
+    public void initSession(String filename,
+                            List<String> names,
+                            List<Transcript> transcripts,
+                            KDTree<Transcript> tree) {
+        InseqSession s = new InseqSession(names, transcripts, tree, getCAA());
 
-		ConstructTreeTask builder = new ConstructTreeTask(rawImport, ia);
-		TaskIterator itr = new TaskIterator(builder);     
-		getCSAA().getDialogTaskManager().execute(itr);
-	}
+        if(panel == null) {
+            panel = new MainPanel(this);
+            registerAllServices(context, panel, properties);
 
-	/** Initializes the session.
-	 *  This is called by ImportAction on successful import.
-	 */
-	public void initSession(KDTree<Transcript> tree, List<Transcript> raw) {
-		session = new InseqSession(tree, raw, getCAA());
+            ViewAdjustmentListener al = new ViewAdjustmentListener(s);
+            registerService(context, al, ViewChangedListener.class, properties);
+            RowsSetListener rsl = new RowsSetListener() {
+                @Override
+                public void handleEvent(RowsSetEvent e) {
+                    boolean willUpdate = true;
+                    /*for (RowSetRecord record : e.getColumnRecords(CyNetwork.SELECTED)) {
+                        if((Boolean)record.getValue() == true) willUpdate = true;
+                    }*/
+                    if(willUpdate) {
+                        //System.out.println("Updating");
+                        panel.updateSelectionPanel();
+                    }
+                    /*CyTable t = e.getSource();
+                    for(CyColumn c : t.getColumns()) {
 
-		panel = new MainPanel(this, session);
-		registerAllServices(context, panel, properties);
+                          System.out.println(c.getName());
+                    }*/
 
-		RowsSetListener rowsSetListener = new RowsSetListener() {
-			@Override
-			public void handleEvent(RowsSetEvent e) {
-				if (e.getColumnRecords(CyNetwork.SELECTED) != null) {
-					panel.updateSelectionPanel();
-				}
-			}
-		};
-		registerService(context, rowsSetListener, RowsSetListener.class, properties);
+                }
+            };
+            registerService(context, rsl, RowsSetListener.class, properties);
 
-		// Switch to the Inseq control panel.
-		CytoPanel cyPanel = getCSAA().getCySwingApplication().getCytoPanel(CytoPanelName.WEST);
-		int index = cyPanel.indexOfComponent(panel);
-		cyPanel.setSelectedIndex(index);
-	}
+            panel.addSession(filename, s);
+        }
+        else {
+            panel.addSession(filename, s);
+        }
 
-	/** Returns the current session.
-	 */
-	public InseqSession getSession() {
-		return this.session;
-	}
+        // Switch to the Inseq control panel.
+        CytoPanel cyPanel = getCSAA().getCySwingApplication()
+            .getCytoPanel(CytoPanelName.WEST);
+        int index = cyPanel.indexOfComponent(panel);
+        cyPanel.setSelectedIndex(index);
+    }
 
-	/** Returns the CyAppAdapter convenience interface.
-	 */
-	public CyAppAdapter getCAA() {
-		return getService(context, CyAppAdapter.class);
-	}
-	
-	/** Returns the CySwingAppAdapter convenience interface.
-	 */
-	public CySwingAppAdapter getCSAA() {
-		return getService(context, CySwingAppAdapter.class);
-	}
+    public boolean doesImportExist(String filename) {
+        if(panel == null) return false;
 
-	@Override
-	public void shutDown() {
-		if(panel != null) panel.shutDown();
-		session = null;
-		super.shutDown();
-	}
+        return panel.exists(filename);
+    }
+    /** 
+     *  Returns the CyAppAdapter convenience interface.
+     */
+    public CyAppAdapter getCAA() {
+        return getService(context, CyAppAdapter.class);
+    }
+    
+    /** 
+     *  Returns the CySwingAppAdapter convenience interface.
+     */
+    public CySwingAppAdapter getCSAA() {
+        return getService(context, CySwingAppAdapter.class);
+    }
+
+    @Override
+    public void shutDown() {
+        if(panel != null) panel.shutDown();
+        super.shutDown();
+    }
 }

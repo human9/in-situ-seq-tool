@@ -1,8 +1,11 @@
 package org.cytoscape.inseq.internal.typenetwork;
 
 import java.awt.Shape;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
@@ -16,7 +19,14 @@ public class TypeNetwork {
 	double distance;
 	double cutoff;
 	private Shape selection;
-	public CyNetworkView view;
+	private CyNetworkView view;
+
+    // Set to indicate it should be discarded
+    public boolean emptyFlag;
+
+    // An ordered list of CyNodes, so that nodes of type (i) can be looked up
+    // without jumping through too many hoops
+    private List<CyNode> nodes = new ArrayList<CyNode>();
 
 	public TypeNetwork(CyNetwork n, double d, double c)
 	{
@@ -26,9 +36,25 @@ public class TypeNetwork {
 		cutoff = c;
 	}
 
+    public void addNode(int index, CyNode node) {
+        nodes.add(index, node); 
+    }
+
+    public List<CyNode> getNodeList() {
+        return nodes;
+    }
+
 	public CyNetwork getNetwork() {
 		return network;
 	}
+
+    public CyNetworkView getView() {
+        return view;
+    }
+
+    public void setView(CyNetworkView v) {
+        view = v;
+    }
 
 	public void setNetwork(CyNetwork n) {
 		network = n;

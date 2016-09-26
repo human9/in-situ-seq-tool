@@ -3,3 +3,6 @@
 .classpath
 .settings/
 /target/
+
+#vim
+*.swp

@@ -101,11 +101,9 @@
 						<Export-Package>${bundle.namespace}</Export-Package>
 						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.internal.InseqActivator</Bundle-Activator>
-						
 						<Embed-Dependency>*;scope=!provided|test;groupId=!org.cytoscape</Embed-Dependency>
 						<Embed-Transitive>true</Embed-Transitive>
 						<Import-Package>*;resolution:=optional</Import-Package>
-						
 					</instructions>
 				</configuration>
 			</plugin>
@@ -146,70 +144,24 @@
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
-			<artifactId>service-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>model-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>swing-util-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
 			<artifactId>core-task-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>swing-application-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>presentation-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>app-api</artifactId>
-			<version>3.1.0</version>
+			<version>3.2.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-app-api</artifactId>
-			<version>3.1.0</version>
+			<version>3.2.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>session-api</artifactId>
-			<version>3.1.0</version>
+        <dependency>
+        <groupId>org.cytoscape</groupId>
+            <artifactId>viewmodel-api</artifactId>
+			<version>3.2.0</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>layout-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.cytoscape</groupId>
-			<artifactId>work-api</artifactId>
-			<version>3.1.0</version>
-			<scope>provided</scope>
-		</dependency>
+        </dependency>
+
+
 
 		<!-- KD-Tree Implementation -->
 		<dependency>
@@ -222,30 +174,37 @@
 		<!-- Apache Commons -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
 			<version>1.2</version>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-math3</artifactId>
-			<version>3.6.1</version>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.6</version>
 			<optional>true</optional>
-		</dependency>
+        </dependency>
 
-		<!-- JFreeChart -->
-		<dependency>
-			<groupId>org.jfree</groupId>
-			<artifactId>jfreechart</artifactId>
-			<version>1.0.19</version>
-		</dependency>
-		
-		<!-- ImageIO Plugins -->
+        <!-- JOGL: OpenGL bindings -->
+        <dependency>
+          <groupId>org.jogamp.gluegen</groupId>
+          <artifactId>gluegen-rt-main</artifactId>
+          <version>2.3.2</version>
+        </dependency>
+        <dependency>
+          <groupId>org.jogamp.jogl</groupId>
+          <artifactId>jogl-all-main</artifactId>
+          <version>2.3.2</version>
+        </dependency>
+
+        <!-- JOML: Linear algebra -->
+        <dependency>
+          <groupId>org.joml</groupId>
+          <artifactId>joml</artifactId>
+          <version>1.8.2</version>
+        </dependency>
+
+		<!-- TIFF support -->
 		<dependency>
 			<groupId>com.twelvemonkeys.imageio</groupId>
 			<artifactId>imageio-tiff</artifactId>
