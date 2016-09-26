@@ -166,6 +166,7 @@ public class SpatialNetworkTask extends AbstractTask {
         edgeTable.createColumn("num", Integer.class, false);
         edgeTable.createColumn("normal", Double.class, false);
         edgeTable.createColumn("rank", Integer.class, false);
+        edgeTable.createColumn("unique", Integer.class, false);
 
         // Add nodes into actual network
         for (int i = 0; i < numTranscriptsForGene.length; i++)

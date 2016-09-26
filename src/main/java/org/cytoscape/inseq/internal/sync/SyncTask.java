@@ -1,7 +1,9 @@
 package org.cytoscape.inseq.internal.sync;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.InseqSession;
@@ -9,6 +11,7 @@ import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -57,6 +60,8 @@ public class SyncTask extends AbstractTask {
             unionNodes.add(node);
         }
 
+        Map<CyEdge, List<CyRow>> uniqueEdges = new HashMap<CyEdge, List<CyRow>>();
+
         // Copy all edges from networks without duplication
         for(TypeNetwork tn : networkList) {
 
@@ -72,13 +77,30 @@ public class SyncTask extends AbstractTask {
                     CyNode unionTarget = unionNodes.get(target);
                 
                     if(!union.containsEdge(unionSource, unionTarget)) {
-                        union.addEdge(unionSource, unionTarget, false);
+                        CyEdge key = union.addEdge(unionSource, unionTarget, false);
+                        List<CyRow> edges = new ArrayList<CyRow>();
+                        CyRow row = tn.getNetwork().getDefaultEdgeTable().getRow(edge.getSUID());
+                        row.set("unique", 0);
+                        edges.add(row);
+                        uniqueEdges.put(key, edges);
+                    }
+                    else {
+                        CyEdge key = union.getConnectingEdgeList(unionSource, unionTarget, CyEdge.Type.ANY).get(0);
+                        CyRow row = tn.getNetwork().getDefaultEdgeTable().getRow(edge.getSUID());
+                        row.set("unique", 0);
+                        uniqueEdges.get(key).add(row);
                     }
                 }
                 catch (java.lang.ArrayIndexOutOfBoundsException e) {
                     // This should only happen if a node has been manually added,
                     // and should be ignored
                 }
+            }
+        }
+
+        for(List<CyRow> list : uniqueEdges.values()) {
+            for(CyRow row : list) {
+                row.set("unique", list.size());
             }
         }
         
