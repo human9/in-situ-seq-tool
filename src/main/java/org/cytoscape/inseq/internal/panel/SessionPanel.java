@@ -549,7 +549,7 @@ public class SessionPanel extends JPanel {
                     session.addNetwork(network, px, cutoff);
                 }
                 else {
-                    ia.getCAA().getCyNetworkManager().destroyNetwork(network.getNetwork());
+                    //ia.getCAA().getCyNetworkManager().destroyNetwork(network.getNetwork());
 		            //ia.getCAA().getCyEventHelper().flushPayloadEvents();
                 }
             }
