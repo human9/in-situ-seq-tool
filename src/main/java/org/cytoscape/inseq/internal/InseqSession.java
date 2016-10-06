@@ -247,7 +247,7 @@ public class InseqSession {
         {
             CAA.getCyNetworkViewManager().addNetworkView(n.getView());
             //CAA.getCyEventHelper().flushPayloadEvents(); 
-            CAA.getCyApplicationManager().setCurrentNetworkView(n.getView());
+            //CAA.getCyApplicationManager().setCurrentNetworkView(n.getView());
         }
     }
     
