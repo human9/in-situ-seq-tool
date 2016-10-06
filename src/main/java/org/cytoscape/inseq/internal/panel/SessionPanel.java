@@ -174,8 +174,8 @@ public class SessionPanel extends JPanel {
             }
         });
 
-        model = new DefaultListModel<TypeNetwork>();
-        networkList = new JList<TypeNetwork>(model);
+        model = new DefaultListModel<>();
+        networkList = new JList<>(model);
         networkList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         networkList.setLayoutOrientation(JList.VERTICAL);
 
@@ -193,7 +193,7 @@ public class SessionPanel extends JPanel {
         JScrollPane listScroller = new JScrollPane(networkList);
         listScroller.setMinimumSize(networkList.getPreferredScrollableViewportSize());
 
-        JComboBox<CyLayoutAlgorithm> layoutComboBox = new JComboBox<CyLayoutAlgorithm>(ia.getCAA().getCyLayoutAlgorithmManager().getAllLayouts().toArray(new CyLayoutAlgorithm[0]));
+        JComboBox<CyLayoutAlgorithm> layoutComboBox = new JComboBox<>(ia.getCAA().getCyLayoutAlgorithmManager().getAllLayouts().toArray(new CyLayoutAlgorithm[0]));
         layoutAlgorithm = ia.getCAA().getCyLayoutAlgorithmManager().getLayout("force-directed");
         layoutComboBox.setSelectedItem(layoutAlgorithm);
         layoutComboBox.addItemListener(new ItemListener() {
@@ -544,12 +544,13 @@ public class SessionPanel extends JPanel {
         // Register the network
         Task registerTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
-                ia.getCAA().getCyNetworkManager().addNetwork(network.getNetwork());
+                //ia.getCAA().getCyNetworkManager().addNetwork(network.getNetwork());
                 if(!network.emptyFlag) {
                     session.addNetwork(network, px, cutoff);
                 }
                 else {
                     ia.getCAA().getCyNetworkManager().destroyNetwork(network.getNetwork());
+		            //ia.getCAA().getCyEventHelper().flushPayloadEvents();
                 }
             }
         };

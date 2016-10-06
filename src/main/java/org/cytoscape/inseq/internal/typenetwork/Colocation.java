@@ -29,7 +29,7 @@ public class Colocation {
     public double probabilityCumulative;
 
     // A set containing all transcripts used in this colocation
-    private HashSet<Transcript> transcripts = new HashSet<Transcript>();
+    private HashSet<Transcript> transcripts = new HashSet<>();
 
     public Colocation(Transcript[] ordered) {
         first = ordered[0].type;

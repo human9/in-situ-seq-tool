@@ -17,17 +17,14 @@ public class Transcript {
     public final Integer type;
 	
     // The shape of the selection area, null if entire dataset
-	private Map<TypeNetwork, Shape> selection;
+	private Map<TypeNetwork, Shape> selection = new HashMap<>();
 
-	private Map<TypeNetwork, List<Transcript>> neighbours;
+	private Map<TypeNetwork, List<Transcript>> neighbours = new HashMap<>();
 	
 	public Transcript(Point2D.Double pos, int type, int index) {
 		this.pos = pos;
 		this.type = type;
         this.index = index;
-
-		neighbours = new HashMap<TypeNetwork, List<Transcript>>();
-		selection = new HashMap<TypeNetwork, Shape>();
 	}
 
 	public List<Transcript> getNeighboursForNetwork(TypeNetwork n) {

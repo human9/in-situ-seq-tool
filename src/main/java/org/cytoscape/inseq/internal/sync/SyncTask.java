@@ -53,14 +53,17 @@ public class SyncTask extends AbstractTask {
          */
 
         // Create network, add gene nodes
-        CyNetwork union = adapter.getCyNetworkFactory().createNetwork();
-        List<CyNode> unionNodes = new ArrayList<CyNode>();
+        CyNetwork union = session.getUnion();
+        // destroy anything there
+        union.removeNodes(union.getNodeList());
+        union.removeEdges(union.getEdgeList());
+        List<CyNode> unionNodes = new ArrayList<>();
         for(int i = 0; i < session.getNumGenes(); i++) {
             CyNode node = union.addNode();
             unionNodes.add(node);
         }
 
-        Map<CyEdge, List<CyRow>> uniqueEdges = new HashMap<CyEdge, List<CyRow>>();
+        Map<CyEdge, List<CyRow>> uniqueEdges = new HashMap<>();
 
         // Copy all edges from networks without duplication
         for(TypeNetwork tn : networkList) {
@@ -78,7 +81,7 @@ public class SyncTask extends AbstractTask {
                 
                     if(!union.containsEdge(unionSource, unionTarget)) {
                         CyEdge key = union.addEdge(unionSource, unionTarget, false);
-                        List<CyRow> edges = new ArrayList<CyRow>();
+                        List<CyRow> edges = new ArrayList<>();
                         CyRow row = tn.getNetwork().getDefaultEdgeTable().getRow(edge.getSUID());
                         row.set("unique", 0);
                         edges.add(row);
@@ -105,13 +108,18 @@ public class SyncTask extends AbstractTask {
         }
         
         // Apply layout
-		CyNetworkView view = adapter.getCyNetworkViewFactory().createNetworkView(union);
+        CyNetworkView view = adapter.getCyNetworkViewFactory().createNetworkView(union);
 		TaskIterator itr = algorithm.createTaskIterator(view, algorithm.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		adapter.getTaskManager().execute(itr);
-		adapter.getCyNetworkManager().addNetwork(union);
-		adapter.getCyNetworkViewManager().addNetworkView(view);
+        try {
+            Thread.sleep(100); // terrible hackyness.. TODO: Write a synchronous taskmanager implementation
+        } catch(InterruptedException ex) {
+                Thread.currentThread().interrupt();
+        }
+        view.updateView();
+		adapter.getCyEventHelper().flushPayloadEvents();
+		//adapter.getCyNetworkViewManager().addNetworkView(view);
         
-
         // Find union node locations
         double[][] locations = new double[unionNodes.size()][2];
         for(int i = 0; i < unionNodes.size(); i++) {
@@ -122,10 +130,10 @@ public class SyncTask extends AbstractTask {
         double xloc = view.getVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION);
         double yloc = view.getVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION);
         double scale = view.getVisualProperty(BasicVisualLexicon.NETWORK_SCALE_FACTOR);
-		
         // we don't actually want the union view
-        adapter.getCyNetworkViewManager().destroyNetworkView(view);
-		adapter.getCyNetworkManager().destroyNetwork(union);
+		//adapter.getCyEventHelper().flushPayloadEvents();
+        //adapter.getCyNetworkViewManager().destroyNetworkView(view);
+		//adapter.getCyNetworkManager().destroyNetwork(union);
 
         for(TypeNetwork tn : networkList) {
 
@@ -142,7 +150,17 @@ public class SyncTask extends AbstractTask {
                 tn.getView().getNodeView(nodes.get(i)).setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, locations[i][1]);
                 //tn.view.updateView();
             }
+
+            adapter.getCyNetworkManager().addNetwork(tn.getNetwork());
+            adapter.getCyEventHelper().flushPayloadEvents();
+            if(networkList.indexOf(tn) == networkList.size() - 1) {
+                adapter.getCyNetworkViewManager().addNetworkView(tn.getView());
+            }
+            //tn.getView().updateView();
+		    //adapter.getCyEventHelper().flushPayloadEvents();
+            //adapter.getCyApplicationManager().setCurrentNetworkView(tn.getView());
         }
+
 
     }
 

@@ -44,7 +44,7 @@ public class VisualPicker extends JDialog implements ChangeListener
     private Integer type;
     
     private int symbol;
-    private List<SymbolTile> tiles;
+    private List<SymbolTile> tiles = new ArrayList<>();
     
     private Color colour;
 
@@ -77,7 +77,6 @@ public class VisualPicker extends JDialog implements ChangeListener
         JPanel symbols = new JPanel();
         symbols.setLayout(new FlowLayout());
         
-        tiles = new ArrayList<SymbolTile>();
         for(int i = 0; i < s.getSymbolList().size(); i++) {
             SymbolTile tile = new SymbolTile(i);
             symbols.add(tile);

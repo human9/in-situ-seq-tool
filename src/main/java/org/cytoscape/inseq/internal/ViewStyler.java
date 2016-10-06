@@ -143,13 +143,13 @@ public class ViewStyler extends AbstractTask {
 		network.setView(view);
 		style.apply(view);
 
-		final CyLayoutAlgorithmManager algm = a.getCyLayoutAlgorithmManager();
-		CyLayoutAlgorithm algor = algm.getDefaultLayout();
-		TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
-		a.getTaskManager().execute(itr);
+		//final CyLayoutAlgorithmManager algm = a.getCyLayoutAlgorithmManager();
+		//CyLayoutAlgorithm algor = algm.getDefaultLayout();
+		//TaskIterator itr = algor.createTaskIterator(view, algor.createLayoutContext(), CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
+		//a.getTaskManager().execute(itr);
 
 		//a.getCyEventHelper().flushPayloadEvents();
-		a.getCyNetworkManager().addNetwork(network.getNetwork());
+		//a.getCyNetworkManager().addNetwork(network.getNetwork());
 		//a.getVisualMappingManager().setVisualStyle(style, view);
 		//a.getVisualMappingManager().setCurrentVisualStyle(style);
 	}

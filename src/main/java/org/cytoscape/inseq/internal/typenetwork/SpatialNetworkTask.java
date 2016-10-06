@@ -37,7 +37,7 @@ public class SpatialNetworkTask extends AbstractTask {
     // Stores the number of each transcript name that are found
     private int[] numTranscriptsForGene;
     private int[] numColocationsForGene;
-    protected HashMap<String, Colocation> colocations = new HashMap<String, Colocation>();
+    protected HashMap<String, Colocation> colocations = new HashMap<>();
 
     private int interaction;
     private double sigLevel;
@@ -68,7 +68,7 @@ public class SpatialNetworkTask extends AbstractTask {
 
         if (net.emptyFlag) return;
         // Assign a sensible pvalue for ranking, and remove interactions as required
-        List<Colocation> colocationList = new ArrayList<Colocation>(colocations.values());
+        List<Colocation> colocationList = new ArrayList<>(colocations.values());
         Iterator<Colocation> itr = colocationList.iterator();
         while(itr.hasNext()) {
             Colocation c = itr.next();
@@ -126,6 +126,8 @@ public class SpatialNetworkTask extends AbstractTask {
             }
 
         }
+
+		session.getCAA().getCyEventHelper().flushPayloadEvents();
     }
 
     protected void incrTotal() {

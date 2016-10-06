@@ -26,7 +26,7 @@ public class TypeNetwork {
 
     // An ordered list of CyNodes, so that nodes of type (i) can be looked up
     // without jumping through too many hoops
-    private List<CyNode> nodes = new ArrayList<CyNode>();
+    private List<CyNode> nodes = new ArrayList<>();
 
 	public TypeNetwork(CyNetwork n, double d, double c)
 	{

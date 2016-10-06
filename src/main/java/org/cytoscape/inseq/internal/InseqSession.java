@@ -40,6 +40,9 @@ public class InseqSession {
     public List<String> names;
     private Integer selectedNetwork;
     private List<BufferedImage> symbols;
+        
+    CyNetwork union;
+    CyNetworkView unionView;
 
     /**
      * Defines the appearance of a certain gene.
@@ -84,6 +87,14 @@ public class InseqSession {
             symbols.add(pointSprites.getSubimage(i*size, 0, size, size)); 
         }
 
+        // Make union network here, once, to prevent weirdness later
+        union = CAA.getCyNetworkFactory().createNetwork();
+        unionView = CAA.getCyNetworkViewFactory().createNetworkView(union);
+        //TODO: Set union net name as unique for each session?
+        union.getRow(union).set(CyNetwork.NAME, "Union network");
+		CAA.getCyNetworkManager().addNetwork(union);
+		CAA.getCyNetworkViewManager().addNetworkView(unionView);
+
         // Give each gene a unique colour as well spaced as possible.
         genes = new ArrayList<Gene>();
         List<String> alphabeticalGenes = new ArrayList<String>(names);
@@ -103,6 +114,18 @@ public class InseqSession {
         // Initialise network style
         updateStyle();
 
+    }
+    
+    public CyNetwork getUnion() {
+    	return union;
+    }
+    
+    public CyNetworkView getUnionView() {
+    	return unionView;
+    }
+    
+    public CyAppAdapter getCAA() {
+        return CAA;
     }
 
     public void setSymbolList(List<BufferedImage> list) {
