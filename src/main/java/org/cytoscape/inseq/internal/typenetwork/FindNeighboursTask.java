@@ -49,6 +49,10 @@ public class FindNeighboursTask extends AbstractTask implements ObservableTask {
 			else {
 				searchArea = tree.range(new double[]{0d,0d}, new double[]{Double.MAX_VALUE, Double.MAX_VALUE});
 			}
+				
+			if(searchArea.size() < 1) {
+				network.isEmpty = true;
+			}
 
 			network.setSelection(selection);
 			

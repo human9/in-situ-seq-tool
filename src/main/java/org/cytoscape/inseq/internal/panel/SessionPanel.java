@@ -619,6 +619,7 @@ public class SessionPanel extends JPanel {
     }
 
     public void refreshNetworks(TypeNetwork selected) {
+		if(selected.isEmpty) return;
         if(!model.contains(selected)) {
             model.addElement(selected);
         }

@@ -2,6 +2,7 @@ package org.cytoscape.inseq.internal.sync;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +53,16 @@ public class SyncTask extends AbstractTask {
          * to reimplement here.
          */
 
+        Iterator<TypeNetwork> it = networkList.iterator();
+        while(it.hasNext()) {
+            TypeNetwork tn = it.next();
+
+			if(tn.isEmpty) {
+				it.remove();
+			}
+		}
+
+
         // Create network, add gene nodes
         CyNetwork union = session.getUnion();
         // destroy anything there
@@ -68,7 +79,7 @@ public class SyncTask extends AbstractTask {
         // Copy all edges from networks without duplication
         for(TypeNetwork tn : networkList) {
 
-            List<CyNode> otherNodes = tn.getNodeList(); 
+			List<CyNode> otherNodes = tn.getNodeList(); 
             List<CyEdge> otherEdges = tn.getNetwork().getEdgeList();
             for(CyEdge edge : otherEdges) {
                 int source = otherNodes.indexOf(edge.getSource()); 
@@ -135,6 +146,12 @@ public class SyncTask extends AbstractTask {
 		//adapter.getCyNetworkManager().destroyNetwork(union);
 
         for(TypeNetwork tn : networkList) {
+			
+			try {
+				Thread.sleep(100); // Prevent lockups
+			} catch(InterruptedException ex) {
+					Thread.currentThread().interrupt();
+			}
 
             // Apply union zoom and centering to other views
             tn.getView().setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xloc);
