@@ -5,8 +5,6 @@ import java.awt.Paint;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.inseq.internal.typenetwork.TypeNetwork;
-import org.cytoscape.view.layout.CyLayoutAlgorithm;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.vizmap.VisualMappingFunction;
@@ -16,7 +14,6 @@ import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 
 public class ViewStyler extends AbstractTask {
@@ -137,8 +134,6 @@ public class ViewStyler extends AbstractTask {
 
 	public void run(TaskMonitor monitor) {
 
-        if(network.emptyFlag) return;
-		
 		CyNetworkView view = a.getCyNetworkViewFactory().createNetworkView(network.getNetwork());
 		network.setView(view);
 		style.apply(view);

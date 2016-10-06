@@ -66,7 +66,6 @@ public class SpatialNetworkTask extends AbstractTask {
 
     public void run(TaskMonitor taskMonitor) {
 
-        if (net.emptyFlag) return;
         // Assign a sensible pvalue for ranking, and remove interactions as required
         List<Colocation> colocationList = new ArrayList<>(colocations.values());
         Iterator<Colocation> itr = colocationList.iterator();

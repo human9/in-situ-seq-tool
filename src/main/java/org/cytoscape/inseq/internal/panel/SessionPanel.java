@@ -146,7 +146,7 @@ public class SessionPanel extends JPanel {
         this.session = session;
         this.setLayout(new GridBagLayout());
 
-        autoDim = new Dimension(session.min.width/4, session.min.height/4);
+        autoDim = new Dimension((int)(session.min.width/4.5), (int)(session.min.height/4.5));
 
         ImageIcon icon = NetworkUtil.iconFromResource("/texture/pop.png");
         pop = new JButton(icon);
@@ -435,11 +435,16 @@ public class SessionPanel extends JPanel {
                     int numHorizontal = (int) Math.ceil((float)total.width / d.width);
                     int numVertical = (int) Math.ceil((float)total.height / d.height);
 
+                    float remHoz = (float)numHorizontal*d.width - total.width;
+                    int subHoz = (int)(remHoz / (float)numHorizontal);
+                    
+                    float remVer = (float)numVertical*d.height - total.height;
+                    int subVer = (int)(remVer / (float)numVertical);
+
                     for(int h = 0; h < numVertical; h++) {
                         for(int w = 0; w < numHorizontal; w++) {
-                            Rectangle r = new Rectangle(w*d.width, h*d.height, d.width, d.height);
+                            Rectangle r = new Rectangle(w*d.width - w*subHoz, h*d.height - h*subVer, d.width, d.height);
                             session.setSelection(r);
-                            // Makes new network be created
                             makeNetwork(getTN());
                         }
                     }
@@ -545,13 +550,7 @@ public class SessionPanel extends JPanel {
         Task registerTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
                 //ia.getCAA().getCyNetworkManager().addNetwork(network.getNetwork());
-                if(!network.emptyFlag) {
-                    session.addNetwork(network, px, cutoff);
-                }
-                else {
-                    //ia.getCAA().getCyNetworkManager().destroyNetwork(network.getNetwork());
-		            //ia.getCAA().getCyEventHelper().flushPayloadEvents();
-                }
+                session.addNetwork(network, px, cutoff);
             }
         };
 
@@ -573,10 +572,7 @@ public class SessionPanel extends JPanel {
 
         Task refreshTask = new AbstractTask() {
             public void run (TaskMonitor monitor) {
-                if(!network.emptyFlag) {
-                    refreshNetworks(network);
-                    //updateListSelection();
-                }
+                refreshNetworks(network);
             }
         };
 

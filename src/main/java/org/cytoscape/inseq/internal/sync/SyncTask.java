@@ -68,7 +68,6 @@ public class SyncTask extends AbstractTask {
         // Copy all edges from networks without duplication
         for(TypeNetwork tn : networkList) {
 
-            if(tn.emptyFlag) continue;
             List<CyNode> otherNodes = tn.getNodeList(); 
             List<CyEdge> otherEdges = tn.getNetwork().getEdgeList();
             for(CyEdge edge : otherEdges) {
@@ -136,8 +135,6 @@ public class SyncTask extends AbstractTask {
 		//adapter.getCyNetworkManager().destroyNetwork(union);
 
         for(TypeNetwork tn : networkList) {
-
-            if(tn.emptyFlag) continue;
 
             // Apply union zoom and centering to other views
             tn.getView().setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, xloc);
