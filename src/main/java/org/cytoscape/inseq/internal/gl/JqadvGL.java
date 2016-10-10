@@ -611,7 +611,6 @@ public class JqadvGL {
 
         st.attachShaderProgram(gl2, simplesp, true);
 
-        st.enableVertexAttribArray(gl2, "shape");
         //fill polygon w/ stencil buffer
         gl2.glColorMask(false, false, false, false);
         gl2.glStencilFunc(GL.GL_ALWAYS, 1, 0);
@@ -619,10 +618,12 @@ public class JqadvGL {
         gl2.glStencilMask(1);
 
 
+        st.enableVertexAttribArray(gl2, "shape");
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
         gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"), 2, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, capacity / 2);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        st.disableVertexAttribArray(gl2, "shape");
 
         st.attachShaderProgram(gl2, boxsp, true);
 
@@ -630,12 +631,13 @@ public class JqadvGL {
         gl2.glStencilFunc(GL.GL_EQUAL, 0, 1);
         gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP);
 
+        st.enableVertexAttribArray(gl2, "coord");
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
-        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"), 2, GL.GL_FLOAT, false, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "coord"), 2, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        st.disableVertexAttribArray(gl2, "coord");
 
-        st.disableVertexAttribArray(gl2, "shape");
 
         gl2.glDisable(GL.GL_STENCIL_TEST);
 
@@ -710,6 +712,7 @@ public class JqadvGL {
         gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT);
 
         //drawBackground(gl2);
+        drawBackground(gl2);
         drawImage(gl2);
         drawPoints(gl2);
 
