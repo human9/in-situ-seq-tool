@@ -77,12 +77,12 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     public void reshape(GLAutoDrawable drawable, 
                         int x, int y, 
                         int width, int height) {
-        jqadvgl.setup(drawable.getGL().getGL2(),
+        jqadvgl.setup(drawable.getGL().getGL2ES2(),
                       width, height);
     }
     
     public void init(GLAutoDrawable drawable) {
-        jqadvgl.init(drawable.getGL().getGL2());
+        jqadvgl.init(drawable.getGL().getGL2ES2());
     }
     
     public void dispose(GLAutoDrawable drawable) {
@@ -90,7 +90,7 @@ public class JqadvPanel extends NewtCanvasAWT implements GLEventListener {
     }
     
     public void display(GLAutoDrawable drawable) {
-        jqadvgl.render(drawable.getGL().getGL2(),
+        jqadvgl.render(drawable.getGL().getGL2ES2(),
                        drawable.getSurfaceWidth(),
                        drawable.getSurfaceHeight());
     }

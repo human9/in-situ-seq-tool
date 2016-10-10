@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.GLUniformData;
 import com.jogamp.opengl.util.glsl.ShaderCode;
@@ -20,13 +21,13 @@ import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 public class Util 
 {
 
-    public static void updateUniform(GL2 gl2, ShaderState st, String name, float u) {
+    public static void updateUniform(GL2ES2 gl2, ShaderState st, String name, float u) {
         GLUniformData ud = st.getUniform(name);
         ud.setData(u);
         st.uniform(gl2, ud);
     }
     
-    public static void updateUniform(GL2 gl2, ShaderState st, String name, int u) {
+    public static void updateUniform(GL2ES2 gl2, ShaderState st, String name, int u) {
         GLUniformData ud = st.getUniform(name);
         ud.setData(u);
         st.uniform(gl2, ud);
@@ -35,7 +36,7 @@ public class Util
     /**
      * Uniform creation convenience method.
      */
-    public static void makeUniform(GL2 gl2, ShaderState st, String name, float u) {
+    public static void makeUniform(GL2ES2 gl2, ShaderState st, String name, float u) {
 
         GLUniformData ud = new GLUniformData(name, u);
         st.ownUniform(ud);
@@ -45,7 +46,7 @@ public class Util
     /**
      * Shader program compilation convenience method.
      */
-    public static ShaderProgram compileProgram(GL2 gl2, String name) {
+    public static ShaderProgram compileProgram(GL2ES2 gl2, String name) {
         final ShaderCode vp = 
             ShaderCode.create(gl2,
                     GL2.GL_VERTEX_SHADER, Util.class,

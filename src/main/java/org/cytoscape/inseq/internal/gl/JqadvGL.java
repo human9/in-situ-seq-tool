@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -19,6 +20,7 @@ import org.joml.Vector3f;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLUniformData;
 import com.jogamp.opengl.util.GLBuffers;
@@ -37,6 +39,8 @@ public class JqadvGL {
     private int imageVBO;
     private int bkgrndVBO;
     private int selectionVBO;
+    private int hudVBO;
+    private int hudIndexVBO;
 
     // Shader control
     private ShaderState st;
@@ -48,6 +52,7 @@ public class JqadvGL {
     private ShaderProgram simplesp;
     private ShaderProgram boxsp;
     private ShaderProgram matsp;
+    private ShaderProgram hudsp;
 
     private float xOffset = 0;
     private float yOffset = 0;
@@ -61,6 +66,8 @@ public class JqadvGL {
     private boolean HUDVisible = true;
     private boolean showAll = true;
     private float[] coords;
+    private float[] hud;
+    private int[] hudIndex;
     private float[] colours;
     private float[] symbols;
     private float[] point_scale = {1f};
@@ -124,13 +131,29 @@ public class JqadvGL {
             coords[i++] = t.type;
         }
 
+        hud = new float[] {
+            -1.0f, -1.0f,
+            -1.0f, -0.9f,
+             0.9f, -1.0f,
+             0.9f,  0.9f,
+             0.9f,  1.0f,
+             1.0f, -1.0f,
+             1.0f,  1.0f
+        };
+
+        hudIndex = new int[]{ 
+            0, 1, 2,
+            2, 3, 1,
+            2, 4, 6,
+            6, 2, 5
+        };
         animator = new Animator(drawable);
         animator.start();
 
     }
 
 
-    protected void init(GL2 gl2) {
+    protected void init(GL2ES2 gl2) {
 
         // Attempt to enable vsync
         gl2.setSwapInterval(1);
@@ -167,12 +190,30 @@ public class JqadvGL {
         // 2. imageVBO: coordinates to stretch an image across
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
-        int vbo[] = new int[4];
-        gl2.glGenBuffers(4, vbo, 0);
-        pointsVBO  = vbo[0];
+        // 5. hudVBO: describes the space allocated for scale/other text
+        int vbo[] = new int[6];
+        gl2.glGenBuffers(6, vbo, 0);
+        pointsVBO    = vbo[0];
         imageVBO     = vbo[1];
         bkgrndVBO    = vbo[2];
         selectionVBO = vbo[3];
+        hudVBO       = vbo[4];
+        hudIndexVBO  = vbo[5];
+
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         hud.length * GLBuffers.SIZEOF_FLOAT,
+                         FloatBuffer.wrap(hud),
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        gl2.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, hudIndexVBO);
+        gl2.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER,
+                         hudIndex.length * GLBuffers.SIZEOF_INT,
+                         IntBuffer.wrap(hudIndex),
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER, 
@@ -378,7 +419,7 @@ public class JqadvGL {
      * Look under the resources folder to find the source code for these
      * shaders.
      */
-    private void generateShaderProgram(GL2 gl2) {
+    private void generateShaderProgram(GL2ES2 gl2) {
 
         st = new ShaderState();
 
@@ -397,13 +438,16 @@ public class JqadvGL {
         matsp = Util.compileProgram(gl2, "mat");
         st.attachShaderProgram(gl2, matsp, false);
 
+        hudsp = Util.compileProgram(gl2, "hud");
+        st.attachShaderProgram(gl2, hudsp, false);
+
         bgrndsp = Util.compileProgram(gl2, "bgrnd");
         st.attachShaderProgram(gl2, bgrndsp, true);
         
     }
 
     /**
-     * Center and scale the view so that as much of the data as possible is visible.
+     * Center and scae the view so that as much of the data as possible is visible.
      */
     protected void centerView() {
         
@@ -428,7 +472,7 @@ public class JqadvGL {
         }
     }
 
-    protected void setup(GL2 gl2, int width, int height) {
+    protected void setup(GL2ES2 gl2, int width, int height) {
         
         // Update viewport size to canvas dimensions
         gl2.glViewport(0, 0, width, height);
@@ -485,7 +529,7 @@ public class JqadvGL {
         return new float[] {v.x, v.y};
     }
 
-    private void constructMatrices(GL2 gl2) {
+    private void constructMatrices(GL2ES2 gl2) {
 
         MvMatrix.identity()
                 .translate(-xOffset, -yOffset, 0f)
@@ -497,55 +541,56 @@ public class JqadvGL {
                 .translate(xOffset, yOffset, 0f);
     }
 
-    private void drawBackground(GL2 gl2) {
+    private void drawBackground(GL2ES2 gl2) {
         st.attachShaderProgram(gl2, bgrndsp, true);
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        st.enableVertexAttribArray(gl2, "coord");
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "coord"), 2, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+        st.disableVertexAttribArray(gl2, "coord");
     }
 
-    private void drawImage(GL2 gl2) {
+    private void drawImage(GL2ES2 gl2) {
+
+        st.enableVertexAttribArray(gl2, "tex_coords");
         st.attachShaderProgram(gl2, imgsp, true);
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         for(int i = 0; i < imageTiler.getNumTiles(); i++) {
             Util.updateUniform(gl2, st, "background", i+2);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
-            gl2.glVertexPointer(4, GL.GL_FLOAT, 0, i*24*GLBuffers.SIZEOF_FLOAT);
+            gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "tex_coords"), 4, GL.GL_FLOAT, false, 0, i*24*GLBuffers.SIZEOF_FLOAT);
             gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         }
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
+
+        st.disableVertexAttribArray(gl2, "tex_coords");
     }
 
-    private void drawPoints(GL2 gl2) {
+    private void drawPoints(GL2ES2 gl2) {
         st.attachShaderProgram(gl2, jqsp, true);
 
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
+        st.enableVertexAttribArray(gl2, "coord2d");
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
 
-        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "coord2d"), 3, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_POINTS, 0, coords.length / 3);
+        
+        st.disableVertexAttribArray(gl2, "coord2d");
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
 
     }
 
-    private void drawSelectionLine(GL2 gl2) {
+    private void drawSelectionLine(GL2ES2 gl2) {
 
         st.attachShaderProgram(gl2, simplesp, true);
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
+        
+        st.enableVertexAttribArray(gl2, "shape");
         
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
         gl2.glLineWidth(3f);
         gl2.glEnable(GL.GL_LINE_SMOOTH);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"), 2, GL.GL_FLOAT, false, 0, 0);
         if(pathClosed) {
             Util.updateUniform(gl2, st, "closed", 1f);
             gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 1);
@@ -554,89 +599,104 @@ public class JqadvGL {
             gl2.glDrawArrays(GL.GL_LINE_STRIP, 1, capacity / 2 - 2);
         }
         gl2.glLineWidth(1f);
+        
+        st.disableVertexAttribArray(gl2, "shape");
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 
     }
 
-    private void drawSelectionMask(GL2 gl2) {
+    private void drawSelectionMask(GL2ES2 gl2) {
 
         gl2.glEnable(GL.GL_STENCIL_TEST);
 
         st.attachShaderProgram(gl2, simplesp, true);
+
+        st.enableVertexAttribArray(gl2, "shape");
         //fill polygon w/ stencil buffer
         gl2.glColorMask(false, false, false, false);
         gl2.glStencilFunc(GL.GL_ALWAYS, 1, 0);
         gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_INVERT);
         gl2.glStencilMask(1);
 
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        
+
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, selectionVBO);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"), 2, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, capacity / 2);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        
         st.attachShaderProgram(gl2, boxsp, true);
 
         gl2.glColorMask(true, true, true, true);
         gl2.glStencilFunc(GL.GL_EQUAL, 0, 1);
         gl2.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP);
 
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, bkgrndVBO);
-        gl2.glVertexPointer(2, GL.GL_FLOAT, 0, 0);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"), 2, GL.GL_FLOAT, false, 0, 0);
         gl2.glDrawArrays(GL.GL_TRIANGLES, 0, 6);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        
+        st.disableVertexAttribArray(gl2, "shape");
+
         gl2.glDisable(GL.GL_STENCIL_TEST);
 
     }
 
-    private void drawSelectedPointBubble(GL2 gl2) {
+    private void drawScaleBarBorder(GL2ES2 gl2) {
+
+        st.attachShaderProgram(gl2, hudsp, true);
+        st.enableVertexAttribArray(gl2, "shape");
+        
+        gl2.glLineWidth(3f);
+        gl2.glEnable(GL.GL_LINE_SMOOTH);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"),
+                                2,
+                                GL.GL_FLOAT,
+                                false,
+                                0,
+                                0);
+        gl2.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, hudIndexVBO);
+        gl2.glDrawElements(GL.GL_POINTS,
+                           hud.length,
+                           GL2.GL_INT,
+                           0);
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        st.disableVertexAttribArray(gl2, "shape");
+
+    }
+
+    private void drawSelectedPointBubble(GL2ES2 gl2) {
         st.attachShaderProgram(gl2, jqsp, true);
-        gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
+        
+        st.enableVertexAttribArray(gl2, "coord2d");
         
         Util.updateUniform(gl2, st, "sel", 1f);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
-        gl2.glVertexPointer(3, GL.GL_FLOAT, 0, selectedTranscript.index * 3 * GLBuffers.SIZEOF_FLOAT);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "coord2d"), 3, GL.GL_FLOAT, false, 0, selectedTranscript.index * 3 * GLBuffers.SIZEOF_FLOAT);
         gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
         Util.updateUniform(gl2, st, "sel", 0f);
-
-        gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-        gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
 
         try {
             for(Transcript t : selectedTranscript.getNeighboursForNetwork(session.getSelectedNetwork()) ) {
 
-                gl2.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-                gl2.glEnableClientState(GL2.GL_POINT_SPRITE);
-                
                 Util.updateUniform(gl2, st, "sel", 1f);
                 gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, pointsVBO);
-                gl2.glVertexPointer(3, GL.GL_FLOAT, 0, t.index * 3 * GLBuffers.SIZEOF_FLOAT);
+                gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "coord2d"), 3, GL.GL_FLOAT, false, 0, t.index * 3 * GLBuffers.SIZEOF_FLOAT);
                 gl2.glDrawArrays(GL.GL_POINTS, 0, 1);
                 Util.updateUniform(gl2, st, "sel", 0f);
-
-                gl2.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-                gl2.glDisableClientState(GL2.GL_POINT_SPRITE);
                 
             }
         }
         catch (NullPointerException e) {
             // No neighbours, clean up
         }
+
+        st.disableVertexAttribArray(gl2, "coord2d");
     }
 
 
-    protected void render(GL2 gl2, int width, int height) {
+    protected void render(GL2ES2 gl2, int width, int height) {
     
 
         gl2.glEnable(GL.GL_BLEND);
@@ -667,6 +727,8 @@ public class JqadvGL {
         if(selectedTranscript != null) {
             drawSelectedPointBubble(gl2);    
         }
+            
+        drawScaleBarBorder(gl2);
         
         if(HUDVisible) {
             textRenderer.renderText(gl2, scale, selectedTranscript);
@@ -712,7 +774,7 @@ public class JqadvGL {
         COLOUR_CHANGED,
     } 
 
-    public void fetchUpdates(GL2 gl2) {
+    public void fetchUpdates(GL2ES2 gl2) {
         
         float[] e;
         int size = (int) Math.floor(eventFiFo.size() * 0.6);

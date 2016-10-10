@@ -16,7 +16,6 @@ import com.jogamp.graph.font.Font;
 import com.jogamp.graph.font.FontFactory;
 import com.jogamp.graph.geom.SVertex;
 import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
 import com.jogamp.opengl.util.PMVMatrix;
@@ -46,7 +45,7 @@ public class TextRenderer {
         }
     }
 
-    public void initRender(GL2 gl2) {
+    public void initRender(GL2ES2 gl2) {
 
         RenderState renderState = RenderState.createRenderState(SVertex.factory());
         renderState.setHintMask(RenderState.BITHINT_GLOBAL_DEPTH_TEST_ENABLED);
@@ -65,11 +64,11 @@ public class TextRenderer {
         renderer.reshapeOrtho(w, h, -1, 1);
     }
 
-    public void clearRegion(GL2 gl2) {
+    public void clearRegion(GL2ES2 gl2) {
         util.clear(gl2);
     }
 
-    public void renderText(GL2 gl2, float scale, Transcript selection) {
+    public void renderText(GL2ES2 gl2, float scale, Transcript selection) {
 
         gl2.glActiveTexture(GL.GL_TEXTURE0);
         

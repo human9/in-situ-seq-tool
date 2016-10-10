@@ -8,6 +8,7 @@ import java.nio.IntBuffer;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.util.GLBuffers;
 import com.jogamp.opengl.util.texture.Texture;
@@ -34,7 +35,7 @@ public class ImageTiler {
         numTiles = 0;
     }
 
-    public ImageTiler(GL2 gl2, BufferedImage bufferedImage) {
+    public ImageTiler(GL2ES2 gl2, BufferedImage bufferedImage) {
         
         w = bufferedImage.getWidth();
         h = bufferedImage.getHeight();
@@ -56,7 +57,7 @@ public class ImageTiler {
      * it into no more than (MAX_TEXTURE_UNITS - 1) pieces (as one unit is 
      * to be used for point sprites).
      */
-    public static int[] detectHardwareLimits(GL2 gl2) {
+    public static int[] detectHardwareLimits(GL2ES2 gl2) {
         int[] tex_size = new int[1];
         int[] tex_num = new int[1];
         gl2.glGetIntegerv(GL.GL_MAX_TEXTURE_SIZE, IntBuffer.wrap(tex_size));
@@ -64,7 +65,7 @@ public class ImageTiler {
         return new int[] {tex_size[0], tex_num[0] };
     }
 
-    public void bindTexture(GL2 gl2) {
+    public void bindTexture(GL2ES2 gl2) {
         
         // make and bind subimage tiles
         int tilew = w / req.width;
@@ -97,7 +98,7 @@ public class ImageTiler {
         gl2.glActiveTexture(GL.GL_TEXTURE0);
     }
 
-    public void bindVertices(GL2 gl2, int imageVBO) {
+    public void bindVertices(GL2ES2 gl2, int imageVBO) {
         
         float[] img = getVertices(req, w, h);
 
