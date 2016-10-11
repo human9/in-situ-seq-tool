@@ -39,6 +39,7 @@ public class JqadvGL {
     private int bkgrndVBO;
     private int selectionVBO;
     private int hudVBO;
+    private int legendVBO;
 
     // Shader control
     private ShaderState st;
@@ -65,6 +66,7 @@ public class JqadvGL {
     private boolean showAll = true;
     private float[] coords;
     private float[] hud;
+    private float[] legend;
     private float[] colours;
     private float[] symbols;
     private float[] point_scale = {1f};
@@ -134,6 +136,15 @@ public class JqadvGL {
             -1.0f, -0.9f,
              1.0f, -0.9f,
         };
+
+        float lheight = 0.5f;
+        float lwidth = 0.2f;
+        legend = new float[] {
+            -1.0f,  1.0f,
+            -1.0f, lheight,
+            lwidth, lheight,
+            lwidth, 1.0f
+        };
         
         animator = new Animator(drawable);
         animator.start();
@@ -179,19 +190,27 @@ public class JqadvGL {
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
         // 5. hudVBO: describes the space allocated for scale/other text
-        int vbo[] = new int[5];
-        gl2.glGenBuffers(5, vbo, 0);
+        int vbo[] = new int[6];
+        gl2.glGenBuffers(6, vbo, 0);
         pointsVBO    = vbo[0];
         imageVBO     = vbo[1];
         bkgrndVBO    = vbo[2];
         selectionVBO = vbo[3];
         hudVBO       = vbo[4];
+        legendVBO    = vbo[5];
 
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                          hud.length * GLBuffers.SIZEOF_FLOAT,
                          FloatBuffer.wrap(hud),
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, legendVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         legend.length * GLBuffers.SIZEOF_FLOAT,
+                         FloatBuffer.wrap(legend),
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
@@ -478,6 +497,22 @@ public class JqadvGL {
                          FloatBuffer.wrap(hud),
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+
+        float lwidth = (session.getLongestGeneNameLength() * 20) / w;
+        float lheight = (session.getNumGenes() * 33) / h;
+        legend = new float[] {
+            -1.0f,  1.0f,
+            -1.0f, 1-lheight,
+            -1+lwidth, 1-lheight,
+            -1+lwidth, 1.0f
+        };
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, legendVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         legend.length * GLBuffers.SIZEOF_FLOAT,
+                         FloatBuffer.wrap(legend),
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         
         
         // Center the view
@@ -654,7 +689,18 @@ public class JqadvGL {
                                 0,
                                 0);
         gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, hud.length/2);
-
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        st.disableVertexAttribArray(gl2, "shape");
+        
+        st.enableVertexAttribArray(gl2, "shape");
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, legendVBO);
+        gl2.glVertexAttribPointer(st.getAttribLocation(gl2, "shape"),
+                                2,
+                                GL.GL_FLOAT,
+                                false,
+                                0,
+                                0);
+        gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, legend.length/2);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         st.disableVertexAttribArray(gl2, "shape");
 
