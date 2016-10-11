@@ -101,7 +101,7 @@ public class TextRenderer {
         if(selection != null) {
             String display = session.name(selection.type) + " " + selection;
             matrix.glLoadIdentity();
-            matrix.glTranslatef(w-(fontSize/2)*display.length(), h-15, 0);
+            matrix.glTranslatef(w-(fontSize/2)*display.length(), 10, 0);
             session.getGeneColour(selection.type).getRGBColorComponents(colour);
             util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, display,
                     colour, SAMPLE_COUNT);

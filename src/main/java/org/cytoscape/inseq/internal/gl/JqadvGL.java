@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -40,7 +39,6 @@ public class JqadvGL {
     private int bkgrndVBO;
     private int selectionVBO;
     private int hudVBO;
-    private int hudIndexVBO;
 
     // Shader control
     private ShaderState st;
@@ -67,7 +65,6 @@ public class JqadvGL {
     private boolean showAll = true;
     private float[] coords;
     private float[] hud;
-    private int[] hudIndex;
     private float[] colours;
     private float[] symbols;
     private float[] point_scale = {1f};
@@ -132,21 +129,12 @@ public class JqadvGL {
         }
 
         hud = new float[] {
+             1.0f, -1.0f,
             -1.0f, -1.0f,
             -1.0f, -0.9f,
-             0.9f, -1.0f,
-             0.9f,  0.9f,
-             0.9f,  1.0f,
-             1.0f, -1.0f,
-             1.0f,  1.0f
+             1.0f, -0.9f,
         };
-
-        hudIndex = new int[]{ 
-            0, 1, 2,
-            2, 3, 1,
-            2, 4, 6,
-            6, 2, 5
-        };
+        
         animator = new Animator(drawable);
         animator.start();
 
@@ -191,27 +179,19 @@ public class JqadvGL {
         // 3. bkgrndVBO: A rectangle that covers the entire screen
         // 4. selectionVBO: Coordinates of the current selection
         // 5. hudVBO: describes the space allocated for scale/other text
-        int vbo[] = new int[6];
-        gl2.glGenBuffers(6, vbo, 0);
+        int vbo[] = new int[5];
+        gl2.glGenBuffers(5, vbo, 0);
         pointsVBO    = vbo[0];
         imageVBO     = vbo[1];
         bkgrndVBO    = vbo[2];
         selectionVBO = vbo[3];
         hudVBO       = vbo[4];
-        hudIndexVBO  = vbo[5];
 
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                          hud.length * GLBuffers.SIZEOF_FLOAT,
                          FloatBuffer.wrap(hud),
-                         GL.GL_STATIC_DRAW);
-        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-
-        gl2.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, hudIndexVBO);
-        gl2.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER,
-                         hudIndex.length * GLBuffers.SIZEOF_INT,
-                         IntBuffer.wrap(hudIndex),
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
@@ -472,6 +452,7 @@ public class JqadvGL {
         }
     }
 
+    float margin = 50f;
     protected void setup(GL2ES2 gl2, int width, int height) {
         
         // Update viewport size to canvas dimensions
@@ -483,6 +464,21 @@ public class JqadvGL {
 
         w = width;
         h = height;
+        
+        hud = new float[] {
+             1.0f, -1.0f,
+            -1.0f, -1.0f,
+            -1.0f, -1+margin/h,
+             1.0f, -1+margin/h,
+        };
+
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
+        gl2.glBufferData(GL.GL_ARRAY_BUFFER,
+                         hud.length * GLBuffers.SIZEOF_FLOAT,
+                         FloatBuffer.wrap(hud),
+                         GL.GL_STATIC_DRAW);
+        gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+        
         
         // Center the view
         if (makeCenter) {
@@ -553,8 +549,8 @@ public class JqadvGL {
 
     private void drawImage(GL2ES2 gl2) {
 
-        st.enableVertexAttribArray(gl2, "tex_coords");
         st.attachShaderProgram(gl2, imgsp, true);
+        st.enableVertexAttribArray(gl2, "tex_coords");
         for(int i = 0; i < imageTiler.getNumTiles(); i++) {
             Util.updateUniform(gl2, st, "background", i+2);
             gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, imageVBO);
@@ -657,11 +653,7 @@ public class JqadvGL {
                                 false,
                                 0,
                                 0);
-        gl2.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, hudIndexVBO);
-        gl2.glDrawElements(GL.GL_POINTS,
-                           hud.length,
-                           GL2.GL_INT,
-                           0);
+        gl2.glDrawArrays(GL.GL_TRIANGLE_FAN, 0, hud.length/2);
 
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         st.disableVertexAttribArray(gl2, "shape");
@@ -731,10 +723,10 @@ public class JqadvGL {
             drawSelectedPointBubble(gl2);    
         }
             
-        drawScaleBarBorder(gl2);
-        
         if(HUDVisible) {
+            drawScaleBarBorder(gl2);
             textRenderer.renderText(gl2, scale, selectedTranscript);
+        
         }
         
         if(!eventFiFo.isEmpty()) animator.go();
