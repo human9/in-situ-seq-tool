@@ -30,7 +30,7 @@ public class ImportAction extends AbstractCyAction {
 	private final InseqActivator ia;
 
 	public ImportAction(InseqActivator ia) {
-		super("Import Inseq data", ia.getCAA().getCyApplicationManager(), null, null);
+		super("Import InsituNet data", ia.getCAA().getCyApplicationManager(), null, null);
 		this.ia = ia;
 		setPreferredMenu("Apps");
 	}

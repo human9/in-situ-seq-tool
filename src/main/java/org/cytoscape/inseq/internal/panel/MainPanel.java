@@ -114,7 +114,7 @@ public class MainPanel extends JPanel implements CytoPanelComponent, ItemListene
 
     @Override
     public String getTitle() {
-        return "Inseq";
+        return "InsituNet";
     }
 
     public boolean exists(String filename) {

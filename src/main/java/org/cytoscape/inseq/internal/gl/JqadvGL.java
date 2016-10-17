@@ -498,8 +498,8 @@ public class JqadvGL {
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        float lwidth = (session.getLongestGeneNameLength() * 20) / w;
-        float lheight = (session.getNumGenes() * 33) / h;
+        float lwidth = (session.getLongestGeneNameLength() * 17 + 22) / w;
+        float lheight = (session.getNumGenes() * 32 + 8) / h;
         legend = new float[] {
             -1.0f,  1.0f,
             -1.0f, 1-lheight,

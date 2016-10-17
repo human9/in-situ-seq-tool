@@ -27,6 +27,7 @@ public class TextRenderer {
     private RegionRenderer renderer;
     private TextRegionUtil util;
     private Font font;
+    private Font fontBold;
     private List<InseqSession.Gene> genesAlphabetical;
     private InseqSession session;
     private int w;
@@ -40,8 +41,10 @@ public class TextRenderer {
         try {
             InputStream fs = TextRenderer.class.getResourceAsStream("/font/DroidSans.ttf");
             font = FontFactory.get(fs, true);
+            fs = TextRenderer.class.getResourceAsStream("/font/DroidSans-Bold.ttf");
+            fontBold = FontFactory.get(fs, true);
         } catch (IOException e) {
-            System.out.println("could not create font file");
+            System.out.println("An error occurred while loading fonts");
         }
     }
 
@@ -86,13 +89,14 @@ public class TextRenderer {
             gene.color.getRGBComponents(colour);
             colour[3] = 1;
 
+            Font fontToUse = font;
             String name = "";
             if(selection != null) {
                 if(gene.name == session.name(selection.type)) {
-                    name = "> ";
+                    fontToUse = fontBold;
                 }
             }
-            util.drawString3D((GL2ES2)gl2, renderer, font, fontSize, name + gene.name,
+            util.drawString3D((GL2ES2)gl2, renderer, fontToUse, fontSize, name + gene.name,
                     colour, SAMPLE_COUNT);
         
             matrix.glTranslatef(0, -16, 0);
