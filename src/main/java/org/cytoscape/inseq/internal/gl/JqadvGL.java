@@ -28,47 +28,49 @@ import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
 
 /**
- * This class handles all OpenGL rendering code.
+ * This class is the calling point for all OpenGL rendering code.
+ * The init() method sets up the OpenGL context and shaders etc.
+ * The "main loop" is within the render() method.
+ * Upon resizing, the setup() method is called.
+ * Other methods are primarily for adjustment of parameters like
+ * zoom, pan, background image scale, etc.
  * 
  */
 public class JqadvGL {
     
     // Vertex Buffor Objects
-    private int pointsVBO;
-    private int imageVBO;
-    private int bkgrndVBO;
-    private int selectionVBO;
-    private int hudVBO;
-    private int legendVBO;
+    private int pointsVBO,
+                imageVBO,
+                bkgrndVBO,
+                selectionVBO,
+                hudVBO,
+                legendVBO;
 
     // Shader control
     private ShaderState st;
 
     // Shader programs
-    private ShaderProgram jqsp;
-    private ShaderProgram imgsp;
-    private ShaderProgram bgrndsp;
-    private ShaderProgram simplesp;
-    private ShaderProgram boxsp;
-    private ShaderProgram matsp;
-    private ShaderProgram hudsp;
+    private ShaderProgram jqsp,
+                          imgsp,
+                          bgrndsp,
+                          simplesp,
+                          boxsp,
+                          matsp,
+                          hudsp;
 
+
+    // Remembering where we are and what size we are
     private float xOffset = 0;
     private float yOffset = 0;
     private float w;
     private float h;
     private float scale = 1;
 
-    private boolean initDone;
-    private boolean pathClosed;
+    private boolean initDone, pathClosed;
     private boolean makeCenter = true;
     private boolean HUDVisible = true;
     private boolean showAll = true;
-    private float[] coords;
-    private float[] hud;
-    private float[] legend;
-    private float[] colours;
-    private float[] symbols;
+    private float[] coords, hud, legend, colours, symbols;
     private float[] point_scale = {1f};
     private float[] extrascale = {1f};
     private FloatBuffer selectionShape;
@@ -96,8 +98,8 @@ public class JqadvGL {
     // An empty set of update type enums
     private EnumSet<UpdateType> updates = EnumSet.noneOf(UpdateType.class);
 
-    // Events can build up here before being applied
-    private ArrayDeque<float[]> eventFiFo = new ArrayDeque<float[]>();
+    // Mouse/keybouard events can build up here before being applied
+    private ArrayDeque<float[]> eventFiFo = new ArrayDeque<>();
 
     // To redraw if more events pending
     protected Animator animator;
@@ -200,6 +202,7 @@ public class JqadvGL {
         legendVBO    = vbo[5];
 
 
+        // Create GL Buffers
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, hudVBO);
         gl2.glBufferData(GL.GL_ARRAY_BUFFER,
                          hud.length * GLBuffers.SIZEOF_FLOAT,
@@ -230,12 +233,16 @@ public class JqadvGL {
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         
 
+        // Bind uniforms (variables besides the arrays that are uploaded to shaders)
         Util.makeUniform(gl2, st, "background", 2);
         Util.makeUniform(gl2, st, "ptsize", (float) pointSprites.getHeight());
         Util.makeUniform(gl2, st, "texnum", (float) pointSprites.getWidth() / pointSprites.getHeight());
         Util.makeUniform(gl2, st, "sel", 0f);
         Util.makeUniform(gl2, st, "closed", 0f);
 
+        // Projection and modelview matrices are also uniforms
+        // We don't necesarrily NEED to use matrices
+        // But it's nicer than having lots of variables to deal with in the shader
         GLUniformData P = new GLUniformData("P", 4, 4, PBuffer);
         st.uniform(gl2, P);
         GLUniformData Mv = new GLUniformData("Mv", 4, 4, MvBuffer);
@@ -256,6 +263,7 @@ public class JqadvGL {
 
         gl2.glActiveTexture(GL.GL_TEXTURE0);
 
+        // text rendering is complicated, fortunately JOGL takes care of it for us
         textRenderer.initRender(gl2);
 
         initDone = true;
@@ -276,6 +284,8 @@ public class JqadvGL {
     public void updateScale(float direction, float x, float y) {
         int SCALE_AMPLIFIER = 8;
 
+        // By adding multiple, small zoom events we can make the overall
+        // zoom effect smoother.
         for(int i = 0; i < SCALE_AMPLIFIER; i++) {
             eventFiFo.add(new float[] {direction,x,y});
         }
@@ -572,6 +582,9 @@ public class JqadvGL {
                 .translate(xOffset, yOffset, 0f);
     }
 
+    // This method draws a pretty checkerbox background
+    // It's good for debugging (because it contrasts with most things)
+    /*
     private void drawBackground(GL2ES2 gl2) {
         st.attachShaderProgram(gl2, bgrndsp, true);
         st.enableVertexAttribArray(gl2, "coord");
@@ -581,7 +594,7 @@ public class JqadvGL {
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
         st.disableVertexAttribArray(gl2, "coord");
     }
-
+    */
     private void drawImage(GL2ES2 gl2) {
 
         st.attachShaderProgram(gl2, imgsp, true);
@@ -758,7 +771,7 @@ public class JqadvGL {
             drawSelectionLine(gl2); 
 
             // capacity will be at least 10 if a valid shape is drawn
-            if(capacity > 9) {
+            if(capacity >= 10) {
             
                 drawSelectionMask(gl2);
             }
@@ -814,10 +827,20 @@ public class JqadvGL {
         COLOUR_CHANGED,
     } 
 
+    /**
+     * Called once every render loop to check for anything that may need updating.
+     */
+
     public void fetchUpdates(GL2ES2 gl2) {
+
+        // Each frame, the number of events removed from the queue equals
+        // sizeof(queue) x EVENT_THROTTLE, such that if EVENT_THROTTLE = 1
+        // all of the events will be removed, with a lower value meaning the
+        // animation becomes more delayed (and more fluid)
+        float EVENT_THROTTLE = 0.6f; 
         
         float[] e;
-        int size = (int) Math.floor(eventFiFo.size() * 0.6);
+        int size = (int) Math.floor(eventFiFo.size() * EVENT_THROTTLE);
         while(eventFiFo.size() > size) {
             e = eventFiFo.remove();
             switch(e.length) {
