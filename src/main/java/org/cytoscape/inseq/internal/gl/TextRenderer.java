@@ -47,6 +47,10 @@ public class TextRenderer {
             System.out.println("An error occurred while loading fonts");
         }
     }
+    
+    public Font getFont() {
+        return font;
+    }
 
     public void initRender(GL2ES2 gl2) {
 

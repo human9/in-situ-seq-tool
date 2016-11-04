@@ -141,16 +141,6 @@ public class InseqSession {
         return genes.size();
     }
 
-    public int getLongestGeneNameLength() {
-        String longestName = "";
-        for(Gene gene: genes) {
-            if(gene.name.length() > longestName.length()) {
-                longestName = gene.name;
-            }
-        }
-        return longestName.length();
-    }
-
     private boolean showAllSelected;
     public void setShowAll(boolean b) {
         showAllSelected = b;

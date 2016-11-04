@@ -17,6 +17,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.jogamp.common.nio.Buffers;
+import com.jogamp.graph.font.Font;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL2ES2;
@@ -508,7 +509,17 @@ public class JqadvGL {
                          GL.GL_STATIC_DRAW);
         gl2.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 
-        float lwidth = (session.getLongestGeneNameLength() * 17 + 22) / w;
+
+        Font font = textRenderer.getFont();
+        float fontSize = font.getPixelSize(11, 96);
+        float longestNameLength = font.getMetricWidth("", fontSize);
+        for(InseqSession.Gene gene: session.getGenes()) {
+            float stringWidth = font.getMetricWidth(gene.name, fontSize);
+            if(stringWidth > longestNameLength) {
+                longestNameLength = stringWidth;
+            }
+        }
+        float lwidth = (longestNameLength * 2 + 20) / w;
         float lheight = (session.getNumGenes() * 32 + 8) / h;
         legend = new float[] {
             -1.0f,  1.0f,
