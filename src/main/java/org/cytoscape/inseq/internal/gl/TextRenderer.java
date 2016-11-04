@@ -84,9 +84,10 @@ public class TextRenderer {
         PMVMatrix matrix = renderer.getMatrix();
         matrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
         matrix.glLoadIdentity();
-        matrix.glTranslatef(5, h-15, 0);
         
         float fontSize = font.getPixelSize(11, 96);
+        float lineHeight = font.getLineHeight(fontSize);
+        matrix.glTranslatef(5, h-lineHeight, 0);
         float[] colour = new float[4];
         for(InseqSession.Gene gene : genesAlphabetical) {
 
@@ -103,7 +104,7 @@ public class TextRenderer {
             util.drawString3D((GL2ES2)gl2, renderer, fontToUse, fontSize, name + gene.name,
                     colour, SAMPLE_COUNT);
         
-            matrix.glTranslatef(0, -16, 0);
+            matrix.glTranslatef(0, -lineHeight, 0);
         }
 
         if(selection != null) {

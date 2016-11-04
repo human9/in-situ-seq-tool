@@ -512,6 +512,7 @@ public class JqadvGL {
 
         Font font = textRenderer.getFont();
         float fontSize = font.getPixelSize(11, 96);
+        float lineHeight = font.getLineHeight(fontSize);
         float longestNameLength = font.getMetricWidth("", fontSize);
         for(InseqSession.Gene gene: session.getGenes()) {
             float stringWidth = font.getMetricWidth(gene.name, fontSize);
@@ -520,7 +521,7 @@ public class JqadvGL {
             }
         }
         float lwidth = (longestNameLength * 2 + 20) / w;
-        float lheight = (session.getNumGenes() * 32 + 8) / h;
+        float lheight = (session.getNumGenes() * lineHeight * 2 + lineHeight) / h;
         legend = new float[] {
             -1.0f,  1.0f,
             -1.0f, 1-lheight,
